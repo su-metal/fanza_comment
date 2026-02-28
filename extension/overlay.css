@@ -1,0 +1,5 @@
+/* Main CSS is injected via JS content script for now to handle style isolation better, 
+   but we can keep shared styles here if we move to Shadow DOM fully */
+.fc-overlay-root {
+    /* ... */
+}
