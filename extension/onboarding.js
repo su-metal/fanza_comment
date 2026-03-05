@@ -138,4 +138,18 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  const closeBtn = document.getElementById('close-tab-btn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      chrome.tabs.getCurrent((tab) => {
+        if (tab) {
+          chrome.tabs.remove(tab.id);
+        } else {
+          // Fallback if not in a tab context (though unlikely here)
+          window.close();
+        }
+      });
+    });
+  }
 });
