@@ -1,4 +1,276 @@
 const FC_EARLY_GUARD_INSTALLED = '__fanza_comment_early_guard_installed__';
+const VIDEO_MEMO_COMMENTS_PREFIX = 'video_memo_comments_';
+const VIDEO_MEMO_META_PREFIX = 'video_memo_meta_';
+const BACKUP_SCHEMA_VERSION = 2;
+const COMMENT_SCHEMA_VERSION = 1;
+const FREE_COMMENT_LIMIT = 50;
+const BETA_PERIOD_END_ISO = '2026-05-31T14:59:59.000Z'; // 2026-05-31 23:59:59 JST
+const LICENSE_API_BASE_URL = 'https://wzinimxikcihdqqdvppa.supabase.co/functions/v1/license-api';
+const CHECKOUT_POLL_INTERVAL_MS = 5000;
+const CHECKOUT_POLL_MAX_ATTEMPTS = 60; // 5 min
+const ENTITLEMENT_KEY_FIRST_SEEN_AT = 'fanza_memo_first_seen_at';
+const ENTITLEMENT_KEY_BETA_GRANDFATHERED = 'fanza_memo_is_beta_grandfathered';
+const ENTITLEMENT_KEY_PRO_PURCHASED = 'fanza_memo_is_pro_purchased';
+const ENTITLEMENT_KEYS = [
+  ENTITLEMENT_KEY_FIRST_SEEN_AT,
+  ENTITLEMENT_KEY_BETA_GRANDFATHERED,
+  ENTITLEMENT_KEY_PRO_PURCHASED
+];
+const BACKUP_MANAGED_KEY_PREFIXES = [VIDEO_MEMO_COMMENTS_PREFIX, VIDEO_MEMO_META_PREFIX];
+const BACKUP_MANAGED_EXACT_KEYS = [
+  'fanza_mock_shortcut',
+  'fanza_mock_ui_pos',
+  'fanza_mock_default_auto_min',
+  ENTITLEMENT_KEY_FIRST_SEEN_AT,
+  ENTITLEMENT_KEY_BETA_GRANDFATHERED,
+  ENTITLEMENT_KEY_PRO_PURCHASED
+];
+
+function isBackupManagedKey(key) {
+  if (typeof key !== 'string' || key.length === 0) return false;
+  if (BACKUP_MANAGED_EXACT_KEYS.includes(key)) return true;
+  return BACKUP_MANAGED_KEY_PREFIXES.some((prefix) => key.startsWith(prefix));
+}
+
+function pickManagedBackupData(storageObject) {
+  const src = (storageObject && typeof storageObject === 'object') ? storageObject : {};
+  return Object.fromEntries(
+    Object.entries(src).filter(([key]) => isBackupManagedKey(key))
+  );
+}
+
+function getStorageLocalAll() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(null, (all) => resolve(all || {}));
+  });
+}
+
+function setStorageLocal(items) {
+  return new Promise((resolve) => {
+    const payload = (items && typeof items === 'object') ? items : {};
+    if (Object.keys(payload).length === 0) {
+      resolve();
+      return;
+    }
+    chrome.storage.local.set(payload, () => resolve());
+  });
+}
+
+function removeStorageLocal(keys) {
+  return new Promise((resolve) => {
+    if (!Array.isArray(keys) || keys.length === 0) {
+      resolve();
+      return;
+    }
+    chrome.storage.local.remove(keys, () => resolve());
+  });
+}
+
+function getStorageLocal(keys) {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(keys, (result) => resolve(result || {}));
+  });
+}
+
+function getStorageSync(keys) {
+  return new Promise((resolve) => {
+    chrome.storage.sync.get(keys, (result) => {
+      if (chrome.runtime.lastError) {
+        resolve({});
+        return;
+      }
+      resolve(result || {});
+    });
+  });
+}
+
+function setStorageSync(items) {
+  return new Promise((resolve) => {
+    const payload = (items && typeof items === 'object') ? items : {};
+    if (Object.keys(payload).length === 0) {
+      resolve();
+      return;
+    }
+    chrome.storage.sync.set(payload, () => resolve());
+  });
+}
+
+function getDeviceFingerprint() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['fanza_memo_device_fingerprint'], (res) => {
+      let fp = res.fanza_memo_device_fingerprint;
+      if (!fp) {
+        fp = crypto.randomUUID();
+        chrome.storage.local.set({ fanza_memo_device_fingerprint: fp });
+      }
+      resolve(fp);
+    });
+  });
+}
+
+function saveTextAsFile(filename, content) {
+  const blob = new Blob([content], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+function toBackupDateStamp(date = new Date()) {
+  const yyyy = String(date.getFullYear());
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mi = String(date.getMinutes()).padStart(2, '0');
+  const ss = String(date.getSeconds()).padStart(2, '0');
+  return `${yyyy}${mm}${dd}_${hh}${mi}${ss}`;
+}
+
+function buildBackupFileName() {
+  return `kamishine_memo_backup_${toBackupDateStamp()}.json`;
+}
+
+function generateCommentId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `c_${Date.now()}_${Math.random().toString(16).slice(2, 10)}`;
+}
+
+function normalizeCommentTimestamp(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return Number(parsed.toFixed(2));
+}
+
+function getCommentMigrationContext() {
+  const { siteKey, videoId } = getStorageKeys();
+  return { siteKey, videoId };
+}
+
+function normalizeCommentRecord(raw, context) {
+  const src = (raw && typeof raw === 'object') ? raw : {};
+  const text = String(src.text ?? '').trim();
+  if (!text) return { comment: null, changed: true };
+
+  const commentId = String(src.comment_id || src.share_id || src.id || '').trim() || generateCommentId();
+  const legacyId = (src.id !== undefined && src.id !== null) ? src.id : commentId;
+  const createdAtRaw = String(src.created_at || src.createdAt || '').trim();
+  const updatedAtRaw = String(src.updated_at || src.updatedAt || '').trim();
+  const createdAt = createdAtRaw || new Date().toISOString();
+  const updatedAt = updatedAtRaw || createdAt;
+  const visibility = (src.visibility === 'shared') ? 'shared' : 'private';
+  const comment = {
+    id: legacyId,
+    comment_id: commentId,
+    schema_version: COMMENT_SCHEMA_VERSION,
+    site: String(src.site || context.siteKey || ''),
+    video_id: String(src.video_id || context.videoId || ''),
+    t: normalizeCommentTimestamp(src.t),
+    text,
+    work_key: String(src.work_key || context.videoId || 'mock'),
+    isLocal: src.isLocal !== false,
+    visibility,
+    share_id: String(src.share_id || ''),
+    created_at: createdAt,
+    updated_at: updatedAt
+  };
+
+  const changed = !src.comment_id
+    || src.schema_version !== COMMENT_SCHEMA_VERSION
+    || String(src.site || '') !== comment.site
+    || String(src.video_id || '') !== comment.video_id
+    || String(src.visibility || 'private') !== visibility
+    || normalizeCommentTimestamp(src.t) !== Number(src.t)
+    || String(src.created_at || src.createdAt || '') !== createdAt
+    || String(src.updated_at || src.updatedAt || '') !== updatedAt;
+
+  return { comment, changed };
+}
+
+function normalizeCommentsArray(rawComments, context) {
+  if (!Array.isArray(rawComments)) {
+    return { comments: [], changed: true };
+  }
+  const normalized = [];
+  let changed = false;
+  rawComments.forEach((item) => {
+    const { comment, changed: rowChanged } = normalizeCommentRecord(item, context);
+    if (!comment) {
+      changed = true;
+      return;
+    }
+    if (rowChanged) changed = true;
+    normalized.push(comment);
+  });
+  normalized.sort((a, b) => a.t - b.t);
+  if (normalized.length > 300) {
+    changed = true;
+    return { comments: normalized.slice(-300), changed };
+  }
+  return { comments: normalized, changed };
+}
+
+function createLocalComment(text, timestamp, context) {
+  const nowIso = new Date().toISOString();
+  return {
+    id: Date.now() + Math.random(),
+    comment_id: generateCommentId(),
+    schema_version: COMMENT_SCHEMA_VERSION,
+    site: context.siteKey,
+    video_id: context.videoId,
+    t: normalizeCommentTimestamp(timestamp),
+    text: String(text || '').trim(),
+    work_key: context.videoId || 'mock',
+    isLocal: true,
+    visibility: 'private',
+    share_id: '',
+    created_at: nowIso,
+    updated_at: nowIso
+  };
+}
+
+// Share payload boundary:
+// keep comment text local by default and only export timeline markers.
+function serializeCommentForShare(rawComment) {
+  const src = (rawComment && typeof rawComment === 'object') ? rawComment : {};
+  return {
+    comment_id: String(src.comment_id || ''),
+    site: String(src.site || ''),
+    video_id: String(src.video_id || ''),
+    t: normalizeCommentTimestamp(src.t),
+    visibility: (src.visibility === 'shared') ? 'shared' : 'private',
+    share_id: String(src.share_id || ''),
+    created_at: String(src.created_at || ''),
+    updated_at: String(src.updated_at || '')
+  };
+}
+
+function buildShareableMarkers(rawComments) {
+  if (!Array.isArray(rawComments)) return [];
+  return rawComments
+    .filter((c) => c && c.visibility === 'shared')
+    .map((c) => serializeCommentForShare(c))
+    .filter((c) => c.comment_id && c.site && c.video_id && Number.isFinite(c.t));
+}
+
+function normalizeImportedBackup(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  if (raw.data && typeof raw.data === 'object') {
+    return {
+      version: Number(raw.version) || BACKUP_SCHEMA_VERSION,
+      data: pickManagedBackupData(raw.data)
+    };
+  }
+  return {
+    version: BACKUP_SCHEMA_VERSION,
+    data: pickManagedBackupData(raw)
+  };
+}
 
 function isOverlayInputTarget(target) {
   if (!(target instanceof Element)) return false;
@@ -33,223 +305,390 @@ style.textContent = `
     position: absolute;
     bottom: 20px;
     right: 20px;
-    width: 300px;
-    height: 400px;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    z-index: 2147483647; /* Max z-index */
-    border-radius: 8px;
+    width: 320px;
+    height: 440px;
+    min-width: 260px;
+    min-height: 200px;
+    background: rgba(30, 30, 35, 0.82); /* Match actual UI transparency (ref: Step Id: 2096) */
+    color: #f1f5f9;
+    z-index: 2147483647;
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
-    font-family: sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     pointer-events: auto;
     overflow: hidden;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(24px); 
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.12); 
+    resize: both;
   }
+  
+  /* --- Light Theme --- */
+  #fanza-comment-overlay.fc-light-theme {
+    background: rgba(255, 255, 255, 0.9);
+    color: #2c3e50;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  #fanza-comment-overlay.fc-light-theme .fc-header {
+    background: rgba(0, 0, 0, 0.04);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  }
+  #fanza-comment-overlay.fc-light-theme .fc-header-btns button {
+    color: #64748b !important;
+  }
+  #fanza-comment-overlay.fc-light-theme .fc-header-btns button:hover {
+    background: rgba(0, 0, 0, 0.08) !important;
+    color: #1e293b !important;
+  }
+  #fanza-comment-overlay.fc-light-theme .fc-settings h4 { color: #1e293b; }
+  #fanza-comment-overlay.fc-light-theme #fc-video-summary { color: #64748b !important; }
+  #fanza-comment-overlay.fc-light-theme .fc-comment {
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+  }
+  #fanza-comment-overlay.fc-light-theme .fc-comment:hover {
+    background: rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.08);
+  }
+  #fanza-comment-overlay.fc-light-theme .fc-comment.active {
+    background: linear-gradient(90deg, rgba(225, 48, 108, 0.08) 0%, rgba(0, 0, 0, 0.02) 100%);
+    border-color: rgba(225, 48, 108, 0.3);
+  }
+  #fanza-comment-overlay.fc-light-theme .fc-time {
+    background: rgba(0, 0, 0, 0.06);
+    color: #475569;
+  }
+  #fanza-comment-overlay.fc-light-theme .fc-input-area,
+  #fanza-comment-overlay.fc-light-theme .fc-search-area {
+    background: rgba(0, 0, 0, 0.02);
+    border-bottom-color: rgba(0, 0, 0, 0.06);
+    border-top-color: rgba(0, 0, 0, 0.06);
+  }
+  #fanza-comment-overlay.fc-light-theme .fc-input,
+  #fanza-comment-overlay.fc-light-theme .fc-search-input {
+    background: #fff;
+    color: #1e293b;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+  }
+  #fanza-comment-overlay.fc-light-theme .fc-input:focus,
+  #fanza-comment-overlay.fc-light-theme .fc-search-input:focus {
+    background: #fff;
+    border-color: #e1306c;
+    box-shadow: 0 0 0 2px rgba(225, 48, 108, 0.15);
+  }
+  #fanza-comment-overlay.fc-light-theme .fc-btn {
+    background: #fff;
+    color: #64748b;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+  }
+  #fanza-comment-overlay.fc-light-theme .fc-btn:hover {
+    background: #f8fafc;
+    color: #1e293b;
+    border-color: rgba(0, 0, 0, 0.25);
+  }
+  #fanza-comment-overlay.fc-light-theme #fc-video-index {
+    background: rgba(0,0,0,0.02) !important;
+    border-color: rgba(0,0,0,0.08) !important;
+  }
+  #fanza-comment-overlay.fc-light-theme .fc-video-index-item {
+    background: #ffffff !important;
+    border: 1px solid rgba(0,0,0,0.04) !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  }
+  #fanza-comment-overlay.fc-light-theme .fc-video-index-item.fc-current-video {
+    background: #f0f9ff !important;
+    border-color: #bae6fd !important;
+  }
+  #fanza-comment-overlay.fc-light-theme .fc-video-index-item * { color: #475569 !important; }
+  #fanza-comment-overlay.fc-light-theme .fc-video-index-delete { background: rgba(0,0,0,0.05) !important; border-color: rgba(0,0,0,0.08) !important; color: #64748b !important; }
+  #fanza-comment-overlay.fc-light-theme .fc-video-index-delete:hover { background: rgba(239,68,68,0.1) !important; color: #ef4444 !important; }
+  
+  /* --- End Light Theme --- */
+  
   .fc-header {
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.1);
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    cursor: move; /* Drag handle placeholder */
-    height: 40px;
+    cursor: grab;
+    height: 46px;
     box-sizing: border-box;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    color: inherit;
+  }
+  .fc-header:active {
+    cursor: grabbing;
   }
   .fc-list {
     flex: 1;
     overflow-y: auto;
-    padding: 10px;
+    padding: 12px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
   }
   .fc-settings {
     flex: 1;
-    padding: 10px;
+    padding: 14px;
     display: none;
     flex-direction: column;
-    gap: 10px;
-    font-size: 14px;
+    gap: 12px;
+    font-size: 13px;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
+  .fc-settings h4 {
+    margin: 0 0 4px 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+  }
+  .fc-settings::-webkit-scrollbar, .fc-list::-webkit-scrollbar { width: 6px; }
+  .fc-settings::-webkit-scrollbar-track, .fc-list::-webkit-scrollbar-track { background: transparent; }
+  .fc-settings::-webkit-scrollbar-thumb, .fc-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+  .fc-settings::-webkit-scrollbar-thumb:hover, .fc-list::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+  
   .fc-comment {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 6px 10px;
-    border-radius: 4px;
-    font-size: 14px;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.4;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.05);
   }
   .fc-comment:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.12);
   }
   .fc-comment.active {
-    border-left: 3px solid #e1306c; /* DMM pink-ish */
-    background: rgba(225, 48, 108, 0.2);
+    border-left: 3px solid #e1306c;
+    background: linear-gradient(90deg, rgba(225, 48, 108, 0.18) 0%, rgba(255, 255, 255, 0.08) 100%);
+    border-color: rgba(225, 48, 108, 0.35);
   }
   .fc-time {
     font-size: 11px;
-    color: #ccc;
-    margin-right: 6px;
+    font-weight: 600;
+    color: #cbd5e1;
+    margin-right: 8px;
+    background: rgba(0,0,0,0.4);
+    padding: 2px 6px;
+    border-radius: 4px;
   }
   .fc-input-area {
-    padding: 10px;
-    border-top: 1px solid rgba(255,255,255,0.1);
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
     display: flex;
-    gap: 5px;
+    gap: 8px;
   }
   .fc-input {
     flex: 1;
-    background: rgba(0,0,0,0.5);
-    border: 1px solid #555;
-    color: white;
-    padding: 5px;
-    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
     outline: none;
+    font-size: 13px;
+    transition: all 0.2s ease;
+  }
+  .fc-input:focus {
+    border-color: #e1306c;
+    box-shadow: 0 0 0 2px rgba(225, 48, 108, 0.3);
+    background: rgba(0, 0, 0, 0.7);
   }
   .fc-btn {
-    background: #e1306c;
-    border: none;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #f1f5f9;
+    padding: 8px 14px;
+    border-radius: 8px;
     cursor: pointer;
+    font-weight: 500;
+    font-size: 13px;
+    transition: all 0.2s ease;
   }
-  /* Scrollbar */
-  .fc-list::-webkit-scrollbar { width: 6px; }
-  .fc-list::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+  .fc-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+  .fc-btn-pro {
+    background: rgba(225, 48, 108, 0.08);
+    border: 1px solid rgba(225, 48, 108, 0.25);
+    color: #fda4af;
+  }
+  .fc-btn-pro:hover {
+    background: rgba(225, 48, 108, 0.12);
+    color: #fff;
+  }
   
   .fc-delete-btn {
     float: right;
-    color: #999;
+    color: #64748b;
     cursor: pointer;
     font-size: 16px;
     line-height: 12px;
     margin-left: 8px;
-    display: none; /* Show on hover */
+    display: none;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
   }
-  .fc-comment:hover .fc-delete-btn {
-    display: block;
-  }
+  .fc-comment:hover .fc-delete-btn { display: block; }
   .fc-delete-btn:hover {
-    color: #ff4444;
+    color: #ef4444; /* Red 500 */
+    background: rgba(239, 68, 68, 0.15);
   }
 
   /* Minimized state */
   #fanza-comment-overlay.minimized {
-    height: 40px !important;
-    width: 300px; /* Increased from 200px to fit content */
+    height: 46px !important;
+    width: 320px !important;
+    min-height: 0 !important;
+    min-width: 0 !important;
     overflow: hidden;
+    border-radius: 12px; /* Match expanded state */
+    resize: none !important;
   }
   #fanza-comment-overlay.minimized .fc-header {
-    white-space: nowrap;
+    border-bottom: none;
   }
   #fanza-comment-overlay.minimized .fc-list,
   #fanza-comment-overlay.minimized .fc-input-area,
-  #fanza-comment-overlay.minimized .fc-settings {
-    display: none;
-  }
+  #fanza-comment-overlay.minimized .fc-search-area,
+  #fanza-comment-overlay.minimized .fc-settings { display: none !important; }
+  
   .fc-header-btns {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     align-items: center;
   }
+  .fc-header-btns button {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.2s, color 0.2s;
+    color: #94a3b8 !important; /* Slate 400 */
+  }
+  .fc-header-btns button:hover {
+    background: rgba(255,255,255,0.1) !important;
+    color: #fff !important;
+  }
+  
   .fc-edit-btn {
     float: right;
-    color: #999;
+    color: #64748b;
     cursor: pointer;
     font-size: 14px;
     line-height: 12px;
     margin-left: 8px;
     display: none;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
   }
-  .fc-comment:hover .fc-edit-btn {
-    display: block;
-  }
-  .fc-edit-btn:hover {
-    color: #44bbff;
-  }
+  .fc-comment:hover .fc-edit-btn { display: block; }
+  .fc-edit-btn:hover { color: #38bdf8; background: rgba(56, 189, 248, 0.15); }
+  
   .fc-edit-input {
     width: 100%;
-    background: rgba(255,255,255,0.1);
-    border: 1px solid #777;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid #38bdf8;
     color: white;
-    padding: 2px 5px;
+    padding: 6px 8px;
     border-radius: 4px;
-    font-size: 14px;
+    font-size: 13px;
     outline: none;
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
     box-sizing: border-box;
+    margin-top: 4px;
   }
+  
   .fc-search-area {
-    padding: 5px 10px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.02);
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     box-sizing: border-box;
   }
   .fc-search-input {
     flex: 1;
     min-width: 0;
     background: rgba(0,0,0,0.3);
-    border: 1px solid #444;
-    color: #eee;
-    padding: 4px 8px;
-    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #f1f5f9;
+    padding: 6px 10px;
+    border-radius: 6px;
     font-size: 12px;
     outline: none;
+    transition: all 0.2s;
     box-sizing: border-box;
   }
+  .fc-search-input:focus, .fc-search-input.fc-search-active {
+    border-color: #38bdf8;
+    background: rgba(0,0,0,0.5);
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+  }
+  
   .fc-search-clear {
-    width: 22px;
-    height: 22px;
-    border: 1px solid #555;
+    width: 26px;
+    height: 26px;
+    border: none;
     border-radius: 4px;
-    background: rgba(255,255,255,0.1);
-    color: #ddd;
+    background: transparent;
+    color: #94a3b8;
     cursor: pointer;
-    line-height: 18px;
-    font-size: 14px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 0;
-    flex: 0 0 22px;
+    transition: all 0.2s;
   }
   .fc-search-clear:hover {
-    border-color: #777;
-    color: #fff;
-    background: rgba(255,255,255,0.18);
+    color: #f87171;
+    background: rgba(248, 113, 113, 0.15);
   }
-  .fc-search-clear.is-hidden {
-    opacity: 0.4;
-  }
-  .fc-search-input.fc-search-active {
-    border-color: #44bbff;
-    box-shadow: 0 0 0 1px rgba(68, 187, 255, 0.45);
-  }
+  .fc-search-clear.is-hidden { opacity: 0; pointer-events: none; }
+  
   .fc-jump-preview {
     position: absolute;
     z-index: 2147483647;
     max-width: 320px;
-    background: rgba(0, 0, 0, 0.82);
+    background: rgba(15, 15, 20, 0.85);
+    backdrop-filter: blur(8px);
     color: #fff;
-    border: 1px solid rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.15);
     border-radius: 8px;
-    padding: 8px 10px;
-    font-size: 12px;
-    line-height: 1.4;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.5;
     pointer-events: none;
     opacity: 0;
-    transform: translate(-50%, 4px);
-    transition: opacity .14s ease, transform .14s ease;
+    transform: translate(-50%, 8px);
+    transition: opacity .2s cubic-bezier(0.4, 0, 0.2, 1), transform .2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: none;
     box-sizing: border-box;
   }
   .fc-jump-preview.show {
     opacity: 1;
     transform: translate(-50%, 0);
   }
-  .fc-jump-preview-time {
-    color: #9ec5ff;
-    margin-right: 6px;
-  }
+  .fc-jump-preview-time { color: #38bdf8; font-weight: 600; margin-right: 6px; }
 `;
 
 function mountInlineStyle() {
@@ -270,8 +709,11 @@ let isMinimized = false;
 let editingCommentId = null;
 let searchQuery = '';
 let showJumpPreview = null;
+let refreshVideoIndex = null;
+let refreshLimitStatus = null;
 let findVideoIntervalId = null;
 let renderIntervalId = null;
+let videoTimeUpdateHandler = null;
 let lastPageHref = window.location.href;
 let lastVideoId = '';
 
@@ -284,12 +726,104 @@ let shortcutConfig = {
     label: 'Alt + C' // Display
 };
 
+let entitlementState = {
+  firstSeenAt: 0,
+  isBetaGrandfathered: false,
+  isProPurchased: false
+};
+
+function hasUnlimitedAccess() {
+  return !!(entitlementState.isBetaGrandfathered || entitlementState.isProPurchased);
+}
+
+function getRemainingCommentSlots() {
+  return Math.max(0, FREE_COMMENT_LIMIT - comments.length);
+}
+
+function isFreeLimitReached() {
+  return !hasUnlimitedAccess() && comments.length >= FREE_COMMENT_LIMIT;
+}
+
+function getEntitlementLabel() {
+  if (entitlementState.isProPurchased) return 'Pro';
+  if (entitlementState.isBetaGrandfathered) return 'ベータ特典';
+  return '無料';
+}
+
+async function loadEntitlements() {
+  const [syncValues, localValues] = await Promise.all([
+    getStorageSync(ENTITLEMENT_KEYS),
+    getStorageLocal(ENTITLEMENT_KEYS)
+  ]);
+
+  const now = Date.now();
+  const betaEndAt = Date.parse(BETA_PERIOD_END_ISO);
+  let firstSeenAt = Number(syncValues[ENTITLEMENT_KEY_FIRST_SEEN_AT] || localValues[ENTITLEMENT_KEY_FIRST_SEEN_AT] || 0);
+  let isBetaGrandfathered = !!(syncValues[ENTITLEMENT_KEY_BETA_GRANDFATHERED] || localValues[ENTITLEMENT_KEY_BETA_GRANDFATHERED]);
+  const isProPurchased = !!(syncValues[ENTITLEMENT_KEY_PRO_PURCHASED] || localValues[ENTITLEMENT_KEY_PRO_PURCHASED]);
+
+  if (!firstSeenAt) {
+    firstSeenAt = now;
+  }
+  if (!isBetaGrandfathered && firstSeenAt <= betaEndAt) {
+    isBetaGrandfathered = true;
+  }
+
+  const canonical = {
+    [ENTITLEMENT_KEY_FIRST_SEEN_AT]: firstSeenAt,
+    [ENTITLEMENT_KEY_BETA_GRANDFATHERED]: isBetaGrandfathered,
+    [ENTITLEMENT_KEY_PRO_PURCHASED]: isProPurchased
+  };
+
+  await Promise.all([
+    setStorageLocal(canonical),
+    setStorageSync(canonical)
+  ]);
+
+  entitlementState = {
+    firstSeenAt,
+    isBetaGrandfathered,
+    isProPurchased
+  };
+}
+
+async function verifyDeviceEntitlement() {
+  const fp = await getDeviceFingerprint();
+  const response = await fetch(`${LICENSE_API_BASE_URL}/verify-device`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ device_fingerprint: fp })
+  });
+  if (!response.ok) return false;
+  const data = await response.json();
+  return !!(data && data.ok && data.is_pro);
+}
+
+async function persistProEntitlement() {
+  const patch = { [ENTITLEMENT_KEY_PRO_PURCHASED]: true };
+  await Promise.all([setStorageLocal(patch), setStorageSync(patch)]);
+  entitlementState = { ...entitlementState, isProPurchased: true };
+  refreshLimitStatus?.();
+}
+
 // Video ID Extraction
 function getSiteKey() {
   const host = window.location.hostname;
   if (host.includes('youtube.com') || host.includes('youtu.be')) return 'youtube';
   if (host.includes('dmm.co.jp')) return 'dmm';
   return host.replace(/[^\w.-]/g, '_') || 'site';
+}
+
+function isSupportedPlaybackPage() {
+  const siteKey = getSiteKey();
+  const path = window.location.pathname || '';
+  if (siteKey === 'youtube') {
+    if (path === '/watch') return true;
+    if (path.startsWith('/shorts/')) return true;
+    if (path.startsWith('/live/')) return true;
+    return false;
+  }
+  return true;
 }
 
 function getVideoId() {
@@ -339,33 +873,314 @@ function getVideoId() {
 function getStorageKeys() {
   const siteKey = getSiteKey();
   const videoId = getVideoId();
+  const suffix = `${siteKey}_${videoId}`;
   return {
+    siteKey,
     videoId,
-    storageKey: `video_memo_comments_${siteKey}_${videoId}`,
+    suffix,
+    storageKey: `${VIDEO_MEMO_COMMENTS_PREFIX}${suffix}`,
+    metaKey: `${VIDEO_MEMO_META_PREFIX}${suffix}`,
     legacyStorageKey: `fanza_mock_comments_${videoId}`
   };
 }
 
+function getSiteLabel(site) {
+  if (site === 'youtube') return 'YouTube';
+  if (site === 'dmm') return 'FANZA';
+  return site;
+}
+
+function normalizeVideoTitle(rawTitle, fallback) {
+  const t = String(rawTitle || '').trim();
+  if (!t) return fallback;
+  if (/^https?:\/\//i.test(t) || /^www\./i.test(t)) return fallback;
+  return t;
+}
+
+function isPlaceholderTitle(site, title) {
+  const t = String(title || '').trim();
+  if (!t) return true;
+  if (/^https?:\/\//i.test(t)) return true;
+
+  if (site === 'youtube') {
+    return /^YouTube$/i.test(t) || /^- YouTube$/i.test(t);
+  }
+  if (site === 'dmm') {
+    return /^(DMM|FANZA)\s*Player$/i.test(t) || /^(DMM|FANZA)\s*プレイヤー$/i.test(t);
+  }
+  return false;
+}
+
+function pickBestTitle(site, candidates, fallback) {
+  for (const c of candidates) {
+    const t = String(c || '').trim();
+    if (!t) continue;
+    if (isPlaceholderTitle(site, t)) continue;
+    return t;
+  }
+  return fallback;
+}
+
+function getCurrentPageTitle(site, fallback) {
+  const candidates = [];
+
+  if (site === 'youtube') {
+    const h1Title = document.querySelector('h1.ytd-watch-metadata yt-formatted-string')?.textContent?.trim();
+    candidates.push(h1Title);
+  }
+
+  // Common metadata
+  candidates.push(
+    document.querySelector('meta[property="og:title"]')?.getAttribute('content')?.trim(),
+    document.querySelector('meta[name="og:title"]')?.getAttribute('content')?.trim(),
+    document.querySelector('meta[name="twitter:title"]')?.getAttribute('content')?.trim(),
+    document.querySelector('meta[name="title"]')?.getAttribute('content')?.trim()
+  );
+
+  if (site === 'dmm') {
+    // Player DOM variants: pick likely work title nodes if available.
+    const dmmTitleSelectors = [
+      'h1',
+      '[class*="title"]',
+      '[class*="Title"]',
+      '[data-title]',
+      '[data-work-title]'
+    ];
+    for (const sel of dmmTitleSelectors) {
+      const node = document.querySelector(sel);
+      const txt = node?.getAttribute?.('data-title') || node?.getAttribute?.('data-work-title') || node?.textContent;
+      if (txt) candidates.push(String(txt).trim());
+    }
+  }
+
+  candidates.push((document.title || '').trim());
+
+  let title = pickBestTitle(site, candidates, fallback);
+  if (site === 'youtube') {
+    title = title.replace(/\s*-\s*YouTube\s*$/i, '').trim();
+  }
+  if (site === 'dmm') {
+    title = title
+      .replace(/\s*-\s*(DMM|FANZA)\s*(Player|プレイヤー)\s*$/i, '')
+      .trim();
+  }
+  return normalizeVideoTitle(title, fallback);
+}
+
+function getCurrentVideoMeta() {
+  const { siteKey, videoId } = getStorageKeys();
+  const fallbackTitle = `${getSiteLabel(siteKey)} / ${videoId}`;
+  return {
+    site: siteKey,
+    videoId,
+    title: getCurrentPageTitle(siteKey, fallbackTitle),
+    url: window.location.href,
+    updatedAt: Date.now()
+  };
+}
+
+function normalizeStoredVideoId(site, rawId) {
+  let id = String(rawId || '').trim();
+  if (!id) return '';
+
+  if (site === 'youtube') {
+    // Normalize accidental prefixes from older keys like "youtube_yt_xxx".
+    id = id.replace(/^youtube_+/i, '');
+    const markerMatch = id.match(/(yt_(?:shorts_|live_)?[A-Za-z0-9_-]+)/);
+    if (markerMatch && markerMatch[1]) id = markerMatch[1];
+  } else if (site === 'dmm') {
+    id = id.replace(/^dmm_+/i, '');
+  }
+  return id;
+}
+
+function buildVideoUrlFromEntry(entry) {
+  const site = String(entry.site || '');
+  const id = normalizeStoredVideoId(site, entry.videoId);
+
+  if (site === 'youtube') {
+    if (!id) {
+      const fallbackUrl = String(entry.url || '').trim();
+      return fallbackUrl;
+    }
+    if (id.startsWith('yt_shorts_')) return `https://www.youtube.com/shorts/${id.replace('yt_shorts_', '')}`;
+    if (id.startsWith('yt_live_')) return `https://www.youtube.com/live/${id.replace('yt_live_', '')}`;
+    if (id.startsWith('yt_')) return `https://www.youtube.com/watch?v=${id.replace('yt_', '')}`;
+    return `https://www.youtube.com/watch?v=${id}`;
+  }
+
+  const url = String(entry.url || '').trim();
+  if (url) return url;
+  if (!id) return '';
+  if (site === 'dmm') {
+    return `https://www.dmm.co.jp/digital/-/player/=/player=html5/act=playlist/pid=${encodeURIComponent(id)}/`;
+  }
+  return '';
+}
+
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function parseStoredCommentSuffix(suffix) {
+  const firstUnderscore = suffix.indexOf('_');
+  const site = firstUnderscore > -1 ? suffix.slice(0, firstUnderscore) : 'site';
+  const rawVideoId = firstUnderscore > -1 ? suffix.slice(firstUnderscore + 1) : suffix;
+  const videoId = normalizeStoredVideoId(site, rawVideoId);
+  return { site, rawVideoId, videoId };
+}
+
+function findCommentsKeyByCanonicalId(all, targetSite, targetVideoId) {
+  const keys = Object.keys(all || {});
+  for (const key of keys) {
+    if (!key.startsWith(VIDEO_MEMO_COMMENTS_PREFIX)) continue;
+    const suffix = key.slice(VIDEO_MEMO_COMMENTS_PREFIX.length);
+    const parsed = parseStoredCommentSuffix(suffix);
+    if (parsed.site === targetSite && parsed.videoId === targetVideoId) {
+      return key;
+    }
+  }
+  return null;
+}
+
+const youtubeTitleCache = new Map();
+const pageTitleCache = new Map();
+
+async function fetchYouTubeTitleFromVideoId(videoId) {
+  const normalized = normalizeStoredVideoId('youtube', videoId);
+  if (!normalized) return '';
+
+  let watchId = normalized;
+  if (watchId.startsWith('yt_shorts_')) watchId = watchId.replace(/^yt_shorts_/, '');
+  else if (watchId.startsWith('yt_live_')) watchId = watchId.replace(/^yt_live_/, '');
+  else if (watchId.startsWith('yt_')) watchId = watchId.replace(/^yt_/, '');
+  if (!watchId) return '';
+
+  if (youtubeTitleCache.has(watchId)) return youtubeTitleCache.get(watchId);
+
+  const endpoint = `https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${watchId}`)}&format=json`;
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch(endpoint, { signal: controller.signal });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error(`oembed status: ${res.status}`);
+    const json = await res.json();
+    const title = normalizeVideoTitle(json?.title || '', '');
+    youtubeTitleCache.set(watchId, title);
+    return title;
+  } catch {
+    youtubeTitleCache.set(watchId, '');
+    return '';
+  }
+}
+
+async function fetchTitleFromUrl(url, site, fallbackTitle = '') {
+  const targetUrl = String(url || '').trim();
+  if (!targetUrl) return fallbackTitle;
+  if (pageTitleCache.has(targetUrl)) return pageTitleCache.get(targetUrl);
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3500);
+    const res = await fetch(targetUrl, { signal: controller.signal, credentials: 'omit' });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error(`title fetch status: ${res.status}`);
+    const html = await res.text();
+
+    const ogMatch = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i);
+    const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+    const raw = (ogMatch && ogMatch[1]) || (titleMatch && titleMatch[1]) || '';
+    const decoded = raw
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+    const normalized = normalizeVideoTitle(decoded, fallbackTitle);
+    const result = isPlaceholderTitle(site, normalized) ? fallbackTitle : normalized;
+    pageTitleCache.set(targetUrl, result);
+    return result;
+  } catch {
+    pageTitleCache.set(targetUrl, fallbackTitle);
+    return fallbackTitle;
+  }
+}
+
+function loadCommentedVideos() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(null, (all) => {
+      const entries = [];
+      const keys = Object.keys(all);
+      keys.forEach((key) => {
+        if (!key.startsWith(VIDEO_MEMO_COMMENTS_PREFIX)) return;
+        const commentsData = all[key];
+        if (!Array.isArray(commentsData) || commentsData.length === 0) return;
+        const suffix = key.slice(VIDEO_MEMO_COMMENTS_PREFIX.length);
+        const meta = all[`${VIDEO_MEMO_META_PREFIX}${suffix}`] || {};
+        const parsed = parseStoredCommentSuffix(suffix);
+        const resolvedSite = meta.site || parsed.site;
+        const resolvedVideoId = normalizeStoredVideoId(resolvedSite, meta.videoId || parsed.rawVideoId);
+        entries.push({
+          keySuffix: suffix,
+          site: resolvedSite,
+          videoId: resolvedVideoId,
+          title: meta.title || '',
+          url: meta.url || '',
+          count: commentsData.length,
+          updatedAt: Number(meta.updatedAt || 0)
+        });
+      });
+
+      entries.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+      resolve(entries);
+    });
+  });
+}
+
 // Persistence
 async function loadComments() {
-  const { videoId, storageKey, legacyStorageKey } = getStorageKeys();
+  const { siteKey, videoId, storageKey, metaKey } = getStorageKeys();
+  const context = getCommentMigrationContext();
   
   return new Promise((resolve) => {
-    // 1. Try chrome.storage.local
-    chrome.storage.local.get([storageKey, legacyStorageKey, 'fanza_mock_shortcut'], (result) => {
-      if (result[storageKey]) {
+    chrome.storage.local.get(null, (result) => {
+      const matchedCommentKey = result[storageKey]
+        ? storageKey
+        : findCommentsKeyByCanonicalId(result, siteKey, videoId);
+      const matchedSuffix = matchedCommentKey
+        ? matchedCommentKey.slice(VIDEO_MEMO_COMMENTS_PREFIX.length)
+        : '';
+      const matchedMetaKey = matchedSuffix ? `${VIDEO_MEMO_META_PREFIX}${matchedSuffix}` : metaKey;
+      const legacyStorageKey = `fanza_mock_comments_${videoId}`;
+      let shouldPersistNormalizedComments = false;
+
+      if (matchedCommentKey && result[matchedCommentKey]) {
         try {
-          comments = result[storageKey];
+          const normalized = normalizeCommentsArray(result[matchedCommentKey], context);
+          comments = normalized.comments;
+          shouldPersistNormalizedComments = normalized.changed;
           console.log(`Loaded comments for ${videoId} from chrome.storage:`, comments.length);
         } catch (e) {
           console.error("Failed to parse comments", e);
           comments = [];
         }
+        if (matchedCommentKey !== storageKey) {
+          chrome.storage.local.set({ [storageKey]: comments });
+          shouldPersistNormalizedComments = false;
+        }
       } else if (result[legacyStorageKey]) {
         try {
-          comments = result[legacyStorageKey];
+          const normalized = normalizeCommentsArray(result[legacyStorageKey], context);
+          comments = normalized.comments;
           console.log(`Migrated comments for ${videoId} from legacy key:`, comments.length);
           chrome.storage.local.set({ [storageKey]: comments });
+          shouldPersistNormalizedComments = false;
         } catch (e) {
           console.error("Failed to parse legacy comments", e);
           comments = [];
@@ -375,7 +1190,9 @@ async function loadComments() {
         const saved = localStorage.getItem(storageKey) || localStorage.getItem(legacyStorageKey);
         if (saved) {
           try {
-            comments = JSON.parse(saved);
+            const parsed = JSON.parse(saved);
+            const normalized = normalizeCommentsArray(parsed, context);
+            comments = normalized.comments;
             console.log(`Migrated comments for ${videoId} from localStorage`);
             saveComments(); // Persist to new storage
           } catch(e) { comments = []; }
@@ -397,14 +1214,40 @@ async function loadComments() {
               } catch(e) {}
           }
       }
+      if (comments.length > 0) {
+        const baseMeta = result[matchedMetaKey] || {};
+        chrome.storage.local.set({
+          [metaKey]: {
+            ...baseMeta,
+            ...getCurrentVideoMeta(),
+            videoId
+          }
+        });
+      }
+      if (shouldPersistNormalizedComments) {
+        saveComments();
+      }
       resolve();
     });
   });
 }
 
-function saveComments() {
-  const { storageKey } = getStorageKeys();
-  chrome.storage.local.set({ [storageKey]: comments });
+function saveComments(onSaved) {
+  const { storageKey, metaKey } = getStorageKeys();
+  if (comments.length > 0) {
+    chrome.storage.local.set({
+      [storageKey]: comments,
+      [metaKey]: getCurrentVideoMeta()
+    }, () => {
+      if (typeof onSaved === 'function') onSaved();
+      refreshVideoIndex?.();
+    });
+    return;
+  }
+  chrome.storage.local.remove([storageKey, metaKey], () => {
+    if (typeof onSaved === 'function') onSaved();
+    refreshVideoIndex?.();
+  });
 }
 
 function formatTime(seconds) {
@@ -420,14 +1263,14 @@ function createOverlay() {
   overlay.id = 'fanza-comment-overlay';
   overlay.innerHTML = `
     <div class="fc-header">
-      <span id="fc-status">同期コメント</span>
+      <span id="fc-status">シーン・メモ</span>
       <div class="fc-header-btns">
-        <label style="font-size:10px;color:#aaa;margin-right:5px;cursor:pointer;">
-            <input type="checkbox" id="fc-auto-min"> 自動最小化
+        <label style="font-size:10px;color:#94a3b8;margin-right:5px;cursor:pointer;display:flex;align-items:center;">
+            <input type="checkbox" id="fc-auto-min" style="margin:right:4px;"> 自動最小化
         </label>
-        <button id="fc-settings-btn" style="background:none;border:none;color:#aaa;cursor:pointer;" title="設定">⚙</button>
-        <button id="fc-minimize-btn" style="background:none;border:none;color:#aaa;cursor:pointer;" title="最小化">_</button>
-        <button id="fc-close-btn" style="background:none;border:none;color:#aaa;cursor:pointer;" title="非表示">x</button>
+        <button id="fc-settings-btn" style="background:none;border:none;cursor:pointer;" title="設定">⚙</button>
+        <button id="fc-minimize-btn" style="background:none;border:none;cursor:pointer;" title="最小化">_</button>
+        <button id="fc-close-btn" style="background:none;border:none;cursor:pointer;" title="非表示">×</button>
       </div>
     </div>
     
@@ -440,22 +1283,36 @@ function createOverlay() {
     
     <div class="fc-settings" id="fc-settings">
         <h4>設定</h4>
+        <div id="fc-video-summary" style="font-size: 11px; color: #cbd5e1; line-height: 1.4; margin-bottom: 12px;"></div>
+        <button id="fc-upgrade-btn" class="fc-btn fc-btn-pro" style="margin-bottom:12px; display:none; width:100%; font-size:12px;" title="買い切り500円で制限解除">Pro版アップグレード (制限なし)</button>
+        <input type="text" id="fc-video-filter" class="fc-input" placeholder="コメント済み動画を検索..." style="font-size:12px;">
+        <div id="fc-video-index" style="min-height:160px;max-height:220px;overflow:auto;border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:6px;background:rgba(0,0,0,0.2);"></div>
+        <button id="fc-video-more-btn" class="fc-btn" style="width:100%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);box-shadow:none;font-size:12px;margin-top:8px;">もっと見る</button>
         <div>
             <label>表示切替ショートカット:</label>
             <input type="text" id="fc-shortcut-input" class="fc-input" readonly value="${shortcutConfig.label}" style="cursor:pointer; text-align:center;">
             <p style="font-size:10px;color:#aaa;">クリック後にキーを押して設定</p>
         </div>
-        <div style="margin-top:6px;">
+        <div style="margin-top:6px; display:flex; flex-direction:column; gap:6px;">
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
                 <input type="checkbox" id="fc-default-auto-min">
                 自動最小化をデフォルトでON
             </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                <input type="checkbox" id="fc-theme-toggle">
+                ライトテーマを使用する
+            </label>
         </div>
-        <div style="margin-top: 10px; border-top: 1px solid #444; padding-top: 10px;">
-             <button id="fc-generate-dummy-btn" class="fc-btn" style="width:100%; background:#444; font-size:12px; display:none;">+ ダミーコメント100件追加</button>
-             <button id="fc-clear-all-btn" class="fc-btn" style="width:100%; background:#822; font-size:12px; margin-top:5px;">全コメント削除</button>
+        <div style="display:flex;gap:6px;margin-top:4px;">
+            <button id="fc-export-json-btn" class="fc-btn" type="button" style="flex:1;font-size:12px;">JSON保存</button>
+            <button id="fc-import-json-btn" class="fc-btn" type="button" style="flex:1;font-size:12px;">JSON復元</button>
+            <input id="fc-import-json-file" type="file" accept="application/json,.json" style="display:none;">
         </div>
-        <button class="fc-btn" id="fc-settings-back" style="margin-top:10px;">戻る</button>
+        <div id="fc-settings-footer" style="padding-top:16px; margin-top:auto; background: none;">
+             <button id="fc-generate-dummy-btn" class="fc-btn" style="width:100%; font-size:12px; display:none; margin-bottom:10px;">+ ダミーコメント100件追加</button>
+             <button id="fc-clear-all-btn" class="fc-btn" style="width:100%; background:rgba(239, 68, 68, 0.04); border-color:rgba(239, 68, 68, 0.12); color:#fca5a5; font-size:12px;">全コメント削除</button>
+             <button class="fc-btn" id="fc-settings-back" style="margin-top:16px; width:100%;">戻る</button>
+        </div>
     </div>
 
     <div class="fc-input-area">
@@ -483,6 +1340,10 @@ function createOverlay() {
   const header = overlay.querySelector('.fc-header'); // Drag handle
   
   const settingsDiv = overlay.querySelector('#fc-settings');
+  const videoSummaryDiv = overlay.querySelector('#fc-video-summary');
+  const videoFilterInput = overlay.querySelector('#fc-video-filter');
+  const videoIndexDiv = overlay.querySelector('#fc-video-index');
+  const videoMoreBtn = overlay.querySelector('#fc-video-more-btn');
   const listDiv = overlay.querySelector('#fc-list');
   const inputAreaDiv = overlay.querySelector('.fc-input-area');
   const settingsBackBtn = overlay.querySelector('#fc-settings-back');
@@ -490,6 +1351,294 @@ function createOverlay() {
   const searchInput = overlay.querySelector('#fc-search-input');
   const searchClearBtn = overlay.querySelector('#fc-search-clear');
   const defaultAutoMinCheckbox = overlay.querySelector('#fc-default-auto-min');
+  const themeToggleCheckbox = overlay.querySelector('#fc-theme-toggle');
+  const exportJsonBtn = overlay.querySelector('#fc-export-json-btn');
+  const importJsonBtn = overlay.querySelector('#fc-import-json-btn');
+  const importJsonFileInput = overlay.querySelector('#fc-import-json-file');
+  const statusEl = overlay.querySelector('#fc-status');
+  let videoIndexQuery = '';
+  let showAllVideoCards = false;
+
+  const updateLimitStatus = () => {
+    if (!statusEl) return;
+    const upgradeBtn = overlay.querySelector('#fc-upgrade-btn');
+    if (hasUnlimitedAccess()) {
+      statusEl.textContent = `シーン・メモ (${getEntitlementLabel()})`;
+      if (upgradeBtn) upgradeBtn.style.display = 'none';
+      return;
+    }
+    statusEl.textContent = `シーン・メモ 残り${getRemainingCommentSlots()}/${FREE_COMMENT_LIMIT}`;
+    if (upgradeBtn) upgradeBtn.style.display = 'block';
+  };
+  refreshLimitStatus = updateLimitStatus;
+  updateLimitStatus();
+
+  const upgradeBtn = overlay.querySelector('#fc-upgrade-btn');
+  if (upgradeBtn) {
+    upgradeBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const setUpgradeButtonIdle = () => {
+        upgradeBtn.textContent = 'Pro版アップグレード';
+        upgradeBtn.disabled = false;
+      };
+      try {
+        const fp = await getDeviceFingerprint();
+        upgradeBtn.textContent = '処理中...';
+        upgradeBtn.disabled = true;
+        
+        const response = await fetch(`${LICENSE_API_BASE_URL}/create-checkout-session`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ device_fingerprint: fp })
+        });
+        const data = await response.json();
+        
+        if (data.ok && data.url) {
+           const width = 500;
+           const height = 700;
+           const left = Math.round((window.screen.width - width) / 2);
+           const top = Math.round((window.screen.height - height) / 2);
+           const checkoutWindow = window.open(data.url, 'stripe_checkout', `width=${width},height=${height},left=${left},top=${top},status=no,location=no,menubar=no,toolbar=no`);
+           upgradeBtn.textContent = '決済確認中...';
+           let attempts = 0;
+           const pollTimer = setInterval(async () => {
+             attempts += 1;
+             try {
+               const isPro = await verifyDeviceEntitlement();
+               if (isPro) {
+                 clearInterval(pollTimer);
+                 if (checkoutWindow && !checkoutWindow.closed) {
+                   checkoutWindow.close();
+                 }
+                 await persistProEntitlement();
+                 setUpgradeButtonIdle();
+                 return;
+               }
+             } catch (_) {
+               // best effort polling
+             }
+             const popupClosed = checkoutWindow && checkoutWindow.closed;
+             if (attempts >= CHECKOUT_POLL_MAX_ATTEMPTS || popupClosed) {
+               clearInterval(pollTimer);
+               setUpgradeButtonIdle();
+             }
+           }, CHECKOUT_POLL_INTERVAL_MS);
+        } else {
+           alert("決済画面のURL取得に失敗しました。");
+           setUpgradeButtonIdle();
+        }
+      } catch (err) {
+        alert("通信エラーが発生しました。");
+        setUpgradeButtonIdle();
+      }
+    });
+  }
+
+  const renderVideoIndex = async () => {
+    if (!videoSummaryDiv || !videoIndexDiv) return;
+    const { siteKey, videoId, suffix, metaKey } = getStorageKeys();
+    const currentSiteLabel = getSiteLabel(siteKey);
+    let currentTitle = getCurrentPageTitle(siteKey, `${currentSiteLabel} / ${videoId}`);
+    if (siteKey === 'youtube') {
+      const titleByVideoId = await fetchYouTubeTitleFromVideoId(videoId);
+      if (titleByVideoId) currentTitle = titleByVideoId;
+    }
+
+    chrome.storage.local.get([metaKey], (r) => {
+      chrome.storage.local.set({
+        [metaKey]: {
+          ...(r[metaKey] || {}),
+          site: siteKey,
+          videoId,
+          title: currentTitle,
+          url: window.location.href,
+          updatedAt: Date.now()
+        }
+      });
+    });
+    const allEntries = await loadCommentedVideos();
+    const siteEntries = allEntries.filter((entry) => entry.site === siteKey);
+    const normalizedQuery = videoIndexQuery.trim().toLowerCase();
+
+    videoSummaryDiv.innerHTML = `
+      <div><strong>現在:</strong> ${escapeHtml(currentTitle)}</div>
+      <div style="color:#bbb;">${escapeHtml(currentSiteLabel)} / ${escapeHtml(videoId)}</div>
+      <div style="margin-top:4px;"><strong>コメント済み動画:</strong> ${siteEntries.length} 件</div>
+    `;
+
+    if (siteEntries.length === 0) {
+      videoIndexDiv.innerHTML = '<div style="font-size:11px;color:#bbb;">まだコメント保存はありません。</div>';
+      if (videoMoreBtn) videoMoreBtn.style.display = 'none';
+      return;
+    }
+
+    const enrichedEntries = await Promise.all(siteEntries.map(async (entry) => {
+      const isCurrentEntry = entry.keySuffix === suffix;
+      const fallbackLabel = `${getSiteLabel(entry.site)} の動画`;
+      let resolvedTitle = normalizeVideoTitle(entry.title, fallbackLabel);
+      const entryUrl = buildVideoUrlFromEntry(entry);
+      const needsTitleBackfill = !entry.title || isPlaceholderTitle(entry.site, entry.title);
+
+      if (isCurrentEntry && currentTitle) {
+        resolvedTitle = currentTitle;
+        const metaKey = `${VIDEO_MEMO_META_PREFIX}${entry.keySuffix}`;
+        chrome.storage.local.get([metaKey], (r) => {
+          chrome.storage.local.set({
+            [metaKey]: {
+              ...(r[metaKey] || {}),
+              site: entry.site,
+              videoId: entry.videoId,
+              title: currentTitle,
+              url: entryUrl || window.location.href,
+              updatedAt: Date.now()
+            }
+          });
+        });
+      }
+
+      if (needsTitleBackfill && entry.site === 'youtube') {
+        const fetchedTitle = await fetchYouTubeTitleFromVideoId(entry.videoId);
+        if (fetchedTitle) {
+          resolvedTitle = fetchedTitle;
+          const metaKey = `${VIDEO_MEMO_META_PREFIX}${entry.keySuffix}`;
+          chrome.storage.local.get([metaKey], (r) => {
+            chrome.storage.local.set({
+              [metaKey]: {
+                ...(r[metaKey] || {}),
+                site: entry.site,
+                videoId: entry.videoId,
+                title: fetchedTitle,
+                url: entryUrl,
+                updatedAt: Date.now()
+              }
+            });
+          });
+        }
+      }
+      if (needsTitleBackfill && !isCurrentEntry && (resolvedTitle === fallbackLabel || isPlaceholderTitle(entry.site, resolvedTitle))) {
+        const fetchedFromUrl = await fetchTitleFromUrl(entryUrl, entry.site, fallbackLabel);
+        if (fetchedFromUrl && fetchedFromUrl !== fallbackLabel) {
+          resolvedTitle = fetchedFromUrl;
+          const metaKey = `${VIDEO_MEMO_META_PREFIX}${entry.keySuffix}`;
+          chrome.storage.local.get([metaKey], (r) => {
+            chrome.storage.local.set({
+              [metaKey]: {
+                ...(r[metaKey] || {}),
+                site: entry.site,
+                videoId: entry.videoId,
+                title: fetchedFromUrl,
+                url: entryUrl,
+                updatedAt: Date.now()
+              }
+            });
+          });
+        }
+      }
+      return {
+        ...entry,
+        url: entryUrl,
+        resolvedTitle
+      };
+    }));
+
+    const filteredEntries = normalizedQuery
+      ? enrichedEntries.filter((entry) => {
+          const haystack = `${entry.resolvedTitle} ${entry.videoId} ${getSiteLabel(entry.site)}`.toLowerCase();
+          return haystack.includes(normalizedQuery);
+        })
+      : enrichedEntries;
+
+    const visibleEntries = showAllVideoCards ? filteredEntries : filteredEntries.slice(0, 5);
+
+    if (filteredEntries.length === 0) {
+      videoIndexDiv.innerHTML = '<div style="font-size:11px;color:#bbb;">一致する動画がありません。</div>';
+      if (videoMoreBtn) videoMoreBtn.style.display = 'none';
+      return;
+    }
+
+    if (videoMoreBtn) {
+      if (filteredEntries.length <= 5) {
+        videoMoreBtn.style.display = 'none';
+      } else {
+        videoMoreBtn.style.display = 'block';
+        const remain = filteredEntries.length - 5;
+        videoMoreBtn.textContent = showAllVideoCards ? '折りたたむ' : `もっと見る（残り${remain}件）`;
+      }
+    }
+
+    videoIndexDiv.innerHTML = visibleEntries.map((entry) => {
+      const label = `${getSiteLabel(entry.site)} の動画`;
+      const title = entry.resolvedTitle || label;
+      const isCurrent = entry.keySuffix === suffix;
+      const targetUrl = entry.url;
+      const safeUrl = escapeHtml(targetUrl);
+      const safeSuffix = escapeHtml(entry.keySuffix);
+      return `
+        <div class="fc-video-index-item ${isCurrent ? 'fc-current-video' : ''}" data-url="${safeUrl}" data-suffix="${safeSuffix}" style="position:relative;padding:5px 28px 5px 6px;border-radius:4px;margin-bottom:4px;background:${isCurrent ? 'rgba(68,187,255,0.25)' : 'rgba(255,255,255,0.02)'};cursor:pointer;">
+          <button type="button" class="fc-video-index-delete" data-suffix="${safeSuffix}" title="この動画のコメントを削除" style="position:absolute;top:4px;right:4px;width:18px;height:18px;border:1px solid rgba(255,255,255,0.24);border-radius:4px;background:rgba(0,0,0,0.3);color:#ddd;cursor:pointer;line-height:14px;padding:0;font-size:12px;">×</button>
+          <div style="font-size:11px;color:${isCurrent ? '#dff3ff' : '#fff'};line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;">${escapeHtml(title)}${isCurrent ? ' (現在)' : ''}</div>
+          <div style="font-size:10px;color:#9ec5ff;">コメント ${entry.count} 件</div>
+          <div style="font-size:10px;color:#8fa4b8;">${escapeHtml(getSiteLabel(entry.site))}</div>
+        </div>
+      `;
+    }).join('');
+
+    const navigateToItem = (item) => {
+        const targetUrl = item.getAttribute('data-url');
+        if (!targetUrl || targetUrl === window.location.href) return;
+        window.location.assign(targetUrl);
+    };
+
+    videoIndexDiv.querySelectorAll('.fc-video-index-item').forEach((item) => {
+      item.addEventListener('click', () => navigateToItem(item));
+      item.addEventListener('pointerup', () => navigateToItem(item));
+      item.addEventListener('touchend', () => navigateToItem(item), { passive: true });
+    });
+    videoIndexDiv.querySelectorAll('.fc-video-index-delete').forEach((btn) => {
+      const stopDeleteEvent = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      };
+      btn.addEventListener('pointerdown', stopDeleteEvent);
+      btn.addEventListener('pointerup', stopDeleteEvent);
+      btn.addEventListener('mousedown', stopDeleteEvent);
+      btn.addEventListener('mouseup', stopDeleteEvent);
+      btn.addEventListener('touchstart', stopDeleteEvent, { passive: false });
+      btn.addEventListener('touchend', stopDeleteEvent, { passive: false });
+      btn.addEventListener('click', (e) => {
+        stopDeleteEvent(e);
+        const keySuffix = btn.getAttribute('data-suffix');
+        if (!keySuffix) return;
+        if (!confirm('この動画のコメントをすべて削除しますか？')) return;
+        const commentsKey = `${VIDEO_MEMO_COMMENTS_PREFIX}${keySuffix}`;
+        const metaKey = `${VIDEO_MEMO_META_PREFIX}${keySuffix}`;
+        chrome.storage.local.remove([commentsKey, metaKey], () => {
+          const parsed = parseStoredCommentSuffix(keySuffix);
+          if (parsed.site === siteKey && parsed.videoId === videoId) {
+            comments = [];
+            lastRenderedCommentCount = 0;
+            renderComments(videoElement ? videoElement.currentTime : 0);
+          }
+          renderVideoIndex();
+        });
+      });
+    });
+  };
+  refreshVideoIndex = renderVideoIndex;
+  if (videoFilterInput) {
+    videoFilterInput.addEventListener('input', () => {
+      videoIndexQuery = videoFilterInput.value || '';
+      showAllVideoCards = false;
+      renderVideoIndex();
+    });
+  }
+  if (videoMoreBtn) {
+    videoMoreBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showAllVideoCards = !showAllVideoCards;
+      renderVideoIndex();
+    });
+  }
   let minimizeAnchor = 'bottom';
   let jumpPreviewTimer = null;
   let jumpPreviewEl = document.getElementById('fc-jump-preview');
@@ -517,15 +1666,28 @@ function createOverlay() {
   const clampOverlayToVideo = () => {
     if (!videoElement) return;
     const vRect = videoElement.getBoundingClientRect();
+    
+    // リサイズ時にプレイヤーサイズを上回らないように制限
+    overlay.style.maxWidth = `${vRect.width}px`;
+    overlay.style.maxHeight = `${vRect.height}px`;
+
+    // 一旦現在のサイズを取得 (minimized クラスの付け外しによる影響を反映させるため)
     const oRect = overlay.getBoundingClientRect();
+    
+    // minX/minY は動画の左上、 maxX/maxY は動画の右下 - オーバーレイ自身の幅/高さ
     const minX = vRect.left;
-    const maxX = vRect.right - oRect.width;
-    const minY = vRect.top;
-    const maxY = vRect.bottom - oRect.height;
+    const maxX = Math.max(vRect.left, vRect.right - oRect.width);
+    
+    // maxYは動画の下端を超えないように
+    const maxY = Math.max(vRect.top, vRect.bottom - oRect.height);
+
     let x = oRect.left;
     let y = oRect.top;
+    
     x = Math.max(minX, Math.min(maxX, x));
-    y = Math.max(minY, Math.min(maxY, y));
+    // ここが重要： もし y が vRect.top（動画の上端）より小さければ無理やり vRect.top に合わせる
+    y = Math.max(vRect.top, Math.min(maxY, y));
+
     overlay.style.right = 'auto';
     overlay.style.bottom = 'auto';
     overlay.style.left = `${x + window.scrollX}px`;
@@ -574,21 +1736,33 @@ function createOverlay() {
     const savedPos = result.fanza_mock_ui_pos;
     const defaultAutoMin = !!result.fanza_mock_default_auto_min;
     let autoMinState = defaultAutoMin;
+    let isLightTheme = false;
 
     if (savedPos) {
         try {
-            const { left, top, isMin, autoMin, minimizeAnchor: savedAnchor } = savedPos;
+            const { left, top, isMin, autoMin, minimizeAnchor: savedAnchor, width, height, theme } = savedPos;
             autoMinState = (typeof autoMin === 'boolean') ? autoMin : defaultAutoMin;
+            isLightTheme = !!theme;
             if (savedAnchor === 'top' || savedAnchor === 'bottom') {
               minimizeAnchor = savedAnchor;
             }
+            if (width) overlay.style.width = width;
+            if (height) overlay.style.height = height;
 
             if (isMin) {
                 isMinimized = true;
                 overlay.classList.add('minimized');
                 minBtn.textContent = '□';
-                overlay.style.left = left;
-                overlay.style.top = top;
+                
+                // 展開時の座標として保存しておく
+                overlay._expandedLeft = left;
+                overlay._expandedTop = top;
+
+                // 最小化時は左上に吸着させる
+                const vRect = videoElement ? videoElement.getBoundingClientRect() : {top:0, left:0};
+                overlay.style.left = `${vRect.left + window.scrollX}px`;
+                overlay.style.top = `${vRect.top + window.scrollY}px`;
+                
                 overlay.style.bottom = 'auto';
                 overlay.style.right = 'auto';
             } else {
@@ -620,7 +1794,32 @@ function createOverlay() {
         });
     }
 
+    if (themeToggleCheckbox) {
+        themeToggleCheckbox.checked = isLightTheme;
+        if (isLightTheme) {
+            overlay.classList.add('fc-light-theme');
+        } else {
+            overlay.classList.remove('fc-light-theme');
+        }
+        themeToggleCheckbox.addEventListener('change', () => {
+             if (themeToggleCheckbox.checked) {
+                 overlay.classList.add('fc-light-theme');
+             } else {
+                 overlay.classList.remove('fc-light-theme');
+             }
+             saveUIState();
+        });
+    }
+
+    const ro = new ResizeObserver(() => {
+        if (!isMinimized && overlay.isConnected) {
+            saveUIState();
+        }
+    });
+    ro.observe(overlay);
+
     requestAnimationFrame(() => clampOverlayToVideo());
+    renderVideoIndex();
   });
 
   window.addEventListener('resize', () => {
@@ -632,66 +1831,55 @@ function createOverlay() {
   // Save UI State helper
   const saveUIState = () => {
       const state = {
-          left: overlay.style.left,
-          top: overlay.style.top,
+          left: isMinimized ? (overlay._expandedLeft || overlay.style.left) : overlay.style.left,
+          top: isMinimized ? (overlay._expandedTop || overlay.style.top) : overlay.style.top,
+          width: overlay.style.width,
+          height: overlay.style.height,
           isMin: isMinimized,
           autoMin: overlay.querySelector('#fc-auto-min')?.checked,
-          minimizeAnchor
+          theme: overlay.querySelector('#fc-theme-toggle')?.checked
       };
       chrome.storage.local.set({ fanza_mock_ui_pos: state });
   };
 
-  const decideMinimizeAnchor = (overlayRect) => {
-    const referenceRect = videoElement
-      ? videoElement.getBoundingClientRect()
-      : { top: 0, bottom: window.innerHeight, height: window.innerHeight };
-    // Choose the nearest edge so behavior stays intuitive for tall expanded panels.
-    const distanceToTop = Math.abs(overlayRect.top - referenceRect.top);
-    const distanceToBottom = Math.abs(referenceRect.bottom - overlayRect.bottom);
-    return distanceToBottom < distanceToTop ? 'bottom' : 'top';
-  };
-  
-  // Minimize/expand with dynamic anchor:
-  // upper-half overlay => collapse to top, lower-half overlay => collapse to bottom
+  // Minimize/expand with top-left anchor:
   const toggleMinimize = (forceMin = null) => {
       const shouldMin = forceMin !== null ? forceMin : !isMinimized;
       if (shouldMin === isMinimized) return; // No change
       
-      const rect = overlay.getBoundingClientRect();
       const currentScrollY = window.scrollY;
       const currentScrollX = window.scrollX;
       
       // Ensure we have explicit top/left set before animating/changing
-      // (Convert from bottom/right if necessary, though drag logic usually sets top/left)
       overlay.style.right = 'auto';
       overlay.style.bottom = 'auto';
-      overlay.style.left = (rect.left + currentScrollX) + 'px';
-      overlay.style.top = (rect.top + currentScrollY) + 'px';
-      
-      const fullHeight = 400; // From CSS
-      const minHeight = 40;   // From CSS
-      const delta = fullHeight - minHeight;
-      
-      isMinimized = shouldMin;
-      
-      if (isMinimized) {
-        minimizeAnchor = decideMinimizeAnchor(rect);
-        const newTop = minimizeAnchor === 'bottom'
-          ? (rect.top + currentScrollY) + delta
-          : (rect.top + currentScrollY);
-        overlay.style.top = newTop + 'px';
-        
-        overlay.classList.add('minimized');
-        minBtn.textContent = '□';
+
+      if (shouldMin) {
+          // 展開時の位置を記憶する
+          overlay._expandedLeft = overlay.style.left;
+          overlay._expandedTop = overlay.style.top;
+
+          // 動画プレイヤーの左上座標を取得
+          const vRect = videoElement ? videoElement.getBoundingClientRect() : {top:0, left:0};
+
+          overlay.style.left = `${vRect.left + currentScrollX}px`;
+          overlay.style.top = `${vRect.top + currentScrollY}px`;
+
+          overlay.classList.add('minimized');
+          minBtn.textContent = '□';
       } else {
-        const newTop = minimizeAnchor === 'bottom'
-          ? (rect.top + currentScrollY) - delta
-          : (rect.top + currentScrollY);
-        overlay.style.top = newTop + 'px';
-        
-        overlay.classList.remove('minimized');
-        minBtn.textContent = '_';
+          overlay.classList.remove('minimized');
+          
+          // 記憶しておいた展開時の位置に戻す
+          if (overlay._expandedLeft && overlay._expandedTop) {
+              overlay.style.left = overlay._expandedLeft;
+              overlay.style.top = overlay._expandedTop;
+          }
+
+          minBtn.textContent = '_';
       }
+
+      isMinimized = shouldMin;
       requestAnimationFrame(() => {
         clampOverlayToVideo();
         saveUIState();
@@ -710,12 +1898,16 @@ function createOverlay() {
     toggleMinimize();
   });
   
-  // Settings Logic
   settingsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (isMinimized && overlay.toggleMinimize) {
+          overlay.toggleMinimize(false);
+      }
       listDiv.style.display = 'none';
       inputAreaDiv.style.display = 'none';
+      overlay.querySelector('.fc-search-area').style.display = 'none';
       settingsDiv.style.display = 'flex';
+      renderVideoIndex();
   });
   
   settingsBackBtn.addEventListener('click', (e) => {
@@ -723,6 +1915,7 @@ function createOverlay() {
       settingsDiv.style.display = 'none';
       listDiv.style.display = 'flex';
       inputAreaDiv.style.display = 'flex';
+      overlay.querySelector('.fc-search-area').style.display = 'flex';
   });
   
   // Shortcut Recording
@@ -768,14 +1961,19 @@ function createOverlay() {
               "Nice angle", "Surprise!", "Test comment", "Hello world", "Fanza mock"
           ];
           
-          for(let i=0; i<100; i++) {
-              newComments.push({
-                  id: Date.now() + Math.random(),
-                  t: Math.random() * duration,
-                  text: phrases[Math.floor(Math.random() * phrases.length)] + " " + (i+1),
-                  work_key: "mock",
-                  isLocal: true
-              });
+          const addableCount = hasUnlimitedAccess() ? 100 : Math.max(0, Math.min(100, getRemainingCommentSlots()));
+          if (addableCount === 0) {
+              alert(`無料プランの上限（${FREE_COMMENT_LIMIT}件）に達しています。`);
+              refreshLimitStatus?.();
+              return;
+          }
+
+          for(let i=0; i<addableCount; i++) {
+              newComments.push(createLocalComment(
+                `${phrases[Math.floor(Math.random() * phrases.length)]} ${i + 1}`,
+                Math.random() * duration,
+                getCommentMigrationContext()
+              ));
           }
           
           comments = [...comments, ...newComments].sort((a,b) => a.t - b.t);
@@ -786,7 +1984,9 @@ function createOverlay() {
           }
 
           saveComments();
+          refreshVideoIndex?.();
           renderComments(videoElement.currentTime);
+          refreshLimitStatus?.();
           alert(`ダミーコメントを ${newComments.length} 件追加しました`);
       });
   }
@@ -799,9 +1999,76 @@ function createOverlay() {
           if (confirm('この動画のコメントをすべて削除しますか？')) {
               comments = [];
               saveComments();
+              refreshVideoIndex?.();
               renderComments(videoElement ? videoElement.currentTime : 0);
           }
       });
+  }
+
+  if (exportJsonBtn) {
+    exportJsonBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      try {
+        const all = await getStorageLocalAll();
+        const managedData = pickManagedBackupData(all);
+        const backup = {
+          schema: 'kamishine_memo_backup',
+          version: BACKUP_SCHEMA_VERSION,
+          exportedAt: new Date().toISOString(),
+          data: managedData
+        };
+        saveTextAsFile(buildBackupFileName(), JSON.stringify(backup, null, 2));
+      } catch (error) {
+        console.error('Failed to export backup', error);
+        alert('JSON保存に失敗しました。');
+      }
+    });
+  }
+
+  if (importJsonBtn && importJsonFileInput) {
+    importJsonBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      importJsonFileInput.click();
+    });
+
+    importJsonFileInput.addEventListener('change', async () => {
+      const file = importJsonFileInput.files && importJsonFileInput.files[0];
+      importJsonFileInput.value = '';
+      if (!file) return;
+
+      try {
+        const rawText = await file.text();
+        const parsed = JSON.parse(rawText);
+        const normalized = normalizeImportedBackup(parsed);
+        if (!normalized) throw new Error('Invalid backup object');
+
+        const importData = normalized.data || {};
+        const importKeys = Object.keys(importData);
+        const currentAll = await getStorageLocalAll();
+        const currentManagedKeys = Object.keys(currentAll).filter((key) => isBackupManagedKey(key));
+
+        if (importKeys.length === 0) {
+          alert('復元可能なデータがJSONに含まれていません。');
+          return;
+        }
+        if (!confirm(`JSONから ${importKeys.length} 件の設定/コメントを復元します。現在データは置き換えられます。続行しますか？`)) {
+          return;
+        }
+
+        await removeStorageLocal(currentManagedKeys);
+        await setStorageLocal(importData);
+        await loadEntitlements();
+        await loadComments();
+        refreshVideoIndex?.();
+        refreshLimitStatus?.();
+        lastRenderedCommentCount = 0;
+        renderComments(videoElement ? videoElement.currentTime : 0);
+        alert('JSON復元が完了しました。');
+      } catch (error) {
+        console.error('Failed to import backup', error);
+        alert('JSON復元に失敗しました。ファイル形式を確認してください。');
+      }
+    });
   }
 
 
@@ -823,12 +2090,6 @@ function createOverlay() {
       // Ensure we switch to left/top positioning if not already
       overlay.style.bottom = 'auto';
       overlay.style.right = 'auto';
-      overlay.style.width = getComputedStyle(overlay).width; // Fix width before moving
-      
-      if (!isMinimized) {
-           // Reset width if it was weird, but let's rely on CSS
-           overlay.style.width = '300px'; 
-      }
       
       document.addEventListener('mousemove', onMouseMove);
       document.addEventListener('mouseup', onMouseUp);
@@ -869,15 +2130,18 @@ function createOverlay() {
     const text = input.value.trim();
     console.log("Attempting to post:", text); // Debug
     if (!text || !videoElement) return;
+    if (isFreeLimitReached()) {
+      alert(`無料プランは${FREE_COMMENT_LIMIT}件までです。コメントを削除するか、Proをご利用ください。`);
+      refreshLimitStatus?.();
+      return;
+    }
     
     // Add to local mock list
-    const newComment = {
-      id: Date.now(), // Simple mock ID
-      t: Math.floor(videoElement.currentTime),
-      text: text,
-      work_key: "mock",
-      isLocal: true
-    };
+    const newComment = createLocalComment(
+      text,
+      videoElement.currentTime,
+      getCommentMigrationContext()
+    );
     
     comments.push(newComment);
     comments.sort((a, b) => a.t - b.t);
@@ -896,6 +2160,8 @@ function createOverlay() {
     }
 
     saveComments();
+    refreshVideoIndex?.();
+    refreshLimitStatus?.();
     
     input.value = '';
     renderComments(videoElement.currentTime);
@@ -1186,8 +2452,9 @@ function renderComments(currentTime) {
   const list = document.getElementById('fc-list');
   const overlay = document.getElementById('fanza-comment-overlay');
   if (!list || !overlay) return;
+  refreshLimitStatus?.();
 
-  const NEAR_THRESHOLD = 2; // seconds
+  const NEAR_THRESHOLD = 0.75; // seconds
   
   // Filter comments based on search query
   const filteredComments = searchQuery 
@@ -1221,7 +2488,9 @@ function renderComments(currentTime) {
               const newText = editInput.value.trim();
               if (newText) {
                   c.text = newText;
+                  c.updated_at = new Date().toISOString();
                   saveComments();
+                  refreshVideoIndex?.();
               }
               editingCommentId = null;
               lastRenderedCommentCount = 0; // Force rebuild
@@ -1258,6 +2527,7 @@ function renderComments(currentTime) {
               if (confirm('このコメントを削除しますか？')) {
                   comments = comments.filter(comm => comm.id !== c.id);
                   saveComments();
+                  refreshVideoIndex?.();
                   renderComments(videoElement ? videoElement.currentTime : 0);
               }
           };
@@ -1334,6 +2604,29 @@ function renderComments(currentTime) {
 }
 
 async function init() {
+  if (!isSupportedPlaybackPage()) {
+    if (findVideoIntervalId) {
+      clearInterval(findVideoIntervalId);
+      findVideoIntervalId = null;
+    }
+    if (renderIntervalId) {
+      clearInterval(renderIntervalId);
+      renderIntervalId = null;
+    }
+    if (videoElement && videoTimeUpdateHandler) {
+      videoElement.removeEventListener('timeupdate', videoTimeUpdateHandler);
+      videoTimeUpdateHandler = null;
+    }
+    const existingOverlay = document.getElementById('fanza-comment-overlay');
+    if (existingOverlay) existingOverlay.remove();
+    const existingPreview = document.getElementById('fc-jump-preview');
+    if (existingPreview) existingPreview.remove();
+    refreshVideoIndex = null;
+    refreshLimitStatus = null;
+    videoElement = null;
+    return;
+  }
+
   const currentVideoId = getVideoId();
   console.log("Video Memo: Init", getSiteKey(), currentVideoId);
 
@@ -1350,17 +2643,24 @@ async function init() {
     clearInterval(renderIntervalId);
     renderIntervalId = null;
   }
+  if (videoElement && videoTimeUpdateHandler) {
+    videoElement.removeEventListener('timeupdate', videoTimeUpdateHandler);
+    videoTimeUpdateHandler = null;
+  }
 
   const existingOverlay = document.getElementById('fanza-comment-overlay');
   if (existingOverlay) existingOverlay.remove();
   const existingPreview = document.getElementById('fc-jump-preview');
   if (existingPreview) existingPreview.remove();
+  refreshVideoIndex = null;
+  refreshLimitStatus = null;
   videoElement = null;
   editingCommentId = null;
   searchQuery = '';
   lastRenderedCommentCount = 0;
   lastRenderedSearchQuery = '';
 
+  await loadEntitlements();
   await loadComments();
   
   findVideoIntervalId = setInterval(() => {
@@ -1369,6 +2669,12 @@ async function init() {
 
     console.log("Video Memo: Video found", v);
     videoElement = v;
+    videoTimeUpdateHandler = () => {
+      if (document.getElementById('fc-list')) {
+        renderComments(v.currentTime);
+      }
+    };
+    v.addEventListener('timeupdate', videoTimeUpdateHandler);
     clearInterval(findVideoIntervalId);
     findVideoIntervalId = null;
     createOverlay();
@@ -1377,7 +2683,7 @@ async function init() {
       if (document.getElementById('fc-list')) {
          renderComments(v.currentTime);
       }
-    }, 1000);
+    }, 500);
   }, 1000);
 }
 

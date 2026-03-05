@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1280px;
+    height: 800px;
+    overflow: hidden;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .slide {
+    width: 1280px;
+    height: 800px;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 30px 50px;
+  }
+  .slide.active { display: flex; }
+
+  /* Gradient backgrounds */
+  .bg-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); }
+  .bg-2 { background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 50%, #a855f7 100%); }
+  .bg-3 { background: linear-gradient(135deg, #f97316 0%, #ef4444 50%, #ec4899 100%); }
+  .bg-4 { background: linear-gradient(135deg, #10b981 0%, #0ea5e9 50%, #6366f1 100%); }
+  .bg-5 { background: linear-gradient(135deg, #f59e0b 0%, #f97316 50%, #ef4444 100%); }
+
+  .heading {
+    color: #fff;
+    font-size: 38px;
+    font-weight: 900;
+    text-align: center;
+    margin-bottom: 14px;
+    text-shadow: 0 2px 16px rgba(0,0,0,0.25);
+    line-height: 1.35;
+  }
+  .sub {
+    color: rgba(255,255,255,0.92);
+    font-size: 16px;
+    font-weight: 400;
+    text-align: center;
+    margin-bottom: 28px;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.15);
+    max-width: 680px;
+    line-height: 1.55;
+  }
+
+  /* Browser frame for full-page screenshots */
+  .browser {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    overflow: hidden;
+    max-width: 960px;
+    width: 100%;
+  }
+  .browser-bar {
+    background: #f1f3f5;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 7px;
+    border-bottom: 1px solid #ddd;
+  }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .r { background: #ff5f57; }
+  .y { background: #ffbd2e; }
+  .g { background: #28c840; }
+  .url-bar {
+    flex: 1;
+    margin-left: 10px;
+    background: #e8eaed;
+    border-radius: 14px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    color: #888;
+    font-size: 11px;
+  }
+  .browser img { width: 100%; display: block; }
+
+  /* UI closeup panel - floating with shadow */
+  .panel-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0;
+  }
+  .panel {
+    border-radius: 14px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.08);
+    overflow: hidden;
+    background: #1e1e23; /* Dark mode base color to prevent flickering */
+    display: flex;
+  }
+  .panel img {
+    display: block;
+    width: 320px; /* Force original UI width */
+    height: 440px; /* Force original UI height from content.js */
+    object-fit: cover;
+  }
+
+  /* Two-column comparison layout */
+  .compare {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    justify-content: center;
+  }
+  .compare-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .compare-label {
+    color: rgba(255,255,255,0.95);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.2);
+  }
+  .compare .panel img {
+    height: 420px;
+    width: auto; /* Allow proportional scaling for side-by-side */
+  }
+
+  /* Pills */
+  .pills {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .pill {
+    background: rgba(255,255,255,0.18);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== 1: メイン （全画面 + ブラウザフレーム） ===== -->
+<div class="slide bg-1 active" id="s1">
+  <div class="heading">動画の「神シーン」を<br>逃さずメモ！</div>
+  <div class="sub">再生中の動画にタイムスタンプ付きコメントを残せる。<br>気になるシーンをワンクリックですぐ見返せます。</div>
+  <div class="browser">
+    <div class="browser-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <div class="url-bar">youtube.com/watch?v=aqz-KE-bpKQ</div>
+    </div>
+    <img src="screenshots/full_dark_input.png">
+  </div>
+</div>
+
+<!-- ===== 2: UIクローズアップ（コメントリスト） ===== -->
+<div class="slide bg-2" id="s2">
+  <div class="heading">ワンクリックで<br>あのシーンへ瞬間移動</div>
+  <div class="sub">記録した時間は自動で保存。リストをクリックするだけで<br>見返したい「あの瞬間」へすぐにジャンプできます。</div>
+  <div class="panel-wrap">
+    <div class="panel">
+      <img src="screenshots/closeup_dark_list.png">
+    </div>
+  </div>
+</div>
+
+<!-- ===== 3: テーマ比較（左右並列） ===== -->
+<div class="slide bg-4" id="s3">
+  <div class="heading">ダーク＆ライトテーマ対応</div>
+  <div class="sub">視聴環境や好みに合わせてワンクリックで切り替え。</div>
+  <div class="compare">
+    <div class="compare-col">
+      <div class="compare-label">🌙 ダークテーマ</div>
+      <div class="panel"><img src="screenshots/closeup_dark_list.png"></div>
+    </div>
+    <div class="compare-col">
+      <div class="compare-label">☀️ ライトテーマ</div>
+      <div class="panel"><img src="screenshots/closeup_light_list.png"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 4: 設定画面クローズアップ（動画管理） ===== -->
+<div class="slide bg-3" id="s4">
+  <div class="heading">過去のメモ動画も<br>まとめて管理</div>
+  <div class="sub">メモした動画の一覧表示＆検索機能で、<br>「あの動画なんだっけ？」を即解決。</div>
+  <div class="panel-wrap">
+    <div class="panel">
+      <img src="screenshots/closeup_dark_settings.png">
+    </div>
+  </div>
+</div>
+
+<!-- ===== 5: カスタマイズ・バックアップ（全画面） ===== -->
+<div class="slide bg-5" id="s5">
+  <div class="pills">
+    <span class="pill">🔧 ショートカットキー</span>
+    <span class="pill">📦 JSONバックアップ</span>
+    <span class="pill">📐 自由なリサイズ</span>
+    <span class="pill">🖱️ 最小化対応</span>
+  </div>
+  <div class="heading">視聴の邪魔をしない<br>自由なカスタマイズ</div>
+  <div class="sub">ドラッグで位置・サイズ変更、最小化、ショートカットキー対応。<br>大切なメモはJSONでいつでもバックアップ＆復元。</div>
+  <div class="browser">
+    <div class="browser-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <div class="url-bar">youtube.com/watch?v=aqz-KE-bpKQ</div>
+    </div>
+    <img src="screenshots/closeup_light_settings.png">
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,55 +1,57 @@
--- Enable necessary extensions
+-- Source of Truth:
+-- - Comments are NOT stored in Supabase.
+-- - Comments are stored/restored as local JSON only.
+-- - Supabase is used only for paid entitlement judgement.
+
 create extension if not exists "uuid-ossp";
 
--- Comments table
-create table comments (
+-- License records used for entitlement checks.
+create table if not exists license_entitlements (
   id uuid primary key default uuid_generate_v4(),
-  work_key text not null,
-  t integer not null, -- timestamp in seconds
-  text text not null check (char_length(text) <= 120),
-  user_id uuid not null references auth.users(id),
-  created_at timestamptz default now(),
-  score integer default 0,
-  is_hidden boolean default false,
-  client_hash text -- optional for dedup
+  app_id text not null default 'fanza_comment',
+  license_code text not null unique,
+  purchase_email_hash text not null,
+  status text not null check (status in ('active', 'revoked', 'refunded')),
+  product text not null default 'kamishine_memo_pro_lifetime',
+  stripe_checkout_session_id text,
+  stripe_payment_intent_id text,
+  last_verified_at timestamptz,
+  verification_count integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
--- Indexes for performance
-create index idx_comments_work_key_t on comments(work_key, t);
-create index idx_comments_work_key_created_at on comments(work_key, created_at desc);
-
--- Reports table
-create table reports (
+-- Optional device claim log for abuse control and support operations.
+create table if not exists license_claims (
   id uuid primary key default uuid_generate_v4(),
-  comment_id uuid not null references comments(id),
-  reporter_user_id uuid not null references auth.users(id),
-  reason text,
-  created_at timestamptz default now(),
-  unique(comment_id, reporter_user_id)
+  app_id text not null default 'fanza_comment',
+  license_id uuid not null references license_entitlements(id) on delete cascade,
+  device_fingerprint_hash text not null,
+  app_version text,
+  created_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now(),
+  unique (app_id, license_id, device_fingerprint_hash)
 );
 
--- Likes table (optional but good for sorting)
-create table likes (
-  comment_id uuid not null references comments(id),
-  user_id uuid not null references auth.users(id),
-  created_at timestamptz default now(),
-  primary key (comment_id, user_id)
+create index if not exists idx_license_entitlements_app_status
+  on license_entitlements(app_id, status);
+
+create index if not exists idx_license_entitlements_payment_intent
+  on license_entitlements(stripe_payment_intent_id);
+
+create index if not exists idx_license_claims_license_id
+  on license_claims(license_id);
+
+-- Stripe webhook idempotency guard.
+create table if not exists webhook_events (
+  event_id text primary key,
+  event_type text not null,
+  processed boolean not null default false,
+  received_at timestamptz not null default now(),
+  processed_at timestamptz
 );
 
--- RLS Policies
-
--- Comments: Everyone can read
-alter table comments enable row level security;
-create policy "Comments are public" on comments for select using (true);
-
--- Comments: Authenticated users can insert
-create policy "Users can insert their own comments" on comments for insert with check (auth.uid() = user_id);
-
--- Reports: Authenticated users can insert
-alter table reports enable row level security;
-create policy "Users can report comments" on reports for insert with check (auth.uid() = reporter_user_id);
-
--- Likes: Authenticated users can insert/delete
-alter table likes enable row level security;
-create policy "Users can like comments" on likes for insert with check (auth.uid() = user_id);
-create policy "Users can unlike comments" on likes for delete using (auth.uid() = user_id);
+-- Server-side API only. No direct client access from anon/auth roles.
+alter table license_entitlements enable row level security;
+alter table license_claims enable row level security;
+alter table webhook_events enable row level security;
