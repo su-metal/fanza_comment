@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #333;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    padding: 40px;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  /* -------------------------------------------
+     Promotional Tile (440x280)
+     ------------------------------------------- */
+  #promo-tile {
+    width: 440px;
+    height: 280px;
+    background: linear-gradient(135deg, #e1306c 0%, #f77737 100%);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0; /* No borders for Chrome Store */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+
+  /* Decorative glow */
+  #promo-tile::before {
+    content: '';
+    position: absolute;
+    top: -50px; left: -50px;
+    width: 200px; height: 200px;
+    background: rgba(255,255,255,0.2);
+    filter: blur(50px);
+    border-radius: 50%;
+  }
+
+  .promo-logo {
+    width: 64px;
+    height: 64px;
+    background: #fff;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 38px;
+    font-weight: 900;
+    color: #e1306c;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    margin-bottom: 20px;
+  }
+
+  .promo-title {
+    color: #fff;
+    font-size: 38px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+    text-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+
+  .promo-subtitle {
+    color: rgba(255,255,255,0.9);
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+
+  /* -------------------------------------------
+     Marquee Tile (1400x560)
+     ------------------------------------------- */
+  #marquee-tile {
+    width: 1400px;
+    height: 560px;
+    background: #0f172a;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  }
+
+  /* Background visual effects for marquee */
+  .marquee-bg {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at right 40%, rgba(225, 48, 108, 0.15) 0%, transparent 60%),
+                radial-gradient(circle at top left, rgba(67, 233, 123, 0.1) 0%, transparent 50%);
+    z-index: 1;
+  }
+
+  .marquee-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    height: 100%;
+    align-items: center;
+    padding: 0 80px;
+  }
+
+  .marquee-left {
+    flex: 1;
+    padding-right: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .marquee-brand {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+
+  .marquee-logo-icon {
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(135deg, #e1306c 0%, #f77737 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    font-weight: 900;
+    color: #fff;
+    box-shadow: 0 8px 25px rgba(225, 48, 108, 0.4);
+  }
+
+  .marquee-app-title {
+    color: #fff;
+    font-size: 52px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+  }
+
+  .marquee-headline {
+    color: #f8fafc;
+    font-size: 64px;
+    font-weight: 900;
+    line-height: 1.2;
+    margin-bottom: 30px;
+    text-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  }
+
+  .marquee-headline .highlight {
+    background: linear-gradient(135deg, #e1306c 0%, #f77737 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .marquee-features {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 0;
+  }
+
+  .marquee-pill {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #e2e8f0;
+    padding: 10px 24px;
+    border-radius: 30px;
+    font-size: 18px;
+    font-weight: 700;
+    backdrop-filter: blur(5px);
+  }
+
+  .marquee-right {
+    flex: 0 0 540px;
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .marquee-screenshot {
+    width: 100%;
+    max-width: 500px;
+    border-radius: 16px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.1);
+    transform: perspective(1000px) rotateY(-10deg) rotateX(5deg) scale(1.05);
+    transition: transform 0.3s ease;
+  }
+
+</style>
+</head>
+<body>
+
+  <!-- 440x280 Promo Tile -->
+  <div id="promo-tile">
+    <div class="promo-logo">神</div>
+    <div class="promo-title">神シーンメモ</div>
+    <div class="promo-subtitle">動画の「今ここ！」を逃さない</div>
+  </div>
+
+  <!-- 1400x560 Marquee Tile -->
+  <div id="marquee-tile">
+    <div class="marquee-bg"></div>
+    <div class="marquee-content">
+      <div class="marquee-left">
+        <div class="marquee-brand">
+          <div class="marquee-logo-icon">神</div>
+          <div class="marquee-app-title">神シーンメモ</div>
+        </div>
+        <div class="marquee-headline">
+          動画の「今ここ！」を<br>逃さない<span class="highlight">コメント同期</span>体験
+        </div>
+        <div class="marquee-features">
+          <div class="marquee-pill">YouTube対応</div>
+          <div class="marquee-pill">DMM（デジタル動画）対応</div>
+          <div class="marquee-pill">自動時間同期</div>
+        </div>
+      </div>
+      <div class="marquee-right">
+        <img src="screenshots/closeup_dark_list.png" class="marquee-screenshot" alt="App Screenshot">
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
