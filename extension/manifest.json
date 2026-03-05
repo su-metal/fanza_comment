@@ -8,7 +8,13 @@
   ],
   "host_permissions": [
     "https://www.dmm.co.jp/digital/-/player/*",
-    "https://www.youtube.com/*"
+    "https://www.youtube.com/watch*",
+    "https://www.youtube.com/shorts/*",
+    "https://www.youtube.com/live/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*",
+    "file:///*",
+    "https://wzinimxikcihdqqdvppa.supabase.co/*"
   ],
   "icons": {
     "16": "icons/icon-16.png",
@@ -24,11 +30,19 @@
       "48": "icons/icon-48.png"
     }
   },
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": [
         "https://www.dmm.co.jp/digital/-/player/*",
-        "https://www.youtube.com/*"
+        "https://www.youtube.com/watch*",
+        "https://www.youtube.com/shorts/*",
+        "https://www.youtube.com/live/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*",
+        "file:///*"
       ],
       "js": [
         "content.js"

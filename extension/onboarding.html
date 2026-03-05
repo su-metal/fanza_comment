@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>神シーンメモ - ようこそ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="onboarding.css">
+</head>
+<body>
+  <div class="background-effects">
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+  </div>
+
+  <main class="container">
+    <header class="hero">
+      <div class="brand">
+        <div class="logo-icon">神</div>
+        <h1>神シーンメモへようこそ</h1>
+      </div>
+      <p class="subtitle">動画視聴の「今ここ！」を逃さない、最高のコメント同期体験。</p>
+    </header>
+
+    <section class="features animate-slide-up" style="animation-delay: 0.1s;">
+      <h2>基本的な使い方</h2>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <h3>動画サイトを開く</h3>
+          <p>YouTubeやDMM/FANZAデジタル動画など、対応しているサイトで動画を再生します。</p>
+        </div>
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <h3>メモを書き込む</h3>
+          <p>プレイヤー上に表示される入力欄から、残したいコメントを打ち込みます。</p>
+        </div>
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <h3>時間を自動同期✨</h3>
+          <p>コメントはローカルに保存され、次回の再生時にもそのタイミングで流れます！</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pro-plan animate-slide-up" style="animation-delay: 0.2s;">
+      <div class="pro-plan-content">
+        <div class="pro-header">
+          <span class="pro-badge">PRO</span>
+          <h2>Proプランのご案内</h2>
+        </div>
+        <p class="pro-description">
+          無料版では最大50件のコメントまで保存できます。さらに使い込みたい方のために、保存数が無制限になるProプランをご用意しています。
+        </p>
+        
+        <div class="pricing-card">
+          <div class="price">
+            <span class="amount">¥500</span>
+            <span class="period">買い切り / 1デバイス</span>
+          </div>
+          <ul class="benefits">
+            <li><span class="check">✓</span> コメント保存数が<b>無制限</b>に</li>
+            <li><span class="check">✓</span> 煩わしい制限からの解放</li>
+            <li><span class="check">✓</span> 今後のアップデートをすべて利用可能</li>
+          </ul>
+
+          <div class="action-area" id="action-container">
+            <button id="upgrade-btn" class="upgrade-btn">✨ Pro版にアップグレード</button>
+            <p id="license-status" class="status-message">ライセンス確認中...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="animate-slide-up" style="animation-delay: 0.3s;">
+      <p>準備は完了です。さっそく動画を見に行きましょう！</p>
+      <button id="close-tab-btn" class="close-btn">タブを閉じる</button>
+    </footer>
+  </main>
+
+  <script src="onboarding.js"></script>
+</body>
+</html>
