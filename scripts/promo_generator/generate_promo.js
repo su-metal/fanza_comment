@@ -26,7 +26,7 @@ const slides = [
     heading: '動画の「神シーン」を<br>逃さず記録！',
     sub: '再生中の動画にタイムスタンプ付きの自分専用メモを残せる。<br>気になるシーンをワンクリックですぐ見返せます。',
     layout: 'browser',
-    image: 'full_dark_input.png',
+    image: 'wide_full_dark_input.png',
     pills: null
   },
   {
@@ -63,7 +63,7 @@ const slides = [
     heading: '自由自在な<br>視聴スタイル',
     sub: 'ウィンドウのサイズ、位置、透過率を好みに合わせて調整。<br>視聴スタイルを邪魔しない、自分だけの快適な画面へ。',
     layout: 'browser',
-    image: 'full_light_resized.png',
+    image: 'wide_full_light_resized.png',
     pills: null
   }
 ];
@@ -199,7 +199,7 @@ async function run() {
     await page.waitForTimeout(1500); // wait for fonts + images
 
     const timestamp = Date.now();
-    const filename = `${slide.id}_${timestamp}.png`;
+    const filename = `wide_${slide.id}_${timestamp}.png`;
     const outputPath = path.join(OUT_DIR, filename);
     await page.screenshot({
       path: outputPath,

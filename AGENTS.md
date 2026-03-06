@@ -11,6 +11,7 @@
 - 課金判定の拡張UIは未接続で、現状はローカル entitlement フラグ運用
 - Supabase 版ライセンスAPI実装は存在するが、拡張からはまだ呼び出していない
 - 課金基盤は Supabase 方針に一本化済み
+- 対応プレイヤーは YouTube / FANZA / DMM TV のローカルメモ用途を含む
 
 ## プロダクト原則
 
@@ -64,7 +65,7 @@
 - 現行運用は `visibility=private`（自分用）を前提とする
 - コメント1件ごとに `comment_id`（UUID相当）を保持する
 - レコードに `schema_version` を持ち、後方互換マイグレーション可能にする
-- 動画識別のため `site`（`dmm` / `youtube`）と `video_id` を保持する
+- 動画識別のため `site`（`dmm` / `dmmtv` / `youtube`）と `video_id` を保持する
 - 共有拡張時は送信用シリアライザを分離し、本文共有の可否を明示制御する
 - 送信データは `serializeCommentForShare` 相当の境界を通し、初期実装では本文を含めない
 

@@ -16,6 +16,7 @@
 - 主用途: 動画再生中にタイムスタンプ付きの「シーン・メモ」を即時記録し、再生体験を中断せず参照する
 - 対応サイト:
   - FANZA: `https://www.dmm.co.jp/digital/-/player/*`
+  - DMM TV: `https://tv.dmm.com/vod/playback/*`
   - YouTube: `https://www.youtube.com/watch*`, `https://www.youtube.com/shorts/*`, `https://www.youtube.com/live/*`
 
 ## 3. 北極星・原則
@@ -134,7 +135,7 @@
 - `id`（レガシー互換）
 - `comment_id`（UUID相当）
 - `schema_version`
-- `site`（`dmm` / `youtube`）
+- `site`（`dmm` / `dmmtv` / `youtube`）
 - `video_id`
 - `t`（秒, number）
 - `text`
@@ -182,7 +183,7 @@
 
 ## 10. 受け入れ基準（現行版）
 
-- FANZA/YouTubeの対象URLでオーバーレイが表示される
+- FANZA / DMM TV / YouTube の対象URLでオーバーレイが表示される
 - コメント投稿/編集/削除/検索/前後ジャンプが動作する
 - リロード後もコメントが復元される
 - JSON保存/復元で管理対象データを移行できる

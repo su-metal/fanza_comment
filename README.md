@@ -20,6 +20,7 @@
 - 対応言語: 日本語UIのみ（現時点）
 - 対象ページ（URLパターン）:
   - `https://www.dmm.co.jp/digital/-/player/*`
+  - `https://tv.dmm.com/vod/playback/*`
   - `https://www.youtube.com/*`
 
 ## インストール（手動）
@@ -31,7 +32,7 @@
 
 ## 使い方
 
-1. 対応動画ページ（FANZA / YouTube）を開く
+1. 対応動画ページ（FANZA / DMM TV / YouTube）を開く
 2. オーバーレイ右下の「コメント...」欄に入力して `Enter` で投稿
 3. 検索欄をクリックして検索（`Esc` / `Enter` / `×` / 外側クリックで終了）
 4. `Ctrl + ← / →` で前後コメントへジャンプ

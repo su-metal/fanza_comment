@@ -305,9 +305,9 @@ style.textContent = `
     position: absolute;
     bottom: 20px;
     right: 20px;
-    width: 320px;
+    width: 380px;
     height: 440px;
-    min-width: 260px;
+    min-width: 320px;
     min-height: 200px;
     background: rgba(30, 30, 35, 0.82); /* Match actual UI transparency (ref: Step Id: 2096) */
     color: #f1f5f9;
@@ -421,6 +421,14 @@ style.textContent = `
     font-size: 13px;
     letter-spacing: 0.02em;
     color: inherit;
+    gap: 10px;
+  }
+  #fc-status {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .fc-header:active {
     cursor: grabbing;
@@ -552,7 +560,7 @@ style.textContent = `
   /* Minimized state */
   #fanza-comment-overlay.minimized {
     height: 46px !important;
-    width: 320px !important;
+    width: 380px !important;
     min-height: 0 !important;
     min-width: 0 !important;
     overflow: hidden;
@@ -571,6 +579,17 @@ style.textContent = `
     display: flex;
     gap: 6px;
     align-items: center;
+    flex-shrink: 0;
+  }
+  .fc-auto-min-label {
+    font-size: 10px;
+    color: #94a3b8;
+    margin-right: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
   }
   .fc-header-btns button {
     width: 24px;
@@ -750,6 +769,11 @@ function getEntitlementLabel() {
   return '無料';
 }
 
+function getHeaderStatusLabel() {
+  if (entitlementState.isProPurchased) return 'シーン・メモ (Pro)';
+  return 'シーン・メモ';
+}
+
 async function loadEntitlements() {
   const [syncValues, localValues] = await Promise.all([
     getStorageSync(ENTITLEMENT_KEYS),
@@ -810,6 +834,7 @@ async function persistProEntitlement() {
 function getSiteKey() {
   const host = window.location.hostname;
   if (host.includes('youtube.com') || host.includes('youtu.be')) return 'youtube';
+  if (host.includes('tv.dmm.com')) return 'dmmtv';
   if (host.includes('dmm.co.jp')) return 'dmm';
   return host.replace(/[^\w.-]/g, '_') || 'site';
 }
@@ -822,6 +847,9 @@ function isSupportedPlaybackPage() {
     if (path.startsWith('/shorts/')) return true;
     if (path.startsWith('/live/')) return true;
     return false;
+  }
+  if (siteKey === 'dmmtv') {
+    return path.startsWith('/vod/playback/');
   }
   return true;
 }
@@ -839,6 +867,14 @@ function getVideoId() {
 
     const liveMatch = window.location.pathname.match(/^\/live\/([^/?#]+)/);
     if (liveMatch && liveMatch[1]) return `yt_live_${liveMatch[1]}`;
+  }
+
+  if (siteKey === 'dmmtv') {
+    const contentId = String(params.get('content') || '').trim();
+    const seasonId = String(params.get('season') || '').trim();
+    if (contentId && seasonId) return `dmmtv_${contentId}__${seasonId}`;
+    if (contentId) return `dmmtv_${contentId}`;
+    if (seasonId) return `dmmtv_season_${seasonId}`;
   }
 
   // FANZA / fallback
@@ -886,6 +922,7 @@ function getStorageKeys() {
 
 function getSiteLabel(site) {
   if (site === 'youtube') return 'YouTube';
+  if (site === 'dmmtv') return 'DMM TV';
   if (site === 'dmm') return 'FANZA';
   return site;
 }
@@ -904,6 +941,9 @@ function isPlaceholderTitle(site, title) {
 
   if (site === 'youtube') {
     return /^YouTube$/i.test(t) || /^- YouTube$/i.test(t);
+  }
+  if (site === 'dmmtv') {
+    return /^DMM\s*TV$/i.test(t) || /^DMM\s*TV\s*プレイヤー$/i.test(t);
   }
   if (site === 'dmm') {
     return /^(DMM|FANZA)\s*Player$/i.test(t) || /^(DMM|FANZA)\s*プレイヤー$/i.test(t);
@@ -937,7 +977,7 @@ function getCurrentPageTitle(site, fallback) {
     document.querySelector('meta[name="title"]')?.getAttribute('content')?.trim()
   );
 
-  if (site === 'dmm') {
+  if (site === 'dmm' || site === 'dmmtv') {
     // Player DOM variants: pick likely work title nodes if available.
     const dmmTitleSelectors = [
       'h1',
@@ -958,6 +998,12 @@ function getCurrentPageTitle(site, fallback) {
   let title = pickBestTitle(site, candidates, fallback);
   if (site === 'youtube') {
     title = title.replace(/\s*-\s*YouTube\s*$/i, '').trim();
+  }
+  if (site === 'dmmtv') {
+    title = title
+      .replace(/\s*[\-|｜]\s*DMM\s*TV\s*$/i, '')
+      .replace(/^\s*DMM\s*TV\s*[\-|｜]\s*/i, '')
+      .trim();
   }
   if (site === 'dmm') {
     title = title
@@ -988,6 +1034,8 @@ function normalizeStoredVideoId(site, rawId) {
     id = id.replace(/^youtube_+/i, '');
     const markerMatch = id.match(/(yt_(?:shorts_|live_)?[A-Za-z0-9_-]+)/);
     if (markerMatch && markerMatch[1]) id = markerMatch[1];
+  } else if (site === 'dmmtv') {
+    id = id.replace(/^dmmtv_+/i, 'dmmtv_');
   } else if (site === 'dmm') {
     id = id.replace(/^dmm_+/i, '');
   }
@@ -1007,6 +1055,21 @@ function buildVideoUrlFromEntry(entry) {
     if (id.startsWith('yt_live_')) return `https://www.youtube.com/live/${id.replace('yt_live_', '')}`;
     if (id.startsWith('yt_')) return `https://www.youtube.com/watch?v=${id.replace('yt_', '')}`;
     return `https://www.youtube.com/watch?v=${id}`;
+  }
+
+  if (site === 'dmmtv') {
+    if (id.startsWith('dmmtv_')) {
+      const payload = id.replace(/^dmmtv_/, '');
+      const [contentId, seasonId] = payload.split('__');
+      if (contentId && seasonId) {
+        return `https://tv.dmm.com/vod/playback/on-demand/?season=${encodeURIComponent(seasonId)}&content=${encodeURIComponent(contentId)}`;
+      }
+      if (contentId) {
+        return `https://tv.dmm.com/vod/playback/on-demand/?content=${encodeURIComponent(contentId)}`;
+      }
+    }
+    const fallbackUrl = String(entry.url || '').trim();
+    if (fallbackUrl) return fallbackUrl;
   }
 
   const url = String(entry.url || '').trim();
@@ -1265,8 +1328,8 @@ function createOverlay() {
     <div class="fc-header">
       <span id="fc-status">シーン・メモ</span>
       <div class="fc-header-btns">
-        <label style="font-size:10px;color:#94a3b8;margin-right:5px;cursor:pointer;display:flex;align-items:center;">
-            <input type="checkbox" id="fc-auto-min" style="margin:right:4px;"> 自動最小化
+        <label class="fc-auto-min-label">
+            <input type="checkbox" id="fc-auto-min"> 自動最小化
         </label>
         <button id="fc-settings-btn" style="background:none;border:none;cursor:pointer;" title="設定">⚙</button>
         <button id="fc-minimize-btn" style="background:none;border:none;cursor:pointer;" title="最小化">_</button>
@@ -1363,7 +1426,7 @@ function createOverlay() {
     if (!statusEl) return;
     const upgradeBtn = overlay.querySelector('#fc-upgrade-btn');
     if (hasUnlimitedAccess()) {
-      statusEl.textContent = `シーン・メモ (${getEntitlementLabel()})`;
+      statusEl.textContent = getHeaderStatusLabel();
       if (upgradeBtn) upgradeBtn.style.display = 'none';
       return;
     }

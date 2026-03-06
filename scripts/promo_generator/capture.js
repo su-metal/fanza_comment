@@ -254,6 +254,8 @@ async function run() {
   console.log('Cleaning up UI for store review (removing Beta/Pro labels)...');
   await page.addStyleTag({ content: `
     #fc-upgrade-btn, .fc-badge-beta, .fc-badge-pro { display: none !important; }
+    #secondary { display: none !important; }
+    ytd-watch-flexy[flexy] #primary.ytd-watch-flexy { max-width: 100% !important; min-width: 100% !important; }
   `});
   // Force status text to be clean
   await page.evaluate(() => {
@@ -342,8 +344,8 @@ async function run() {
     if (input) { input.value = "ここほんと最高…"; input.dispatchEvent(new Event('input', { bubbles: true })); }
   });
   await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(OUT_DIR, 'full_dark_input.png') });
-  console.log('  Saved: full_dark_input.png');
+  await page.screenshot({ path: path.join(OUT_DIR, 'wide_full_dark_input.png') });
+  console.log('  Saved: wide_full_dark_input.png');
 
   // =================================================================
   // 2) Overlay closeup - dark theme burst (at 280s)
@@ -392,8 +394,9 @@ async function run() {
   // =================================================================
   console.log('--- 6. Full page (light) ---');
   await fitOverlayToPlayer({ theme: 'light' });
-  await page.screenshot({ path: path.join(OUT_DIR, 'full_light.png') });
-  console.log('  Saved: full_light.png');
+  await page.waitForTimeout(1000);
+  await page.screenshot({ path: path.join(OUT_DIR, 'wide_full_light.png') });
+  console.log('  Saved: wide_full_light.png');
 
   // =================================================================
   // 7) Switch back to dark + minimized
@@ -405,14 +408,18 @@ async function run() {
   await page.waitForTimeout(300);
   await fitOverlayToPlayer({ theme: 'dark', minimized: true });
   await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(OUT_DIR, 'full_minimized.png') });
+  await page.waitForTimeout(1000);
+  await page.screenshot({ path: path.join(OUT_DIR, 'wide_full_minimized.png') });
+  console.log('  Saved: wide_full_minimized.png');
   console.log('  Saved: full_minimized.png');
 
   // --- 8. Full page (Light, RESIZED for Promo 05) ---
   console.log('--- 8. Full page (light, resized for scale demo) ---');
   await fitOverlayToPlayer({ theme: 'light', minimized: false, width: 600, height: 400 });
   await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(OUT_DIR, 'full_light_resized.png') });
+  await page.waitForTimeout(1000);
+  await page.screenshot({ path: path.join(OUT_DIR, 'wide_full_light_resized.png') });
+  console.log('  Saved: wide_full_light_resized.png');
   console.log('  Saved: full_light_resized.png');
 
   // =================================================================
