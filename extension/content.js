@@ -11,6 +11,10 @@ const CHECKOUT_POLL_MAX_ATTEMPTS = 60; // 5 min
 const ENTITLEMENT_KEY_FIRST_SEEN_AT = 'fanza_memo_first_seen_at';
 const ENTITLEMENT_KEY_BETA_GRANDFATHERED = 'fanza_memo_is_beta_grandfathered';
 const ENTITLEMENT_KEY_PRO_PURCHASED = 'fanza_memo_is_pro_purchased';
+const AUTO_BACKUP_INDEX_KEY = 'fanza_memo_auto_backup_index';
+const AUTO_BACKUP_LAST_SIGNATURE_KEY = 'fanza_memo_auto_backup_last_signature';
+const AUTO_BACKUP_PREFIX = 'fanza_memo_auto_backup_';
+const AUTO_BACKUP_MAX_COUNT = 5;
 const ENTITLEMENT_KEYS = [
   ENTITLEMENT_KEY_FIRST_SEEN_AT,
   ENTITLEMENT_KEY_BETA_GRANDFATHERED,
@@ -132,6 +136,89 @@ function toBackupDateStamp(date = new Date()) {
 
 function buildBackupFileName() {
   return `kamishine_memo_backup_${toBackupDateStamp()}.json`;
+}
+
+function buildAutoBackupFileName(snapshot) {
+  const createdAt = snapshot && snapshot.createdAt ? new Date(snapshot.createdAt) : new Date();
+  return `kamishine_memo_auto_backup_${toBackupDateStamp(createdAt)}.json`;
+}
+
+function formatAutoBackupLabel(isoString) {
+  if (!isoString) return '未作成';
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return '未作成';
+  return new Intl.DateTimeFormat('ja-JP', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date);
+}
+
+function getAutoBackupStorageKey(snapshotId) {
+  return `${AUTO_BACKUP_PREFIX}${snapshotId}`;
+}
+
+function normalizeAutoBackupIndex(rawIndex) {
+  if (!Array.isArray(rawIndex)) return [];
+  return rawIndex
+    .filter((entry) => entry && typeof entry === 'object')
+    .map((entry) => ({
+      id: String(entry.id || '').trim(),
+      createdAt: String(entry.createdAt || '').trim(),
+      reason: String(entry.reason || '').trim()
+    }))
+    .filter((entry) => entry.id && entry.createdAt)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, AUTO_BACKUP_MAX_COUNT);
+}
+
+async function createAutoBackupSnapshot(reason = 'manual') {
+  const all = await getStorageLocalAll();
+  const managedData = pickManagedBackupData(all);
+  if (Object.keys(managedData).length === 0) return null;
+
+  const signature = JSON.stringify(managedData);
+  if (all[AUTO_BACKUP_LAST_SIGNATURE_KEY] === signature) {
+    const existingIndex = normalizeAutoBackupIndex(all[AUTO_BACKUP_INDEX_KEY]);
+    return existingIndex[0] || null;
+  }
+
+  const snapshot = {
+    schema: 'kamishine_memo_auto_backup',
+    version: BACKUP_SCHEMA_VERSION,
+    createdAt: new Date().toISOString(),
+    reason,
+    data: managedData
+  };
+  const snapshotId = `${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
+  const nextEntry = { id: snapshotId, createdAt: snapshot.createdAt, reason };
+  const currentIndex = normalizeAutoBackupIndex(all[AUTO_BACKUP_INDEX_KEY]);
+  const nextIndex = [nextEntry, ...currentIndex].slice(0, AUTO_BACKUP_MAX_COUNT);
+  const removeKeys = currentIndex
+    .slice(AUTO_BACKUP_MAX_COUNT - 1)
+    .map((entry) => getAutoBackupStorageKey(entry.id));
+
+  await setStorageLocal({
+    [getAutoBackupStorageKey(snapshotId)]: snapshot,
+    [AUTO_BACKUP_INDEX_KEY]: nextIndex,
+    [AUTO_BACKUP_LAST_SIGNATURE_KEY]: signature
+  });
+  await removeStorageLocal(removeKeys);
+  return nextEntry;
+}
+
+async function getLatestAutoBackupSnapshot() {
+  const stored = await getStorageLocal([AUTO_BACKUP_INDEX_KEY]);
+  const index = normalizeAutoBackupIndex(stored[AUTO_BACKUP_INDEX_KEY]);
+  if (index.length === 0) return null;
+  const latest = index[0];
+  const snapshotKey = getAutoBackupStorageKey(latest.id);
+  const snapshotResult = await getStorageLocal([snapshotKey]);
+  const snapshot = snapshotResult[snapshotKey];
+  if (!snapshot || typeof snapshot !== 'object') return null;
+  return { ...latest, snapshot };
 }
 
 function generateCommentId() {
@@ -305,9 +392,9 @@ style.textContent = `
     position: absolute;
     bottom: 20px;
     right: 20px;
-    width: 320px;
+    width: 380px;
     height: 440px;
-    min-width: 260px;
+    min-width: 320px;
     min-height: 200px;
     background: rgba(30, 30, 35, 0.82); /* Match actual UI transparency (ref: Step Id: 2096) */
     color: #f1f5f9;
@@ -343,6 +430,14 @@ style.textContent = `
     color: #1e293b !important;
   }
   #fanza-comment-overlay.fc-light-theme .fc-settings h4 { color: #1e293b; }
+  #fanza-comment-overlay.fc-light-theme .fc-settings-close {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+  #fanza-comment-overlay.fc-light-theme .fc-settings-close:hover {
+    background: rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.16);
+  }
   #fanza-comment-overlay.fc-light-theme #fc-video-summary { color: #64748b !important; }
   #fanza-comment-overlay.fc-light-theme .fc-comment {
     background: rgba(0, 0, 0, 0.03);
@@ -421,6 +516,14 @@ style.textContent = `
     font-size: 13px;
     letter-spacing: 0.02em;
     color: inherit;
+    gap: 10px;
+  }
+  #fc-status {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .fc-header:active {
     cursor: grabbing;
@@ -435,7 +538,7 @@ style.textContent = `
   }
   .fc-settings {
     flex: 1;
-    padding: 14px;
+    padding: 0 14px 14px;
     display: none;
     flex-direction: column;
     gap: 12px;
@@ -449,6 +552,44 @@ style.textContent = `
     font-size: 15px;
     font-weight: 600;
     color: #fff;
+  }
+  .fc-settings-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 14px 0 12px;
+    background: inherit;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .fc-settings-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: inherit;
+  }
+  .fc-settings-close {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+    color: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .fc-settings-close:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.22);
   }
   .fc-settings::-webkit-scrollbar, .fc-list::-webkit-scrollbar { width: 6px; }
   .fc-settings::-webkit-scrollbar-track, .fc-list::-webkit-scrollbar-track { background: transparent; }
@@ -552,7 +693,7 @@ style.textContent = `
   /* Minimized state */
   #fanza-comment-overlay.minimized {
     height: 46px !important;
-    width: 320px !important;
+    width: 380px !important;
     min-height: 0 !important;
     min-width: 0 !important;
     overflow: hidden;
@@ -571,6 +712,17 @@ style.textContent = `
     display: flex;
     gap: 6px;
     align-items: center;
+    flex-shrink: 0;
+  }
+  .fc-auto-min-label {
+    font-size: 10px;
+    color: #94a3b8;
+    margin-right: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
   }
   .fc-header-btns button {
     width: 24px;
@@ -711,6 +863,7 @@ let searchQuery = '';
 let showJumpPreview = null;
 let refreshVideoIndex = null;
 let refreshLimitStatus = null;
+let refreshAutoBackupStatus = null;
 let findVideoIntervalId = null;
 let renderIntervalId = null;
 let videoTimeUpdateHandler = null;
@@ -748,6 +901,11 @@ function getEntitlementLabel() {
   if (entitlementState.isProPurchased) return 'Pro';
   if (entitlementState.isBetaGrandfathered) return 'ベータ特典';
   return '無料';
+}
+
+function getHeaderStatusLabel() {
+  if (entitlementState.isProPurchased) return 'シーン・メモ (Pro)';
+  return 'シーン・メモ';
 }
 
 async function loadEntitlements() {
@@ -810,6 +968,7 @@ async function persistProEntitlement() {
 function getSiteKey() {
   const host = window.location.hostname;
   if (host.includes('youtube.com') || host.includes('youtu.be')) return 'youtube';
+  if (host.includes('tv.dmm.com')) return 'dmmtv';
   if (host.includes('dmm.co.jp')) return 'dmm';
   return host.replace(/[^\w.-]/g, '_') || 'site';
 }
@@ -822,6 +981,9 @@ function isSupportedPlaybackPage() {
     if (path.startsWith('/shorts/')) return true;
     if (path.startsWith('/live/')) return true;
     return false;
+  }
+  if (siteKey === 'dmmtv') {
+    return path.startsWith('/vod/playback/');
   }
   return true;
 }
@@ -839,6 +1001,14 @@ function getVideoId() {
 
     const liveMatch = window.location.pathname.match(/^\/live\/([^/?#]+)/);
     if (liveMatch && liveMatch[1]) return `yt_live_${liveMatch[1]}`;
+  }
+
+  if (siteKey === 'dmmtv') {
+    const contentId = String(params.get('content') || '').trim();
+    const seasonId = String(params.get('season') || '').trim();
+    if (contentId && seasonId) return `dmmtv_${contentId}__${seasonId}`;
+    if (contentId) return `dmmtv_${contentId}`;
+    if (seasonId) return `dmmtv_season_${seasonId}`;
   }
 
   // FANZA / fallback
@@ -886,6 +1056,7 @@ function getStorageKeys() {
 
 function getSiteLabel(site) {
   if (site === 'youtube') return 'YouTube';
+  if (site === 'dmmtv') return 'DMM TV';
   if (site === 'dmm') return 'FANZA';
   return site;
 }
@@ -904,6 +1075,9 @@ function isPlaceholderTitle(site, title) {
 
   if (site === 'youtube') {
     return /^YouTube$/i.test(t) || /^- YouTube$/i.test(t);
+  }
+  if (site === 'dmmtv') {
+    return /^DMM\s*TV$/i.test(t) || /^DMM\s*TV\s*プレイヤー$/i.test(t);
   }
   if (site === 'dmm') {
     return /^(DMM|FANZA)\s*Player$/i.test(t) || /^(DMM|FANZA)\s*プレイヤー$/i.test(t);
@@ -937,7 +1111,7 @@ function getCurrentPageTitle(site, fallback) {
     document.querySelector('meta[name="title"]')?.getAttribute('content')?.trim()
   );
 
-  if (site === 'dmm') {
+  if (site === 'dmm' || site === 'dmmtv') {
     // Player DOM variants: pick likely work title nodes if available.
     const dmmTitleSelectors = [
       'h1',
@@ -958,6 +1132,12 @@ function getCurrentPageTitle(site, fallback) {
   let title = pickBestTitle(site, candidates, fallback);
   if (site === 'youtube') {
     title = title.replace(/\s*-\s*YouTube\s*$/i, '').trim();
+  }
+  if (site === 'dmmtv') {
+    title = title
+      .replace(/\s*[\-|｜]\s*DMM\s*TV\s*$/i, '')
+      .replace(/^\s*DMM\s*TV\s*[\-|｜]\s*/i, '')
+      .trim();
   }
   if (site === 'dmm') {
     title = title
@@ -988,6 +1168,8 @@ function normalizeStoredVideoId(site, rawId) {
     id = id.replace(/^youtube_+/i, '');
     const markerMatch = id.match(/(yt_(?:shorts_|live_)?[A-Za-z0-9_-]+)/);
     if (markerMatch && markerMatch[1]) id = markerMatch[1];
+  } else if (site === 'dmmtv') {
+    id = id.replace(/^dmmtv_+/i, 'dmmtv_');
   } else if (site === 'dmm') {
     id = id.replace(/^dmm_+/i, '');
   }
@@ -1007,6 +1189,21 @@ function buildVideoUrlFromEntry(entry) {
     if (id.startsWith('yt_live_')) return `https://www.youtube.com/live/${id.replace('yt_live_', '')}`;
     if (id.startsWith('yt_')) return `https://www.youtube.com/watch?v=${id.replace('yt_', '')}`;
     return `https://www.youtube.com/watch?v=${id}`;
+  }
+
+  if (site === 'dmmtv') {
+    if (id.startsWith('dmmtv_')) {
+      const payload = id.replace(/^dmmtv_/, '');
+      const [contentId, seasonId] = payload.split('__');
+      if (contentId && seasonId) {
+        return `https://tv.dmm.com/vod/playback/on-demand/?season=${encodeURIComponent(seasonId)}&content=${encodeURIComponent(contentId)}`;
+      }
+      if (contentId) {
+        return `https://tv.dmm.com/vod/playback/on-demand/?content=${encodeURIComponent(contentId)}`;
+      }
+    }
+    const fallbackUrl = String(entry.url || '').trim();
+    if (fallbackUrl) return fallbackUrl;
   }
 
   const url = String(entry.url || '').trim();
@@ -1238,15 +1435,19 @@ function saveComments(onSaved) {
     chrome.storage.local.set({
       [storageKey]: comments,
       [metaKey]: getCurrentVideoMeta()
-    }, () => {
+    }, async () => {
+      await createAutoBackupSnapshot('save_comments');
       if (typeof onSaved === 'function') onSaved();
       refreshVideoIndex?.();
+      refreshAutoBackupStatus?.();
     });
     return;
   }
-  chrome.storage.local.remove([storageKey, metaKey], () => {
+  chrome.storage.local.remove([storageKey, metaKey], async () => {
+    await createAutoBackupSnapshot('delete_comments');
     if (typeof onSaved === 'function') onSaved();
     refreshVideoIndex?.();
+    refreshAutoBackupStatus?.();
   });
 }
 
@@ -1265,8 +1466,8 @@ function createOverlay() {
     <div class="fc-header">
       <span id="fc-status">シーン・メモ</span>
       <div class="fc-header-btns">
-        <label style="font-size:10px;color:#94a3b8;margin-right:5px;cursor:pointer;display:flex;align-items:center;">
-            <input type="checkbox" id="fc-auto-min" style="margin:right:4px;"> 自動最小化
+        <label class="fc-auto-min-label">
+            <input type="checkbox" id="fc-auto-min"> 自動最小化
         </label>
         <button id="fc-settings-btn" style="background:none;border:none;cursor:pointer;" title="設定">⚙</button>
         <button id="fc-minimize-btn" style="background:none;border:none;cursor:pointer;" title="最小化">_</button>
@@ -1282,7 +1483,10 @@ function createOverlay() {
     <div class="fc-list" id="fc-list"></div>
     
     <div class="fc-settings" id="fc-settings">
-        <h4>設定</h4>
+        <div class="fc-settings-header">
+            <h4 class="fc-settings-title">設定</h4>
+            <button type="button" id="fc-settings-close" class="fc-settings-close" title="設定を閉じる">×</button>
+        </div>
         <div id="fc-video-summary" style="font-size: 11px; color: #cbd5e1; line-height: 1.4; margin-bottom: 12px;"></div>
         <button id="fc-upgrade-btn" class="fc-btn fc-btn-pro" style="margin-bottom:12px; display:none; width:100%; font-size:12px;" title="買い切り500円で制限解除">Pro版アップグレード (制限なし)</button>
         <input type="text" id="fc-video-filter" class="fc-input" placeholder="コメント済み動画を検索..." style="font-size:12px;">
@@ -1308,10 +1512,16 @@ function createOverlay() {
             <button id="fc-import-json-btn" class="fc-btn" type="button" style="flex:1;font-size:12px;">JSON復元</button>
             <input id="fc-import-json-file" type="file" accept="application/json,.json" style="display:none;">
         </div>
+        <div style="margin-top:6px;font-size:11px;line-height:1.5;color:#cbd5e1;">
+            大事なメモは定期的にJSON保存してください。
+        </div>
+        <div style="margin-top:8px;padding:8px;border:1px solid rgba(255,255,255,0.12);border-radius:8px;background:rgba(255,255,255,0.04);">
+            <div id="fc-auto-backup-status" style="font-size:11px;color:#cbd5e1;">自動バックアップ: 確認中...</div>
+            <button id="fc-export-auto-backup-btn" class="fc-btn" type="button" style="width:100%;font-size:12px;margin-top:6px;">最新自動バックアップを書き出す</button>
+        </div>
         <div id="fc-settings-footer" style="padding-top:16px; margin-top:auto; background: none;">
              <button id="fc-generate-dummy-btn" class="fc-btn" style="width:100%; font-size:12px; display:none; margin-bottom:10px;">+ ダミーコメント100件追加</button>
              <button id="fc-clear-all-btn" class="fc-btn" style="width:100%; background:rgba(239, 68, 68, 0.04); border-color:rgba(239, 68, 68, 0.12); color:#fca5a5; font-size:12px;">全コメント削除</button>
-             <button class="fc-btn" id="fc-settings-back" style="margin-top:16px; width:100%;">戻る</button>
         </div>
     </div>
 
@@ -1328,7 +1538,7 @@ function createOverlay() {
   const btn = overlay.querySelector('.fc-btn'); // This selects the first one (Post button? No, first one is in settings now? NO settings button has class fc-btn too!)
   // Wait, querySelector returns first match. The settings back button has class fc-btn but comes BEFORE the post button? No, afterwards in HTML structure but wait.
   // "fc-settings" is before "fc-input-area". "fc-input-area" has "fc-btn".
-  // "fc-settings" has "fc-settings-back".
+  // "fc-settings" contains settings-specific controls.
   
   // Let's rely on IDs or structure
   const postBtn = overlay.querySelector('.fc-input-area .fc-btn');
@@ -1346,7 +1556,7 @@ function createOverlay() {
   const videoMoreBtn = overlay.querySelector('#fc-video-more-btn');
   const listDiv = overlay.querySelector('#fc-list');
   const inputAreaDiv = overlay.querySelector('.fc-input-area');
-  const settingsBackBtn = overlay.querySelector('#fc-settings-back');
+  const settingsCloseBtn = overlay.querySelector('#fc-settings-close');
   const shortcutInput = overlay.querySelector('#fc-shortcut-input');
   const searchInput = overlay.querySelector('#fc-search-input');
   const searchClearBtn = overlay.querySelector('#fc-search-clear');
@@ -1355,6 +1565,8 @@ function createOverlay() {
   const exportJsonBtn = overlay.querySelector('#fc-export-json-btn');
   const importJsonBtn = overlay.querySelector('#fc-import-json-btn');
   const importJsonFileInput = overlay.querySelector('#fc-import-json-file');
+  const autoBackupStatusEl = overlay.querySelector('#fc-auto-backup-status');
+  const exportAutoBackupBtn = overlay.querySelector('#fc-export-auto-backup-btn');
   const statusEl = overlay.querySelector('#fc-status');
   let videoIndexQuery = '';
   let showAllVideoCards = false;
@@ -1363,7 +1575,7 @@ function createOverlay() {
     if (!statusEl) return;
     const upgradeBtn = overlay.querySelector('#fc-upgrade-btn');
     if (hasUnlimitedAccess()) {
-      statusEl.textContent = `シーン・メモ (${getEntitlementLabel()})`;
+      statusEl.textContent = getHeaderStatusLabel();
       if (upgradeBtn) upgradeBtn.style.display = 'none';
       return;
     }
@@ -1371,7 +1583,34 @@ function createOverlay() {
     if (upgradeBtn) upgradeBtn.style.display = 'block';
   };
   refreshLimitStatus = updateLimitStatus;
+
+  const updateAutoBackupStatus = async () => {
+    if (!autoBackupStatusEl) return;
+    const latest = await getLatestAutoBackupSnapshot();
+    if (!latest) {
+      autoBackupStatusEl.textContent = '自動バックアップ: まだありません';
+      if (exportAutoBackupBtn) exportAutoBackupBtn.disabled = true;
+      return;
+    }
+    autoBackupStatusEl.textContent = `自動バックアップ: ${formatAutoBackupLabel(latest.createdAt)}`;
+    if (exportAutoBackupBtn) exportAutoBackupBtn.disabled = false;
+  };
+  refreshAutoBackupStatus = updateAutoBackupStatus;
   updateLimitStatus();
+
+  const openSettingsPanel = () => {
+    listDiv.style.display = 'none';
+    inputAreaDiv.style.display = 'none';
+    overlay.querySelector('.fc-search-area').style.display = 'none';
+    settingsDiv.style.display = 'flex';
+  };
+
+  const closeSettingsPanel = () => {
+    settingsDiv.style.display = 'none';
+    listDiv.style.display = 'flex';
+    inputAreaDiv.style.display = 'flex';
+    overlay.querySelector('.fc-search-area').style.display = 'flex';
+  };
 
   const upgradeBtn = overlay.querySelector('#fc-upgrade-btn');
   if (upgradeBtn) {
@@ -1619,12 +1858,16 @@ function createOverlay() {
             lastRenderedCommentCount = 0;
             renderComments(videoElement ? videoElement.currentTime : 0);
           }
+          createAutoBackupSnapshot('delete_video_index').finally(() => {
+            refreshAutoBackupStatus?.();
+          });
           renderVideoIndex();
         });
       });
     });
   };
   refreshVideoIndex = renderVideoIndex;
+  refreshAutoBackupStatus?.();
   if (videoFilterInput) {
     videoFilterInput.addEventListener('input', () => {
       videoIndexQuery = videoFilterInput.value || '';
@@ -1903,19 +2146,13 @@ function createOverlay() {
       if (isMinimized && overlay.toggleMinimize) {
           overlay.toggleMinimize(false);
       }
-      listDiv.style.display = 'none';
-      inputAreaDiv.style.display = 'none';
-      overlay.querySelector('.fc-search-area').style.display = 'none';
-      settingsDiv.style.display = 'flex';
+      openSettingsPanel();
       renderVideoIndex();
   });
   
-  settingsBackBtn.addEventListener('click', (e) => {
+  settingsCloseBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      settingsDiv.style.display = 'none';
-      listDiv.style.display = 'flex';
-      inputAreaDiv.style.display = 'flex';
-      overlay.querySelector('.fc-search-area').style.display = 'flex';
+      closeSettingsPanel();
   });
   
   // Shortcut Recording
@@ -2025,6 +2262,23 @@ function createOverlay() {
     });
   }
 
+  if (exportAutoBackupBtn) {
+    exportAutoBackupBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      try {
+        const latest = await getLatestAutoBackupSnapshot();
+        if (!latest || !latest.snapshot) {
+          alert('書き出せる自動バックアップがありません。');
+          return;
+        }
+        saveTextAsFile(buildAutoBackupFileName(latest.snapshot), JSON.stringify(latest.snapshot, null, 2));
+      } catch (error) {
+        console.error('Failed to export auto backup', error);
+        alert('自動バックアップの書き出しに失敗しました。');
+      }
+    });
+  }
+
   if (importJsonBtn && importJsonFileInput) {
     importJsonBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -2055,12 +2309,15 @@ function createOverlay() {
           return;
         }
 
+        await createAutoBackupSnapshot('pre_import');
         await removeStorageLocal(currentManagedKeys);
         await setStorageLocal(importData);
+        await createAutoBackupSnapshot('import_json');
         await loadEntitlements();
         await loadComments();
         refreshVideoIndex?.();
         refreshLimitStatus?.();
+        refreshAutoBackupStatus?.();
         lastRenderedCommentCount = 0;
         renderComments(videoElement ? videoElement.currentTime : 0);
         alert('JSON復元が完了しました。');
@@ -2225,6 +2482,13 @@ function createOverlay() {
 
   input.addEventListener('keyup', (e) => e.stopPropagation(), { capture: true });
   input.addEventListener('keypress', (e) => e.stopPropagation(), { capture: true });
+  overlay.addEventListener('keydown', (e) => {
+    if ((e.key === 'Escape' || e.key === 'Esc') && settingsDiv.style.display === 'flex') {
+      closeSettingsPanel();
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, { capture: true });
   
   // Stop clicks from pausing video if it bubbles up
   overlay.addEventListener('click', (e) => {
@@ -2623,6 +2887,7 @@ async function init() {
     if (existingPreview) existingPreview.remove();
     refreshVideoIndex = null;
     refreshLimitStatus = null;
+    refreshAutoBackupStatus = null;
     videoElement = null;
     return;
   }
@@ -2654,6 +2919,7 @@ async function init() {
   if (existingPreview) existingPreview.remove();
   refreshVideoIndex = null;
   refreshLimitStatus = null;
+  refreshAutoBackupStatus = null;
   videoElement = null;
   editingCommentId = null;
   searchQuery = '';

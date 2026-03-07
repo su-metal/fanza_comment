@@ -4,7 +4,7 @@
 
 ## アイテムの紹介
 
-🎬 神シーンメモ は、YouTube や **DMM（デジタル動画プレイヤー）**上で「再生時間にひもづくメモ」を残せる Chrome 拡張です。
+🎬 神シーンメモ は、YouTube や **DMM系デジタル動画プレイヤー（FANZA / DMM TV）**上で「再生時間にひもづくメモ」を残せる Chrome 拡張です。
 
 👀 視聴画面を離れずに、コメントの追加・編集・検索・ジャンプができます。
 
@@ -28,7 +28,7 @@
 
 ## 対応サイト
 ・YouTube (`youtube.com/watch*` など)
-・DMM系 デジタル動画 (`dmm.co.jp/digital/-/player/*` 形式のプレイヤー)
+・DMM系 デジタル動画 (`dmm.co.jp/digital/-/player/*` / `tv.dmm.com/vod/playback/*`)
 
 ## プラン
 ・無料版: 最大50コメントまで保存可能
