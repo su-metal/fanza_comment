@@ -11,6 +11,10 @@ const CHECKOUT_POLL_MAX_ATTEMPTS = 60; // 5 min
 const ENTITLEMENT_KEY_FIRST_SEEN_AT = 'fanza_memo_first_seen_at';
 const ENTITLEMENT_KEY_BETA_GRANDFATHERED = 'fanza_memo_is_beta_grandfathered';
 const ENTITLEMENT_KEY_PRO_PURCHASED = 'fanza_memo_is_pro_purchased';
+const AUTO_BACKUP_INDEX_KEY = 'fanza_memo_auto_backup_index';
+const AUTO_BACKUP_LAST_SIGNATURE_KEY = 'fanza_memo_auto_backup_last_signature';
+const AUTO_BACKUP_PREFIX = 'fanza_memo_auto_backup_';
+const AUTO_BACKUP_MAX_COUNT = 5;
 const ENTITLEMENT_KEYS = [
   ENTITLEMENT_KEY_FIRST_SEEN_AT,
   ENTITLEMENT_KEY_BETA_GRANDFATHERED,
@@ -132,6 +136,89 @@ function toBackupDateStamp(date = new Date()) {
 
 function buildBackupFileName() {
   return `kamishine_memo_backup_${toBackupDateStamp()}.json`;
+}
+
+function buildAutoBackupFileName(snapshot) {
+  const createdAt = snapshot && snapshot.createdAt ? new Date(snapshot.createdAt) : new Date();
+  return `kamishine_memo_auto_backup_${toBackupDateStamp(createdAt)}.json`;
+}
+
+function formatAutoBackupLabel(isoString) {
+  if (!isoString) return '未作成';
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return '未作成';
+  return new Intl.DateTimeFormat('ja-JP', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date);
+}
+
+function getAutoBackupStorageKey(snapshotId) {
+  return `${AUTO_BACKUP_PREFIX}${snapshotId}`;
+}
+
+function normalizeAutoBackupIndex(rawIndex) {
+  if (!Array.isArray(rawIndex)) return [];
+  return rawIndex
+    .filter((entry) => entry && typeof entry === 'object')
+    .map((entry) => ({
+      id: String(entry.id || '').trim(),
+      createdAt: String(entry.createdAt || '').trim(),
+      reason: String(entry.reason || '').trim()
+    }))
+    .filter((entry) => entry.id && entry.createdAt)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, AUTO_BACKUP_MAX_COUNT);
+}
+
+async function createAutoBackupSnapshot(reason = 'manual') {
+  const all = await getStorageLocalAll();
+  const managedData = pickManagedBackupData(all);
+  if (Object.keys(managedData).length === 0) return null;
+
+  const signature = JSON.stringify(managedData);
+  if (all[AUTO_BACKUP_LAST_SIGNATURE_KEY] === signature) {
+    const existingIndex = normalizeAutoBackupIndex(all[AUTO_BACKUP_INDEX_KEY]);
+    return existingIndex[0] || null;
+  }
+
+  const snapshot = {
+    schema: 'kamishine_memo_auto_backup',
+    version: BACKUP_SCHEMA_VERSION,
+    createdAt: new Date().toISOString(),
+    reason,
+    data: managedData
+  };
+  const snapshotId = `${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
+  const nextEntry = { id: snapshotId, createdAt: snapshot.createdAt, reason };
+  const currentIndex = normalizeAutoBackupIndex(all[AUTO_BACKUP_INDEX_KEY]);
+  const nextIndex = [nextEntry, ...currentIndex].slice(0, AUTO_BACKUP_MAX_COUNT);
+  const removeKeys = currentIndex
+    .slice(AUTO_BACKUP_MAX_COUNT - 1)
+    .map((entry) => getAutoBackupStorageKey(entry.id));
+
+  await setStorageLocal({
+    [getAutoBackupStorageKey(snapshotId)]: snapshot,
+    [AUTO_BACKUP_INDEX_KEY]: nextIndex,
+    [AUTO_BACKUP_LAST_SIGNATURE_KEY]: signature
+  });
+  await removeStorageLocal(removeKeys);
+  return nextEntry;
+}
+
+async function getLatestAutoBackupSnapshot() {
+  const stored = await getStorageLocal([AUTO_BACKUP_INDEX_KEY]);
+  const index = normalizeAutoBackupIndex(stored[AUTO_BACKUP_INDEX_KEY]);
+  if (index.length === 0) return null;
+  const latest = index[0];
+  const snapshotKey = getAutoBackupStorageKey(latest.id);
+  const snapshotResult = await getStorageLocal([snapshotKey]);
+  const snapshot = snapshotResult[snapshotKey];
+  if (!snapshot || typeof snapshot !== 'object') return null;
+  return { ...latest, snapshot };
 }
 
 function generateCommentId() {
@@ -343,6 +430,14 @@ style.textContent = `
     color: #1e293b !important;
   }
   #fanza-comment-overlay.fc-light-theme .fc-settings h4 { color: #1e293b; }
+  #fanza-comment-overlay.fc-light-theme .fc-settings-close {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+  #fanza-comment-overlay.fc-light-theme .fc-settings-close:hover {
+    background: rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.16);
+  }
   #fanza-comment-overlay.fc-light-theme #fc-video-summary { color: #64748b !important; }
   #fanza-comment-overlay.fc-light-theme .fc-comment {
     background: rgba(0, 0, 0, 0.03);
@@ -443,7 +538,7 @@ style.textContent = `
   }
   .fc-settings {
     flex: 1;
-    padding: 14px;
+    padding: 0 14px 14px;
     display: none;
     flex-direction: column;
     gap: 12px;
@@ -457,6 +552,44 @@ style.textContent = `
     font-size: 15px;
     font-weight: 600;
     color: #fff;
+  }
+  .fc-settings-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 14px 0 12px;
+    background: inherit;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .fc-settings-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: inherit;
+  }
+  .fc-settings-close {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+    color: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .fc-settings-close:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.22);
   }
   .fc-settings::-webkit-scrollbar, .fc-list::-webkit-scrollbar { width: 6px; }
   .fc-settings::-webkit-scrollbar-track, .fc-list::-webkit-scrollbar-track { background: transparent; }
@@ -730,6 +863,7 @@ let searchQuery = '';
 let showJumpPreview = null;
 let refreshVideoIndex = null;
 let refreshLimitStatus = null;
+let refreshAutoBackupStatus = null;
 let findVideoIntervalId = null;
 let renderIntervalId = null;
 let videoTimeUpdateHandler = null;
@@ -1301,15 +1435,19 @@ function saveComments(onSaved) {
     chrome.storage.local.set({
       [storageKey]: comments,
       [metaKey]: getCurrentVideoMeta()
-    }, () => {
+    }, async () => {
+      await createAutoBackupSnapshot('save_comments');
       if (typeof onSaved === 'function') onSaved();
       refreshVideoIndex?.();
+      refreshAutoBackupStatus?.();
     });
     return;
   }
-  chrome.storage.local.remove([storageKey, metaKey], () => {
+  chrome.storage.local.remove([storageKey, metaKey], async () => {
+    await createAutoBackupSnapshot('delete_comments');
     if (typeof onSaved === 'function') onSaved();
     refreshVideoIndex?.();
+    refreshAutoBackupStatus?.();
   });
 }
 
@@ -1345,7 +1483,10 @@ function createOverlay() {
     <div class="fc-list" id="fc-list"></div>
     
     <div class="fc-settings" id="fc-settings">
-        <h4>設定</h4>
+        <div class="fc-settings-header">
+            <h4 class="fc-settings-title">設定</h4>
+            <button type="button" id="fc-settings-close" class="fc-settings-close" title="設定を閉じる">×</button>
+        </div>
         <div id="fc-video-summary" style="font-size: 11px; color: #cbd5e1; line-height: 1.4; margin-bottom: 12px;"></div>
         <button id="fc-upgrade-btn" class="fc-btn fc-btn-pro" style="margin-bottom:12px; display:none; width:100%; font-size:12px;" title="買い切り500円で制限解除">Pro版アップグレード (制限なし)</button>
         <input type="text" id="fc-video-filter" class="fc-input" placeholder="コメント済み動画を検索..." style="font-size:12px;">
@@ -1371,10 +1512,16 @@ function createOverlay() {
             <button id="fc-import-json-btn" class="fc-btn" type="button" style="flex:1;font-size:12px;">JSON復元</button>
             <input id="fc-import-json-file" type="file" accept="application/json,.json" style="display:none;">
         </div>
+        <div style="margin-top:6px;font-size:11px;line-height:1.5;color:#cbd5e1;">
+            大事なメモは定期的にJSON保存してください。
+        </div>
+        <div style="margin-top:8px;padding:8px;border:1px solid rgba(255,255,255,0.12);border-radius:8px;background:rgba(255,255,255,0.04);">
+            <div id="fc-auto-backup-status" style="font-size:11px;color:#cbd5e1;">自動バックアップ: 確認中...</div>
+            <button id="fc-export-auto-backup-btn" class="fc-btn" type="button" style="width:100%;font-size:12px;margin-top:6px;">最新自動バックアップを書き出す</button>
+        </div>
         <div id="fc-settings-footer" style="padding-top:16px; margin-top:auto; background: none;">
              <button id="fc-generate-dummy-btn" class="fc-btn" style="width:100%; font-size:12px; display:none; margin-bottom:10px;">+ ダミーコメント100件追加</button>
              <button id="fc-clear-all-btn" class="fc-btn" style="width:100%; background:rgba(239, 68, 68, 0.04); border-color:rgba(239, 68, 68, 0.12); color:#fca5a5; font-size:12px;">全コメント削除</button>
-             <button class="fc-btn" id="fc-settings-back" style="margin-top:16px; width:100%;">戻る</button>
         </div>
     </div>
 
@@ -1391,7 +1538,7 @@ function createOverlay() {
   const btn = overlay.querySelector('.fc-btn'); // This selects the first one (Post button? No, first one is in settings now? NO settings button has class fc-btn too!)
   // Wait, querySelector returns first match. The settings back button has class fc-btn but comes BEFORE the post button? No, afterwards in HTML structure but wait.
   // "fc-settings" is before "fc-input-area". "fc-input-area" has "fc-btn".
-  // "fc-settings" has "fc-settings-back".
+  // "fc-settings" contains settings-specific controls.
   
   // Let's rely on IDs or structure
   const postBtn = overlay.querySelector('.fc-input-area .fc-btn');
@@ -1409,7 +1556,7 @@ function createOverlay() {
   const videoMoreBtn = overlay.querySelector('#fc-video-more-btn');
   const listDiv = overlay.querySelector('#fc-list');
   const inputAreaDiv = overlay.querySelector('.fc-input-area');
-  const settingsBackBtn = overlay.querySelector('#fc-settings-back');
+  const settingsCloseBtn = overlay.querySelector('#fc-settings-close');
   const shortcutInput = overlay.querySelector('#fc-shortcut-input');
   const searchInput = overlay.querySelector('#fc-search-input');
   const searchClearBtn = overlay.querySelector('#fc-search-clear');
@@ -1418,6 +1565,8 @@ function createOverlay() {
   const exportJsonBtn = overlay.querySelector('#fc-export-json-btn');
   const importJsonBtn = overlay.querySelector('#fc-import-json-btn');
   const importJsonFileInput = overlay.querySelector('#fc-import-json-file');
+  const autoBackupStatusEl = overlay.querySelector('#fc-auto-backup-status');
+  const exportAutoBackupBtn = overlay.querySelector('#fc-export-auto-backup-btn');
   const statusEl = overlay.querySelector('#fc-status');
   let videoIndexQuery = '';
   let showAllVideoCards = false;
@@ -1434,7 +1583,34 @@ function createOverlay() {
     if (upgradeBtn) upgradeBtn.style.display = 'block';
   };
   refreshLimitStatus = updateLimitStatus;
+
+  const updateAutoBackupStatus = async () => {
+    if (!autoBackupStatusEl) return;
+    const latest = await getLatestAutoBackupSnapshot();
+    if (!latest) {
+      autoBackupStatusEl.textContent = '自動バックアップ: まだありません';
+      if (exportAutoBackupBtn) exportAutoBackupBtn.disabled = true;
+      return;
+    }
+    autoBackupStatusEl.textContent = `自動バックアップ: ${formatAutoBackupLabel(latest.createdAt)}`;
+    if (exportAutoBackupBtn) exportAutoBackupBtn.disabled = false;
+  };
+  refreshAutoBackupStatus = updateAutoBackupStatus;
   updateLimitStatus();
+
+  const openSettingsPanel = () => {
+    listDiv.style.display = 'none';
+    inputAreaDiv.style.display = 'none';
+    overlay.querySelector('.fc-search-area').style.display = 'none';
+    settingsDiv.style.display = 'flex';
+  };
+
+  const closeSettingsPanel = () => {
+    settingsDiv.style.display = 'none';
+    listDiv.style.display = 'flex';
+    inputAreaDiv.style.display = 'flex';
+    overlay.querySelector('.fc-search-area').style.display = 'flex';
+  };
 
   const upgradeBtn = overlay.querySelector('#fc-upgrade-btn');
   if (upgradeBtn) {
@@ -1682,12 +1858,16 @@ function createOverlay() {
             lastRenderedCommentCount = 0;
             renderComments(videoElement ? videoElement.currentTime : 0);
           }
+          createAutoBackupSnapshot('delete_video_index').finally(() => {
+            refreshAutoBackupStatus?.();
+          });
           renderVideoIndex();
         });
       });
     });
   };
   refreshVideoIndex = renderVideoIndex;
+  refreshAutoBackupStatus?.();
   if (videoFilterInput) {
     videoFilterInput.addEventListener('input', () => {
       videoIndexQuery = videoFilterInput.value || '';
@@ -1966,19 +2146,13 @@ function createOverlay() {
       if (isMinimized && overlay.toggleMinimize) {
           overlay.toggleMinimize(false);
       }
-      listDiv.style.display = 'none';
-      inputAreaDiv.style.display = 'none';
-      overlay.querySelector('.fc-search-area').style.display = 'none';
-      settingsDiv.style.display = 'flex';
+      openSettingsPanel();
       renderVideoIndex();
   });
   
-  settingsBackBtn.addEventListener('click', (e) => {
+  settingsCloseBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      settingsDiv.style.display = 'none';
-      listDiv.style.display = 'flex';
-      inputAreaDiv.style.display = 'flex';
-      overlay.querySelector('.fc-search-area').style.display = 'flex';
+      closeSettingsPanel();
   });
   
   // Shortcut Recording
@@ -2088,6 +2262,23 @@ function createOverlay() {
     });
   }
 
+  if (exportAutoBackupBtn) {
+    exportAutoBackupBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      try {
+        const latest = await getLatestAutoBackupSnapshot();
+        if (!latest || !latest.snapshot) {
+          alert('書き出せる自動バックアップがありません。');
+          return;
+        }
+        saveTextAsFile(buildAutoBackupFileName(latest.snapshot), JSON.stringify(latest.snapshot, null, 2));
+      } catch (error) {
+        console.error('Failed to export auto backup', error);
+        alert('自動バックアップの書き出しに失敗しました。');
+      }
+    });
+  }
+
   if (importJsonBtn && importJsonFileInput) {
     importJsonBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -2118,12 +2309,15 @@ function createOverlay() {
           return;
         }
 
+        await createAutoBackupSnapshot('pre_import');
         await removeStorageLocal(currentManagedKeys);
         await setStorageLocal(importData);
+        await createAutoBackupSnapshot('import_json');
         await loadEntitlements();
         await loadComments();
         refreshVideoIndex?.();
         refreshLimitStatus?.();
+        refreshAutoBackupStatus?.();
         lastRenderedCommentCount = 0;
         renderComments(videoElement ? videoElement.currentTime : 0);
         alert('JSON復元が完了しました。');
@@ -2288,6 +2482,13 @@ function createOverlay() {
 
   input.addEventListener('keyup', (e) => e.stopPropagation(), { capture: true });
   input.addEventListener('keypress', (e) => e.stopPropagation(), { capture: true });
+  overlay.addEventListener('keydown', (e) => {
+    if ((e.key === 'Escape' || e.key === 'Esc') && settingsDiv.style.display === 'flex') {
+      closeSettingsPanel();
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, { capture: true });
   
   // Stop clicks from pausing video if it bubbles up
   overlay.addEventListener('click', (e) => {
@@ -2686,6 +2887,7 @@ async function init() {
     if (existingPreview) existingPreview.remove();
     refreshVideoIndex = null;
     refreshLimitStatus = null;
+    refreshAutoBackupStatus = null;
     videoElement = null;
     return;
   }
@@ -2717,6 +2919,7 @@ async function init() {
   if (existingPreview) existingPreview.remove();
   refreshVideoIndex = null;
   refreshLimitStatus = null;
+  refreshAutoBackupStatus = null;
   videoElement = null;
   editingCommentId = null;
   searchQuery = '';
