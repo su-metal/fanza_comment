@@ -615,6 +615,36 @@ style.textContent = `
     background: linear-gradient(90deg, rgba(225, 48, 108, 0.18) 0%, rgba(255, 255, 255, 0.08) 100%);
     border-color: rgba(225, 48, 108, 0.35);
   }
+  .fc-comment.loop-active {
+    border-right: 3px solid #22c55e;
+    box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.28);
+  }
+  .fc-comment.loop-end {
+    border-right: 3px solid #f59e0b;
+    box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.24);
+  }
+  .fc-loop-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    padding: 3px 6px;
+    border-radius: 999px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .fc-loop-chip-start {
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.14);
+    border: 1px solid rgba(34, 197, 94, 0.22);
+  }
+  .fc-loop-chip-end {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.14);
+    border: 1px solid rgba(245, 158, 11, 0.22);
+  }
   .fc-time {
     font-size: 11px;
     font-weight: 600;
@@ -738,6 +768,23 @@ style.textContent = `
     background: rgba(255,255,255,0.1) !important;
     color: #fff !important;
   }
+  .fc-header-btns .fc-loop-clear-btn {
+    width: auto;
+    min-width: 0;
+    height: 24px;
+    padding: 0 8px;
+    font-size: 10px;
+    font-weight: 700;
+    border: 1px solid rgba(245, 158, 11, 0.25) !important;
+    border-radius: 999px;
+    color: #fbbf24 !important;
+    background: rgba(245, 158, 11, 0.12) !important;
+  }
+  .fc-header-btns .fc-loop-clear-btn:hover {
+    color: #fff7ed !important;
+    background: rgba(245, 158, 11, 0.22) !important;
+    border-color: rgba(245, 158, 11, 0.4) !important;
+  }
   
   .fc-edit-btn {
     float: right;
@@ -753,6 +800,37 @@ style.textContent = `
   }
   .fc-comment:hover .fc-edit-btn { display: block; }
   .fc-edit-btn:hover { color: #38bdf8; background: rgba(56, 189, 248, 0.15); }
+  .fc-loop-point-btn {
+    float: right;
+    color: #64748b;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 12px;
+    margin-left: 6px;
+    display: none;
+    min-width: 22px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+  .fc-comment:hover .fc-loop-point-btn { display: block; }
+  .fc-loop-point-btn:hover { color: #fff; background: rgba(148, 163, 184, 0.18); }
+  .fc-loop-point-btn.is-active {
+    display: block;
+    color: #fff;
+  }
+  .fc-loop-point-btn.is-a {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+  }
+  .fc-loop-point-btn.is-b {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+  }
+  .fc-loop-point-btn.is-pending {
+    background: rgba(34, 197, 94, 0.15);
+  }
   
   .fc-edit-input {
     width: 100%;
@@ -864,9 +942,12 @@ let showJumpPreview = null;
 let refreshVideoIndex = null;
 let refreshLimitStatus = null;
 let refreshAutoBackupStatus = null;
+let refreshLoopClearButton = null;
 let findVideoIntervalId = null;
 let renderIntervalId = null;
 let videoTimeUpdateHandler = null;
+let activeCommentLoop = null;
+let pendingLoopStartCommentId = null;
 let lastPageHref = window.location.href;
 let lastVideoId = '';
 
@@ -1466,6 +1547,7 @@ function createOverlay() {
     <div class="fc-header">
       <span id="fc-status">シーン・メモ</span>
       <div class="fc-header-btns">
+        <button id="fc-loop-clear-btn" class="fc-loop-clear-btn" style="background:none;border:none;cursor:pointer;display:none;" title="A/Bリピート解除">ABリピ解除</button>
         <label class="fc-auto-min-label">
             <input type="checkbox" id="fc-auto-min"> 自動最小化
         </label>
@@ -1567,6 +1649,7 @@ function createOverlay() {
   const importJsonFileInput = overlay.querySelector('#fc-import-json-file');
   const autoBackupStatusEl = overlay.querySelector('#fc-auto-backup-status');
   const exportAutoBackupBtn = overlay.querySelector('#fc-export-auto-backup-btn');
+  const loopClearBtn = overlay.querySelector('#fc-loop-clear-btn');
   const statusEl = overlay.querySelector('#fc-status');
   let videoIndexQuery = '';
   let showAllVideoCards = false;
@@ -1584,6 +1667,13 @@ function createOverlay() {
   };
   refreshLimitStatus = updateLimitStatus;
 
+  const updateLoopClearButton = () => {
+    if (!loopClearBtn) return;
+    const shouldShow = !!(activeCommentLoop || pendingLoopStartCommentId);
+    loopClearBtn.style.display = shouldShow ? 'inline-flex' : 'none';
+  };
+  refreshLoopClearButton = updateLoopClearButton;
+
   const updateAutoBackupStatus = async () => {
     if (!autoBackupStatusEl) return;
     const latest = await getLatestAutoBackupSnapshot();
@@ -1597,6 +1687,18 @@ function createOverlay() {
   };
   refreshAutoBackupStatus = updateAutoBackupStatus;
   updateLimitStatus();
+  updateLoopClearButton();
+
+  if (loopClearBtn) {
+    loopClearBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      activeCommentLoop = null;
+      pendingLoopStartCommentId = null;
+      updateLoopClearButton();
+      lastRenderedCommentCount = 0;
+      renderComments(videoElement ? videoElement.currentTime : 0);
+    });
+  }
 
   const openSettingsPanel = () => {
     listDiv.style.display = 'none';
@@ -2498,6 +2600,15 @@ function createOverlay() {
     e.stopPropagation();
   });
 
+  window.addEventListener('pointerdown', (e) => {
+    if (!overlay.isConnected || overlay.style.display === 'none' || isMinimized) return;
+    const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+    const clickedInsideOverlay = path.includes(overlay) || overlay.contains(e.target);
+    const clickedJumpPreview = !!(jumpPreviewEl && (path.includes(jumpPreviewEl) || jumpPreviewEl.contains(e.target)));
+    if (clickedInsideOverlay || clickedJumpPreview) return;
+    toggleMinimize(true);
+  }, true);
+
   // Store toggleMinimize for reuse in renderComments if needed (or just make it global/reachable)
   overlay.toggleMinimize = toggleMinimize;
 
@@ -2712,11 +2823,54 @@ window.addEventListener('keydown', (e) => {
 let lastRenderedCommentCount = 0;
 let lastRenderedSearchQuery = '';
 
+function findCommentIndexById(commentId) {
+  return comments.findIndex((comment) => comment.id === commentId);
+}
+
+function buildLoopRange(startCommentId, endCommentId) {
+  const startIdx = findCommentIndexById(startCommentId);
+  const endIdx = findCommentIndexById(endCommentId);
+  if (startIdx < 0 || endIdx < 0 || endIdx <= startIdx) return null;
+  const start = Number(comments[startIdx].t);
+  const end = Number(comments[endIdx].t);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
+  return {
+    commentId: startCommentId,
+    start,
+    end,
+    startCommentId,
+    endCommentId
+  };
+}
+
+function syncActiveCommentLoop() {
+  if (pendingLoopStartCommentId && findCommentIndexById(pendingLoopStartCommentId) < 0) {
+    pendingLoopStartCommentId = null;
+  }
+  if (!activeCommentLoop) return;
+  const refreshed = buildLoopRange(activeCommentLoop.startCommentId, activeCommentLoop.endCommentId);
+  if (!refreshed) {
+    activeCommentLoop = null;
+    return;
+  }
+  activeCommentLoop = refreshed;
+}
+
+function applyLoopRange(startCommentId, endCommentId) {
+  const nextRange = buildLoopRange(startCommentId, endCommentId);
+  if (!nextRange) return false;
+  activeCommentLoop = nextRange;
+  pendingLoopStartCommentId = null;
+  return true;
+}
+
 function renderComments(currentTime) {
   const list = document.getElementById('fc-list');
   const overlay = document.getElementById('fanza-comment-overlay');
   if (!list || !overlay) return;
   refreshLimitStatus?.();
+  syncActiveCommentLoop();
+  refreshLoopClearButton?.();
 
   const NEAR_THRESHOLD = 0.75; // seconds
   
@@ -2736,6 +2890,15 @@ function renderComments(currentTime) {
       item.className = 'fc-comment';
       item.dataset.time = c.t; 
       item.dataset.id = c.id;
+      const isPendingLoopStart = pendingLoopStartCommentId === c.id;
+      const isLoopStart = !!(activeCommentLoop && activeCommentLoop.startCommentId === c.id);
+      const isLoopEnd = !!(activeCommentLoop && activeCommentLoop.endCommentId === c.id);
+      if (isLoopStart) {
+        item.classList.add('loop-active');
+      }
+      if (isLoopEnd) {
+        item.classList.add('loop-end');
+      }
       
       if (isEditing) {
           const editInput = document.createElement('input');
@@ -2779,6 +2942,12 @@ function renderComments(currentTime) {
           timeSpan.className = 'fc-time';
           timeSpan.textContent = formatTime(c.t);
           
+          const loopChip = (!isLoopStart && !isLoopEnd && !isPendingLoopStart) ? null : document.createElement('span');
+          if (loopChip) {
+              loopChip.className = `fc-loop-chip ${isLoopStart || isPendingLoopStart ? 'fc-loop-chip-start' : 'fc-loop-chip-end'}`;
+              loopChip.textContent = isLoopStart ? '開始' : isLoopEnd ? '終了' : '開始候補';
+          }
+
           const textSpan = document.createElement('span');
           textSpan.textContent = c.text;
           
@@ -2810,9 +2979,62 @@ function renderComments(currentTime) {
               lastRenderedCommentCount = 0; // Force rebuild to show input
               renderComments(videoElement ? videoElement.currentTime : 0);
           };
+
+          const currentIndex = findCommentIndexById(c.id);
+          const canBeLoopStart = currentIndex >= 0 && currentIndex < comments.length - 1;
+          const canBeLoopEnd = pendingLoopStartCommentId && currentIndex > findCommentIndexById(pendingLoopStartCommentId);
+
+          const loopStartBtn = document.createElement('span');
+          loopStartBtn.className = 'fc-loop-point-btn';
+          if (isLoopStart) loopStartBtn.classList.add('is-active', 'is-a');
+          if (isPendingLoopStart && !isLoopStart) loopStartBtn.classList.add('is-active', 'is-pending');
+          loopStartBtn.innerHTML = 'A';
+          loopStartBtn.title = 'リピート開始点にする';
+          loopStartBtn.onclick = (e) => {
+              e.stopPropagation();
+              if (!canBeLoopStart) return;
+              if (isLoopStart || isPendingLoopStart) {
+                  pendingLoopStartCommentId = null;
+                  if (isLoopStart) activeCommentLoop = null;
+              } else {
+                  pendingLoopStartCommentId = c.id;
+                  if (activeCommentLoop && activeCommentLoop.startCommentId !== c.id) {
+                      activeCommentLoop = null;
+                  }
+              }
+              lastRenderedCommentCount = 0;
+              renderComments(videoElement ? videoElement.currentTime : 0);
+          };
+          if (canBeLoopStart || isLoopStart || isPendingLoopStart) {
+              item.appendChild(loopStartBtn);
+          }
+
+          const loopEndBtn = document.createElement('span');
+          loopEndBtn.className = 'fc-loop-point-btn';
+          if (isLoopEnd) loopEndBtn.classList.add('is-active', 'is-b');
+          loopEndBtn.innerHTML = 'B';
+          loopEndBtn.title = pendingLoopStartCommentId ? 'リピート終了点にする' : '先に開始点 A を選択';
+          loopEndBtn.onclick = (e) => {
+              e.stopPropagation();
+              if (isLoopEnd) {
+                  activeCommentLoop = null;
+                  pendingLoopStartCommentId = null;
+              } else if (pendingLoopStartCommentId && applyLoopRange(pendingLoopStartCommentId, c.id)) {
+                  if (videoElement) {
+                      videoElement.currentTime = activeCommentLoop.start;
+                      videoElement.play().catch(() => {});
+                  }
+              }
+              lastRenderedCommentCount = 0;
+              renderComments(videoElement ? videoElement.currentTime : 0);
+          };
+          if (canBeLoopEnd || isLoopEnd) {
+              item.appendChild(loopEndBtn);
+          }
           
           item.appendChild(delBtn);
           item.appendChild(editBtn);
+          if (loopChip) item.appendChild(loopChip);
           item.appendChild(timeSpan);
           item.appendChild(textSpan);
           
@@ -2888,7 +3110,10 @@ async function init() {
     refreshVideoIndex = null;
     refreshLimitStatus = null;
     refreshAutoBackupStatus = null;
+    refreshLoopClearButton = null;
     videoElement = null;
+    activeCommentLoop = null;
+    pendingLoopStartCommentId = null;
     return;
   }
 
@@ -2920,7 +3145,10 @@ async function init() {
   refreshVideoIndex = null;
   refreshLimitStatus = null;
   refreshAutoBackupStatus = null;
+  refreshLoopClearButton = null;
   videoElement = null;
+  activeCommentLoop = null;
+  pendingLoopStartCommentId = null;
   editingCommentId = null;
   searchQuery = '';
   lastRenderedCommentCount = 0;
@@ -2936,6 +3164,13 @@ async function init() {
     console.log("Video Memo: Video found", v);
     videoElement = v;
     videoTimeUpdateHandler = () => {
+      syncActiveCommentLoop();
+      if (activeCommentLoop && Number.isFinite(v.currentTime) && v.currentTime >= activeCommentLoop.end - 0.05) {
+        v.currentTime = activeCommentLoop.start;
+        if (v.paused) {
+          v.play().catch(() => {});
+        }
+      }
       if (document.getElementById('fc-list')) {
         renderComments(v.currentTime);
       }
