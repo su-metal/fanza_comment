@@ -37,7 +37,7 @@ function buildCorsHeaders(req: Request) {
   const allowedOrigins = resolveAllowedOrigins();
   const origin = req.headers.get("origin") || "";
   const headers: Record<string, string> = {
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey, x-client-info",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
   };
   if (allowedOrigins.includes(origin)) {
@@ -307,7 +307,7 @@ async function handleCreateCheckoutSession(req: Request, corsHeaders: Record<str
       payment_method_types: ["card"],
       line_items: [
         {
-          price: "price_1T7BNdPY3cl7ynNzdaJW1yu8",
+          price: "price_1T8IEHPa0VuZQWboXMu2EuXf",
           quantity: 1,
         },
       ],

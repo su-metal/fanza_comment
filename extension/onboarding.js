@@ -1,4 +1,35 @@
 const API_BASE_URL = "https://wzinimxikcihdqqdvppa.supabase.co/functions/v1/license-api";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_qBIjjA5UN3H62B8dWdqo0w_PRTqVZCq";
+const BETA_PERIOD_END_ISO = '2026-04-02T14:59:59.000Z'; // 2026-04-02 23:59:59 JST
+const ENTITLEMENT_KEY_FIRST_SEEN_AT = 'fanza_memo_first_seen_at';
+const ENTITLEMENT_KEY_BETA_GRANDFATHERED = 'fanza_memo_is_beta_grandfathered';
+const ENTITLEMENT_KEY_PRO_PURCHASED = 'fanza_memo_is_pro_purchased';
+const DEV_FORCE_SHOW_UPGRADE_FOR_BETA = 'fanza_memo_force_show_upgrade_for_beta';
+const DEV_DISABLE_BETA_FOR_CHECKOUT_TEST = 'fanza_memo_disable_beta_for_checkout_test';
+const ENTITLEMENT_KEYS = [
+  ENTITLEMENT_KEY_FIRST_SEEN_AT,
+  ENTITLEMENT_KEY_BETA_GRANDFATHERED,
+  ENTITLEMENT_KEY_PRO_PURCHASED
+];
+
+function getStorageArea(area, keys) {
+  return new Promise((resolve) => {
+    chrome.storage[area].get(keys, (result) => resolve(result || {}));
+  });
+}
+
+function setStorageArea(area, values) {
+  return new Promise((resolve) => {
+    chrome.storage[area].set(values, () => resolve());
+  });
+}
+
+function buildLicenseApiHeaders() {
+  return {
+    "Content-Type": "application/json",
+    apikey: SUPABASE_PUBLISHABLE_KEY
+  };
+}
 
 async function getDeviceFingerprint() {
   return new Promise((resolve) => {
@@ -13,60 +44,143 @@ async function getDeviceFingerprint() {
   });
 }
 
-function updateUI(isPro, infoText = '') {
+async function getEntitlementState() {
+  const [syncValues, localValues] = await Promise.all([
+    getStorageArea('sync', ENTITLEMENT_KEYS),
+    getStorageArea('local', ENTITLEMENT_KEYS)
+  ]);
+
+  const now = Date.now();
+  const betaEndAt = Date.parse(BETA_PERIOD_END_ISO);
+  let firstSeenAt = Number(syncValues[ENTITLEMENT_KEY_FIRST_SEEN_AT] || localValues[ENTITLEMENT_KEY_FIRST_SEEN_AT] || 0);
+  let isBetaGrandfathered = !!(syncValues[ENTITLEMENT_KEY_BETA_GRANDFATHERED] || localValues[ENTITLEMENT_KEY_BETA_GRANDFATHERED]);
+  const isProPurchased = !!(syncValues[ENTITLEMENT_KEY_PRO_PURCHASED] || localValues[ENTITLEMENT_KEY_PRO_PURCHASED]);
+
+  if (!firstSeenAt) {
+    firstSeenAt = now;
+  }
+  if (!isBetaGrandfathered && firstSeenAt <= betaEndAt) {
+    isBetaGrandfathered = true;
+  }
+
+  const canonical = {
+    [ENTITLEMENT_KEY_FIRST_SEEN_AT]: firstSeenAt,
+    [ENTITLEMENT_KEY_BETA_GRANDFATHERED]: isBetaGrandfathered,
+    [ENTITLEMENT_KEY_PRO_PURCHASED]: isProPurchased
+  };
+  await Promise.all([
+    setStorageArea('local', canonical),
+    setStorageArea('sync', canonical)
+  ]);
+
+  return {
+    isProPurchased,
+    isBetaGrandfathered
+  };
+}
+
+async function persistProEntitlement() {
+  const patch = { [ENTITLEMENT_KEY_PRO_PURCHASED]: true };
+  await Promise.all([
+    setStorageArea('local', patch),
+    setStorageArea('sync', patch)
+  ]);
+}
+
+async function shouldShowUpgradeForBeta() {
+  const localValues = await getStorageArea('local', [DEV_FORCE_SHOW_UPGRADE_FOR_BETA]);
+  return !!localValues[DEV_FORCE_SHOW_UPGRADE_FOR_BETA];
+}
+
+async function shouldDisableBetaForCheckoutTest() {
+  const localValues = await getStorageArea('local', [DEV_DISABLE_BETA_FOR_CHECKOUT_TEST]);
+  return !!localValues[DEV_DISABLE_BETA_FOR_CHECKOUT_TEST];
+}
+
+function setUpgradeButtonText(label) {
+  const button = document.getElementById('upgrade-btn');
+  if (button) {
+    button.textContent = label;
+  }
+}
+
+function updateUI(state, infoText = '', options = {}) {
   const statusEl = document.getElementById('license-status');
   const btn = document.getElementById('upgrade-btn');
+  const showUpgradeForBeta = !!options.showUpgradeForBeta;
 
-  if (isPro) {
-    statusEl.innerHTML = '<span style="color:#38f9d7; font-weight:bold;">Pro版をご利用中です！ 🎉</span>';
+  if (state === 'pro') {
+    statusEl.innerHTML = '<span style="color:#38f9d7; font-weight:bold;">Pro版をご利用中です</span>';
     btn.style.display = 'none';
-  } else {
-    statusEl.innerHTML = infoText ? `<span style="color:#e2e8f0;">現在のプラン: 無料版 ${infoText}</span>` : '現在のプラン: 無料版';
-    btn.style.display = 'block';
+    return;
   }
+
+  btn.style.display = 'block';
+
+  if (state === 'beta') {
+    statusEl.innerHTML = `<span style="color:#fbbf24;">ベータ特典で無制限です${infoText ? ` (${infoText})` : ''}</span>`;
+    btn.style.display = showUpgradeForBeta ? 'block' : 'none';
+    if (showUpgradeForBeta) {
+      setUpgradeButtonText('Pro版を購入して確認');
+    }
+    return;
+  }
+
+  statusEl.innerHTML = infoText ? `<span style="color:#e2e8f0;">現在のプラン: 無料版 ${infoText}</span>` : '現在のプラン: 無料版';
+  setUpgradeButtonText('✨ Pro版にアップグレード');
 }
 
 async function checkStatus() {
   const fp = await getDeviceFingerprint();
+  const entitlement = await getEntitlementState();
+  const showUpgradeForBeta = await shouldShowUpgradeForBeta();
+  const disableBetaForCheckoutTest = await shouldDisableBetaForCheckoutTest();
 
-  chrome.storage.local.get(['fanza_memo_is_pro_purchased'], async (res) => {
-    if (res.fanza_memo_is_pro_purchased) {
-       updateUI(true);
-       return;
+  if (entitlement.isProPurchased) {
+    updateUI('pro');
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/verify-device`, {
+      method: "POST",
+      headers: buildLicenseApiHeaders(),
+      body: JSON.stringify({ device_fingerprint: fp })
+    });
+    const data = await response.json();
+
+    if (data.ok && data.is_pro) {
+      await persistProEntitlement();
+      updateUI('pro');
+      return;
     }
+  } catch (err) {
+    console.error(err);
+    if (entitlement.isBetaGrandfathered && !disableBetaForCheckoutTest) {
+      updateUI('beta', '通信なしでも利用可能', { showUpgradeForBeta });
+      return;
+    }
+    updateUI('free', '(通信エラー)');
+    return;
+  }
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/verify-device`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ device_fingerprint: fp })
-      });
-      const data = await response.json();
-      
-      if (data.ok && data.is_pro) {
-        chrome.storage.local.set({ fanza_memo_is_pro_purchased: true }, () => {
-          updateUI(true);
-        });
-      } else {
-        // Estimate free slots
-        chrome.storage.local.get(null, (all) => {
-          let count = 0;
-          for (const k in all) {
-            if (k.startsWith('video_memo_comments_')) {
-              try {
-                const parsed = JSON.parse(all[k]);
-                if (Array.isArray(parsed)) count += parsed.length;
-              } catch(e) {}
-            }
-          }
-          const remaining = Math.max(0, 50 - count);
-          updateUI(false, `(残り ${remaining} 件)`);
-        });
+  if (entitlement.isBetaGrandfathered && !disableBetaForCheckoutTest) {
+    updateUI('beta', showUpgradeForBeta ? '開発確認用に購入導線を表示中' : '', { showUpgradeForBeta });
+    return;
+  }
+
+  chrome.storage.local.get(null, (all) => {
+    let count = 0;
+    for (const k in all) {
+      if (k.startsWith('video_memo_comments_')) {
+        try {
+          const parsed = JSON.parse(all[k]);
+          if (Array.isArray(parsed)) count += parsed.length;
+        } catch (e) {}
       }
-    } catch (err) {
-      console.error(err);
-      updateUI(false, '(通信エラー)');
     }
+    const remaining = Math.max(0, 50 - count);
+    updateUI('free', `(残り ${remaining} 件)`);
   });
 }
 
@@ -74,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
   checkStatus();
 
   const upgradeBtn = document.getElementById('upgrade-btn');
-  if(upgradeBtn) {
+  if (upgradeBtn) {
     upgradeBtn.addEventListener('click', async () => {
       upgradeBtn.disabled = true;
       upgradeBtn.textContent = '準備中...';
@@ -83,58 +197,58 @@ document.addEventListener('DOMContentLoaded', () => {
         const fp = await getDeviceFingerprint();
         const response = await fetch(`${API_BASE_URL}/create-checkout-session`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: buildLicenseApiHeaders(),
           body: JSON.stringify({ device_fingerprint: fp })
         });
         const data = await response.json();
-        
+
         if (data.ok && data.url) {
           const width = 500;
           const height = 700;
           const left = Math.round((window.screen.width - width) / 2);
           const top = Math.round((window.screen.height - height) / 2);
           const popup = window.open(data.url, 'stripe_checkout_popup', `width=${width},height=${height},left=${left},top=${top},status=no,location=no,menubar=no,toolbar=no`);
-          
-          const maxAttempts = 60; // 5 minute max
+
+          const maxAttempts = 60;
           let attempts = 0;
           const pollInterval = setInterval(async () => {
             attempts++;
-            
-            const fp = await getDeviceFingerprint();
+
+            const currentFp = await getDeviceFingerprint();
             try {
               const verifyRes = await fetch(`${API_BASE_URL}/verify-device`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ device_fingerprint: fp })
+                headers: buildLicenseApiHeaders(),
+                body: JSON.stringify({ device_fingerprint: currentFp })
               });
               const vData = await verifyRes.json();
-              
+
               if (vData.ok && vData.is_pro) {
                 clearInterval(pollInterval);
                 if (popup && !popup.closed) {
                   popup.close();
                 }
-                chrome.storage.local.set({ fanza_memo_is_pro_purchased: true }, () => {
-                  updateUI(true);
-                });
+                await persistProEntitlement();
+                updateUI('pro');
+                return;
               }
-            } catch(e) {}
-            
+            } catch (e) {}
+
             if (attempts >= maxAttempts || (popup && popup.closed)) {
               clearInterval(pollInterval);
               upgradeBtn.disabled = false;
-              upgradeBtn.textContent = '✨ Pro版にアップグレード';
+              checkStatus();
             }
           }, 5000);
         } else {
-          alert("エラーが発生しました: " + (data.error || "不明なエラー"));
+          alert("エラーが発生しました: " + (data.message || data.error || "不明なエラー"));
           upgradeBtn.disabled = false;
-          upgradeBtn.textContent = '✨ Pro版にアップグレード';
+          checkStatus();
         }
-      } catch(err) {
-        alert("通信エラーが発生しました");
+      } catch (err) {
+        alert(`通信エラーが発生しました${err && err.message ? `: ${err.message}` : ''}`);
         upgradeBtn.disabled = false;
-        upgradeBtn.textContent = '✨ Pro版にアップグレード';
+        checkStatus();
       }
     });
   }
@@ -146,7 +260,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tab) {
           chrome.tabs.remove(tab.id);
         } else {
-          // Fallback if not in a tab context (though unlikely here)
           window.close();
         }
       });

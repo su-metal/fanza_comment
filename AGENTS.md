@@ -5,14 +5,17 @@
 神シーンメモは、動画視聴中の思考を邪魔せずに「神シーンをすぐ残せる」ことを最優先とする。  
 保存データはユーザー端末ローカルが原則で、外部DBは課金判定にのみ使う。
 
-## 現状サマリ（2026-03-04）
+## 現状サマリ（2026-03-07）
 
 - コメント本文は `chrome.storage.local` に保存し、JSONバックアップ/復元で移行する
 - 保存・削除・JSON復元前に、ローカルへ自動バックアップのスナップショットを保持する
 - コメントを A/B 指定して任意区間をリピートできる
 - 最小化位置を設定から切り替えられる（既定は左上固定）
-- 課金判定の拡張UIは未接続で、現状はローカル entitlement フラグ運用
-- Supabase 版ライセンスAPI実装は存在するが、拡張からはまだ呼び出していない
+- 課金UIは `無料 / ベータ特典 / 購入済みPro` を表示上で区別し、ベータ特典者には課金導線を出さない
+- 開発確認時のみ `chrome.storage.local` の `fanza_memo_force_show_upgrade_for_beta=true` で、ベータ特典者にも一時的に課金導線を表示できる
+- 決済確認を無料状態で試す必要がある場合は `chrome.storage.local` の `fanza_memo_disable_beta_for_checkout_test=true` でベータ特典を一時無効化できる
+- 拡張は Supabase 版ライセンスAPIの `verify-device` / `create-checkout-session` を呼び出し、購入済みProを端末へ反映する
+- 拡張から Supabase Edge Function を呼ぶ際は `apikey` ヘッダーに publishable key を付与し、`license-api` は `verify_jwt=false` で運用する
 - 課金基盤は Supabase 方針に一本化済み
 - 対応プレイヤーは YouTube / FANZA / DMM TV のローカルメモ用途を含む
 

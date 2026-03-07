@@ -1,7 +1,7 @@
 # 神シーンメモ 要件定義書（現行実装反映版）
 
 作成日: 2026-03-04  
-最終更新日: 2026-03-04  
+最終更新日: 2026-03-07  
 対象リポジトリ: `fanza_comment`
 
 ## 1. 文書の目的
@@ -110,7 +110,10 @@
 
 - 無料枠は 50 コメントであること
 - 初回利用時刻が `2026-04-02 23:59:59 JST` 以前ならベータ特典を付与すること
-- 現行のPro判定はローカルフラグ参照であり、サーバー検証未接続であること
+- 購入済みPro判定は端末ローカルフラグを基本とし、`verify-device` の結果で再同期できること
+- 課金UIでは `無料 / ベータ特典 / 購入済みPro` を区別表示し、ベータ特典者には購入導線を表示しないこと
+- 開発確認用として `chrome.storage.local.fanza_memo_force_show_upgrade_for_beta=true` のときのみ、ベータ特典者にも一時的に購入導線を表示できること
+- 開発確認用として `chrome.storage.local.fanza_memo_disable_beta_for_checkout_test=true` のときは、ベータ特典者を一時的に無料扱いとして決済導線と上限制御を確認できること
 
 ### FR-10: コメントデータの将来拡張耐性
 
@@ -178,6 +181,9 @@
 - `POST /functions/v1/license-api/activate`
 - `POST /functions/v1/license-api/verify`
 - `POST /functions/v1/license-api/stripe-webhook`
+- `POST /functions/v1/license-api/create-checkout-session`
+- `POST /functions/v1/license-api/verify-device`
+- 拡張からの呼び出しは Supabase publishable key を `apikey` ヘッダーで付与し、`license-api` は `verify_jwt=false` で公開する
 
 必須シークレット/環境値:
 
@@ -189,8 +195,8 @@
 
 ## 9. 現状の制約・既知ギャップ
 
-- 課金判定APIは Supabase 側に実装済みだが、拡張UIからは未接続
-- そのため現行の Pro 判定はローカルフラグ依存
+- コメント保存上限の実効判定はローカル entitlement を基準とする
+- 購入済みProの端末反映は `verify-device` の応答とローカルフラグに依存する
 - 共有機能は未提供（将来向けデータ項目のみ先行整備）
 
 ## 10. 受け入れ基準（現行版）
