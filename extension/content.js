@@ -2008,8 +2008,7 @@ function createOverlay() {
   }
 
   const placeOverlayInsideVideo = () => {
-    if (!videoElement) return;
-    const vRect = videoElement.getBoundingClientRect();
+    const vRect = getPlaybackBoundsRect();
     const oRect = overlay.getBoundingClientRect();
     const margin = 20;
     const left = (vRect.right - oRect.width - margin) + window.scrollX;
@@ -2021,8 +2020,7 @@ function createOverlay() {
   };
 
   const clampOverlayToVideo = () => {
-    if (!videoElement) return;
-    const vRect = videoElement.getBoundingClientRect();
+    const vRect = getPlaybackBoundsRect();
     
     // リサイズ時にプレイヤーサイズを上回らないように制限
     overlay.style.maxWidth = `${vRect.width}px`;
@@ -2054,13 +2052,7 @@ function createOverlay() {
   showJumpPreview = (comment) => {
     if (!isMinimized || !comment || !jumpPreviewEl) return;
     const overlayRect = overlay.getBoundingClientRect();
-    const vRect = videoElement ? videoElement.getBoundingClientRect() : {
-      top: 0,
-      left: 0,
-      right: window.innerWidth,
-      bottom: window.innerHeight,
-      height: window.innerHeight
-    };
+    const vRect = getPlaybackBoundsRect();
     const text = String(comment.text ?? '');
     const t = Number(comment.t ?? 0);
     jumpPreviewEl.innerHTML = `<span class="fc-jump-preview-time">[${formatTime(t)}]</span><span>${text}</span>`;
@@ -2211,14 +2203,7 @@ function createOverlay() {
   };
 
   const applyMinimizedPosition = () => {
-      const vRect = videoElement ? videoElement.getBoundingClientRect() : {
-          top: 0,
-          left: 0,
-          right: window.innerWidth,
-          bottom: window.innerHeight,
-          width: window.innerWidth,
-          height: window.innerHeight
-      };
+      const vRect = getPlaybackBoundsRect();
       const currentScrollY = window.scrollY;
       const currentScrollX = window.scrollX;
       const overlayRect = overlay.getBoundingClientRect();
@@ -2520,19 +2505,17 @@ function createOverlay() {
       let clientX = e.clientX - dragOffsetX;
       let clientY = e.clientY - dragOffsetY;
       
-      // Constrain to video area (Reverted to strict bounds)
-      if (videoElement) {
-          const vRect = videoElement.getBoundingClientRect();
-          const oRect = overlay.getBoundingClientRect();
-          
-          const minX = vRect.left;
-          const maxX = vRect.right - oRect.width;
-          const minY = vRect.top;
-          const maxY = vRect.bottom - oRect.height; 
-          
-          clientX = Math.max(minX, Math.min(maxX, clientX));
-          clientY = Math.max(minY, Math.min(maxY, clientY));
-      }
+      // Constrain to playback area
+      const vRect = getPlaybackBoundsRect();
+      const oRect = overlay.getBoundingClientRect();
+      
+      const minX = vRect.left;
+      const maxX = vRect.right - oRect.width;
+      const minY = vRect.top;
+      const maxY = vRect.bottom - oRect.height; 
+      
+      clientX = Math.max(minX, Math.min(maxX, clientX));
+      clientY = Math.max(minY, Math.min(maxY, clientY));
 
       overlay.style.left = `${clientX + window.scrollX}px`;
       overlay.style.top = `${clientY + window.scrollY}px`;
@@ -2882,6 +2865,37 @@ window.addEventListener('keydown', (e) => {
 // Keep track of last rendered state to avoid full DOM rebuilds
 let lastRenderedCommentCount = 0;
 let lastRenderedSearchQuery = '';
+
+function getPlaybackBoundsRect() {
+  const siteKey = getSiteKey();
+  const candidates = [];
+  if (siteKey === 'youtube') {
+    candidates.push(
+      document.querySelector('#movie_player'),
+      document.querySelector('.html5-video-player'),
+      document.querySelector('#player-container'),
+      document.querySelector('#player')
+    );
+  }
+  if (videoElement) {
+    candidates.push(videoElement);
+  }
+  for (const el of candidates) {
+    if (!el || typeof el.getBoundingClientRect !== 'function') continue;
+    const rect = el.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      return rect;
+    }
+  }
+  return {
+    top: 0,
+    left: 0,
+    right: window.innerWidth,
+    bottom: window.innerHeight,
+    width: window.innerWidth,
+    height: window.innerHeight
+  };
+}
 
 function findCommentIndexById(commentId) {
   return comments.findIndex((comment) => comment.id === commentId);
