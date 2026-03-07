@@ -1584,6 +1584,16 @@ function createOverlay() {
                 <input type="checkbox" id="fc-default-auto-min">
                 自動最小化をデフォルトでON
             </label>
+            <label style="display:flex;flex-direction:column;gap:4px;">
+                <span>最小化位置</span>
+                <select id="fc-minimize-mode" class="fc-input" style="font-size:12px;">
+                    <option value="top-left">左上（既定）</option>
+                    <option value="current">現在位置</option>
+                    <option value="top-right">右上</option>
+                    <option value="bottom-left">左下</option>
+                    <option value="bottom-right">右下</option>
+                </select>
+            </label>
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
                 <input type="checkbox" id="fc-theme-toggle">
                 ライトテーマを使用する
@@ -1643,6 +1653,7 @@ function createOverlay() {
   const searchInput = overlay.querySelector('#fc-search-input');
   const searchClearBtn = overlay.querySelector('#fc-search-clear');
   const defaultAutoMinCheckbox = overlay.querySelector('#fc-default-auto-min');
+  const minimizeModeSelect = overlay.querySelector('#fc-minimize-mode');
   const themeToggleCheckbox = overlay.querySelector('#fc-theme-toggle');
   const exportJsonBtn = overlay.querySelector('#fc-export-json-btn');
   const importJsonBtn = overlay.querySelector('#fc-import-json-btn');
@@ -1985,6 +1996,7 @@ function createOverlay() {
     });
   }
   let minimizeAnchor = 'bottom';
+  let minimizeMode = 'top-left';
   let jumpPreviewTimer = null;
   let jumpPreviewEl = document.getElementById('fc-jump-preview');
   if (!jumpPreviewEl) {
@@ -2085,11 +2097,14 @@ function createOverlay() {
 
     if (savedPos) {
         try {
-            const { left, top, isMin, autoMin, minimizeAnchor: savedAnchor, width, height, theme } = savedPos;
+            const { left, top, isMin, autoMin, minimizeAnchor: savedAnchor, minimizeMode: savedMode, width, height, theme } = savedPos;
             autoMinState = (typeof autoMin === 'boolean') ? autoMin : defaultAutoMin;
             isLightTheme = !!theme;
             if (savedAnchor === 'top' || savedAnchor === 'bottom') {
               minimizeAnchor = savedAnchor;
+            }
+            if (['top-left', 'current', 'top-right', 'bottom-left', 'bottom-right'].includes(savedMode)) {
+              minimizeMode = savedMode;
             }
             if (width) overlay.style.width = width;
             if (height) overlay.style.height = height;
@@ -2103,13 +2118,9 @@ function createOverlay() {
                 overlay._expandedLeft = left;
                 overlay._expandedTop = top;
 
-                // 最小化時は左上に吸着させる
-                const vRect = videoElement ? videoElement.getBoundingClientRect() : {top:0, left:0};
-                overlay.style.left = `${vRect.left + window.scrollX}px`;
-                overlay.style.top = `${vRect.top + window.scrollY}px`;
-                
                 overlay.style.bottom = 'auto';
                 overlay.style.right = 'auto';
+                requestAnimationFrame(() => applyMinimizedPosition());
             } else {
                 overlay.style.bottom = 'auto';
                 overlay.style.right = 'auto';
@@ -2136,6 +2147,13 @@ function createOverlay() {
                 autoMinCheckbox.checked = checked;
                 saveUIState();
             }
+        });
+    }
+    if (minimizeModeSelect) {
+        minimizeModeSelect.value = minimizeMode;
+        minimizeModeSelect.addEventListener('change', () => {
+            minimizeMode = minimizeModeSelect.value || 'top-left';
+            saveUIState();
         });
     }
 
@@ -2169,7 +2187,11 @@ function createOverlay() {
 
   window.addEventListener('resize', () => {
     if (!overlay.isConnected || overlay.style.display === 'none') return;
-    clampOverlayToVideo();
+    if (isMinimized) {
+      applyMinimizedPosition();
+    } else {
+      clampOverlayToVideo();
+    }
     saveUIState();
   });
 
@@ -2182,9 +2204,52 @@ function createOverlay() {
           height: overlay.style.height,
           isMin: isMinimized,
           autoMin: overlay.querySelector('#fc-auto-min')?.checked,
+          minimizeMode,
           theme: overlay.querySelector('#fc-theme-toggle')?.checked
       };
       chrome.storage.local.set({ fanza_mock_ui_pos: state });
+  };
+
+  const applyMinimizedPosition = () => {
+      const vRect = videoElement ? videoElement.getBoundingClientRect() : {
+          top: 0,
+          left: 0,
+          right: window.innerWidth,
+          bottom: window.innerHeight,
+          width: window.innerWidth,
+          height: window.innerHeight
+      };
+      const currentScrollY = window.scrollY;
+      const currentScrollX = window.scrollX;
+      const overlayRect = overlay.getBoundingClientRect();
+
+      if (minimizeMode === 'current') {
+          overlay.style.left = overlay._expandedLeft || overlay.style.left;
+          overlay.style.top = overlay._expandedTop || overlay.style.top;
+          return;
+      }
+
+      const positions = {
+          'top-left': {
+              left: vRect.left + currentScrollX,
+              top: vRect.top + currentScrollY
+          },
+          'top-right': {
+              left: vRect.right - overlayRect.width + currentScrollX,
+              top: vRect.top + currentScrollY
+          },
+          'bottom-left': {
+              left: vRect.left + currentScrollX,
+              top: vRect.bottom - overlayRect.height + currentScrollY
+          },
+          'bottom-right': {
+              left: vRect.right - overlayRect.width + currentScrollX,
+              top: vRect.bottom - overlayRect.height + currentScrollY
+          }
+      };
+      const target = positions[minimizeMode] || positions['top-left'];
+      overlay.style.left = `${target.left}px`;
+      overlay.style.top = `${target.top}px`;
   };
 
   // Minimize/expand with top-left anchor:
@@ -2204,14 +2269,9 @@ function createOverlay() {
           overlay._expandedLeft = overlay.style.left;
           overlay._expandedTop = overlay.style.top;
 
-          // 動画プレイヤーの左上座標を取得
-          const vRect = videoElement ? videoElement.getBoundingClientRect() : {top:0, left:0};
-
-          overlay.style.left = `${vRect.left + currentScrollX}px`;
-          overlay.style.top = `${vRect.top + currentScrollY}px`;
-
           overlay.classList.add('minimized');
           minBtn.textContent = '□';
+          requestAnimationFrame(() => applyMinimizedPosition());
       } else {
           overlay.classList.remove('minimized');
           
