@@ -56,6 +56,11 @@
 - オーバーレイは非表示/再表示をショートカットで切り替えできること
 - 初期ショートカットは `Alt + C` であること
 - 最小化位置を設定から変更できること（既定は左上）
+- popup から `onboarding.html` を任意に開ける導線を提供し、使い方とPro案内をいつでも参照できること
+- コメント入力ショートカットを設定できること（既定 `Alt + Shift + M`）
+- コメント入力ショートカット押下時、非表示なら表示して入力欄へフォーカスし、最小化中なら展開して入力欄へフォーカスすること
+- コメント入力ショートカット押下時、展開済みなら最小化し、動画が停止中であれば再生を再開すること
+- 表示ON/OFFショートカットと同一キーの設定を禁止すること
 
 ### FR-02: コメント投稿
 
@@ -132,7 +137,7 @@
 ### NFR-02: 権限最小化
 
 - 拡張権限は `storage` のみ
-- Host permissions は対象動画URLおよびローカル検証用URLに限定する
+- Host permissions は対象動画URLおよび課金判定用の Supabase license API に限定する
 
 ### NFR-03: 後方互換
 
@@ -187,6 +192,8 @@
 - `create-checkout-session` は Stripe Checkout の `allow_promotion_codes=true` を有効化し、promotion code 入力欄を表示できる
 - Stripe webhook の entitlement 失効処理は `stripe_payment_intent_id` に加えて `stripe_checkout_session_id` も利用し、無料Checkout由来の失効イベントにも対応する
 - 拡張は `verify-device` の結果が `is_pro=false` だった場合、ローカルの購入済みキャッシュを解除して無料状態へ戻す
+- 拡張は購入済み端末の `license_code` を表示でき、購入時メールアドレス + ライセンスコードで `activate` を呼んで再アクティベートできる
+- `Proを復元` 導線は無料版でのみ表示し、ベータ特典および購入済みProでは表示しない
 
 必須シークレット/環境値:
 

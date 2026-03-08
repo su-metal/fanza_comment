@@ -218,6 +218,7 @@ async function handleActivate(req: Request, corsHeaders: Record<string, string>)
     {
       ok: true,
       entitlement: { is_pro: true, status: "active" },
+      license_code: licenseCode,
       token,
       expires_at: new Date(exp * 1000).toISOString(),
     },
@@ -283,6 +284,7 @@ async function handleCreateCheckoutSession(req: Request, corsHeaders: Record<str
   const body = await req.json().catch(() => ({}));
   const deviceFingerprint = String(body.device_fingerprint || "");
   const email = String(body.email || "");
+  const checkoutState = String(body.checkout_state || "").trim();
 
   if (!deviceFingerprint) {
     return jsonResponse(400, { ok: false, error: "missing_device_fingerprint" }, corsHeaders);
@@ -297,8 +299,9 @@ async function handleCreateCheckoutSession(req: Request, corsHeaders: Record<str
 
   // 固定URLを使ってStripeの戻り先を安定化させる
   // (req.url 依存だと環境差分で不正パスになるケースがある)
-  const successUrl = `${LICENSE_API_PUBLIC_BASE_URL}?redirect=success`;
-  const cancelUrl = `${LICENSE_API_PUBLIC_BASE_URL}?redirect=cancel`;
+  const stateSuffix = checkoutState ? `&checkout_state=${encodeURIComponent(checkoutState)}` : "";
+  const successUrl = `${LICENSE_API_PUBLIC_BASE_URL}?redirect=success${stateSuffix}`;
+  const cancelUrl = `${LICENSE_API_PUBLIC_BASE_URL}?redirect=cancel${stateSuffix}`;
   
   console.log(`[CreateCheckout] successUrl: ${successUrl}`);
 
@@ -352,12 +355,12 @@ async function handleVerifyDevice(req: Request, corsHeaders: Record<string, stri
   for (const claim of claims) {
     const { data: license } = await supabase
       .from("license_entitlements")
-      .select("status, product")
+      .select("status, product, license_code")
       .eq("id", claim.license_id)
       .maybeSingle();
 
     if (license && license.status === "active" && license.product === PRODUCT_ID) {
-      return jsonResponse(200, { ok: true, is_pro: true }, corsHeaders);
+      return jsonResponse(200, { ok: true, is_pro: true, license_code: license.license_code }, corsHeaders);
     }
   }
 
@@ -530,8 +533,16 @@ function handlePaymentSuccess() {
   return Response.redirect("https://www.youtube.com/?fanza_checkout=success", 303);
 }
 
+function handlePaymentSuccessWithState(checkoutState: string) {
+  return Response.redirect(`https://www.youtube.com/?fanza_checkout=success&checkout_state=${encodeURIComponent(checkoutState)}`, 303);
+}
+
 function handlePaymentCancel() {
   return Response.redirect("https://www.youtube.com/?fanza_checkout=cancel", 303);
+}
+
+function handlePaymentCancelWithState(checkoutState: string) {
+  return Response.redirect(`https://www.youtube.com/?fanza_checkout=cancel&checkout_state=${encodeURIComponent(checkoutState)}`, 303);
 }
 
 Deno.serve(async (req) => {
@@ -545,8 +556,9 @@ Deno.serve(async (req) => {
   // 1. GET リダイレクト用エンドポイント (Stripeから戻ってくる)
   // クエリパラメータ方式 (?redirect=success) 
   if (req.method === "GET") {
-    if (redirect === "success") return handlePaymentSuccess();
-    if (redirect === "cancel") return handlePaymentCancel();
+    const checkoutState = String(url.searchParams.get("checkout_state") || "").trim();
+    if (redirect === "success") return checkoutState ? handlePaymentSuccessWithState(checkoutState) : handlePaymentSuccess();
+    if (redirect === "cancel") return checkoutState ? handlePaymentCancelWithState(checkoutState) : handlePaymentCancel();
     // パス方式も念のため残す
     if (path.endsWith("/payment-success")) return handlePaymentSuccess();
     if (path.endsWith("/payment-cancel")) return handlePaymentCancel();

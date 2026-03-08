@@ -7,11 +7,12 @@ const FREE_COMMENT_LIMIT = 50;
 const BETA_PERIOD_END_ISO = '2026-04-02T14:59:59.000Z'; // 2026-04-02 23:59:59 JST
 const LICENSE_API_BASE_URL = 'https://wzinimxikcihdqqdvppa.supabase.co/functions/v1/license-api';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_qBIjjA5UN3H62B8dWdqo0w_PRTqVZCq';
-const CHECKOUT_POLL_INTERVAL_MS = 5000;
-const CHECKOUT_POLL_MAX_ATTEMPTS = 60; // 5 min
+const CHECKOUT_POLL_INTERVAL_MS = 2000;
+const CHECKOUT_POLL_MAX_ATTEMPTS = 150; // 5 min
 const ENTITLEMENT_KEY_FIRST_SEEN_AT = 'fanza_memo_first_seen_at';
 const ENTITLEMENT_KEY_BETA_GRANDFATHERED = 'fanza_memo_is_beta_grandfathered';
 const ENTITLEMENT_KEY_PRO_PURCHASED = 'fanza_memo_is_pro_purchased';
+const INPUT_SHORTCUT_KEY = 'fanza_mock_input_shortcut';
 const DEV_DISABLE_BETA_FOR_CHECKOUT_TEST = 'fanza_memo_disable_beta_for_checkout_test';
 const AUTO_BACKUP_INDEX_KEY = 'fanza_memo_auto_backup_index';
 const AUTO_BACKUP_LAST_SIGNATURE_KEY = 'fanza_memo_auto_backup_last_signature';
@@ -25,6 +26,7 @@ const ENTITLEMENT_KEYS = [
 const BACKUP_MANAGED_KEY_PREFIXES = [VIDEO_MEMO_COMMENTS_PREFIX, VIDEO_MEMO_META_PREFIX];
 const BACKUP_MANAGED_EXACT_KEYS = [
   'fanza_mock_shortcut',
+  INPUT_SHORTCUT_KEY,
   'fanza_mock_ui_pos',
   'fanza_mock_default_auto_min',
   ENTITLEMENT_KEY_FIRST_SEEN_AT,
@@ -119,6 +121,22 @@ function buildLicenseApiHeaders() {
     'Content-Type': 'application/json',
     apikey: SUPABASE_PUBLISHABLE_KEY,
   };
+}
+
+function generateCheckoutState() {
+  return crypto.randomUUID().replace(/-/g, '');
+}
+
+function sendRuntimeMessage(message) {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(message, (response) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      resolve(response || {});
+    });
+  });
 }
 
 function saveTextAsFile(filename, content) {
@@ -967,6 +985,8 @@ let refreshVideoIndex = null;
 let refreshLimitStatus = null;
 let refreshAutoBackupStatus = null;
 let refreshLoopClearButton = null;
+let focusCommentInputHandler = null;
+let entitlementStorageSyncInFlight = null;
 let findVideoIntervalId = null;
 let renderIntervalId = null;
 let videoTimeUpdateHandler = null;
@@ -982,6 +1002,13 @@ let shortcutConfig = {
     shiftKey: false,
     key: 'KeyC', // Code
     label: 'Alt + C' // Display
+};
+let inputShortcutConfig = {
+    altKey: true,
+    ctrlKey: false,
+    shiftKey: true,
+    key: 'KeyM',
+    label: 'Alt + Shift + M'
 };
 
 let entitlementState = {
@@ -1052,6 +1079,33 @@ function getHeaderStatusLabel() {
 
 function getUsedCommentCount() {
   return totalStoredCommentCount;
+}
+
+function buildShortcutLabelFromEvent(e) {
+  const parts = [];
+  if (e.ctrlKey) parts.push('Ctrl');
+  if (e.altKey) parts.push('Alt');
+  if (e.shiftKey) parts.push('Shift');
+  parts.push(e.key.toUpperCase());
+  return parts.join(' + ');
+}
+
+function isShortcutMatch(e, config) {
+  return (
+    e.code === config.key &&
+    e.altKey === config.altKey &&
+    e.ctrlKey === config.ctrlKey &&
+    e.shiftKey === config.shiftKey
+  );
+}
+
+function isSameShortcut(a, b) {
+  return (
+    a.altKey === b.altKey &&
+    a.ctrlKey === b.ctrlKey &&
+    a.shiftKey === b.shiftKey &&
+    a.key === b.key
+  );
 }
 
 async function loadEntitlements() {
@@ -1136,6 +1190,24 @@ async function syncProEntitlementFromServer() {
     return false;
   } catch (_) {
     return true;
+  }
+}
+
+async function syncEntitlementsFromStorage() {
+  if (entitlementStorageSyncInFlight) {
+    return entitlementStorageSyncInFlight;
+  }
+
+  entitlementStorageSyncInFlight = (async () => {
+    await loadEntitlements();
+    await syncProEntitlementFromServer();
+    refreshLimitStatus?.();
+  })();
+
+  try {
+    await entitlementStorageSyncInFlight;
+  } finally {
+    entitlementStorageSyncInFlight = null;
   }
 }
 
@@ -1586,6 +1658,9 @@ async function loadComments() {
               } catch(e) {}
           }
       }
+      if (result[INPUT_SHORTCUT_KEY]) {
+          inputShortcutConfig = result[INPUT_SHORTCUT_KEY];
+      }
       if (comments.length > 0) {
         const baseMeta = result[matchedMetaKey] || {};
         chrome.storage.local.set({
@@ -1676,6 +1751,11 @@ function createOverlay() {
             <input type="text" id="fc-shortcut-input" class="fc-input" readonly value="${shortcutConfig.label}" style="cursor:pointer; text-align:center;">
             <p style="font-size:10px;color:#aaa;">クリック後にキーを押して設定</p>
         </div>
+        <div>
+            <label>コメント入力ショートカット:</label>
+            <input type="text" id="fc-input-shortcut-input" class="fc-input" readonly value="${inputShortcutConfig.label}" style="cursor:pointer; text-align:center;">
+            <p style="font-size:10px;color:#aaa;">最小化中でも入力欄を開いてフォーカス</p>
+        </div>
         <div style="margin-top:6px; display:flex; flex-direction:column; gap:6px;">
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
                 <input type="checkbox" id="fc-default-auto-min">
@@ -1759,8 +1839,28 @@ function createOverlay() {
   const exportAutoBackupBtn = overlay.querySelector('#fc-export-auto-backup-btn');
   const loopClearBtn = overlay.querySelector('#fc-loop-clear-btn');
   const statusEl = overlay.querySelector('#fc-status');
+  const inputShortcutInput = overlay.querySelector('#fc-input-shortcut-input');
   let videoIndexQuery = '';
   let showAllVideoCards = false;
+
+  const focusCommentInput = () => {
+    if (overlay.style.display === 'none') {
+      overlay.style.display = 'flex';
+    }
+    if (settingsDiv && settingsDiv.style.display === 'flex') {
+      closeSettingsPanel();
+    }
+    if (isMinimized && overlay.toggleMinimize) {
+      overlay.toggleMinimize(false);
+    }
+    requestAnimationFrame(() => {
+      input.focus({ preventScroll: true });
+      if (typeof input.select === 'function') {
+        input.select();
+      }
+    });
+  };
+  focusCommentInputHandler = focusCommentInput;
 
   const updateLimitStatus = () => {
     if (!statusEl) return;
@@ -1832,13 +1932,15 @@ function createOverlay() {
       };
       try {
         const fp = await getDeviceFingerprint();
+        const checkoutState = generateCheckoutState();
+        await sendRuntimeMessage({ type: 'registerCheckoutState', checkoutState });
         upgradeBtn.textContent = '処理中...';
         upgradeBtn.disabled = true;
         
         const response = await fetch(`${LICENSE_API_BASE_URL}/create-checkout-session`, {
           method: "POST",
           headers: buildLicenseApiHeaders(),
-          body: JSON.stringify({ device_fingerprint: fp })
+          body: JSON.stringify({ device_fingerprint: fp, checkout_state: checkoutState })
         });
         const data = await response.json();
         
@@ -1850,7 +1952,7 @@ function createOverlay() {
            const checkoutWindow = window.open(data.url, 'stripe_checkout', `width=${width},height=${height},left=${left},top=${top},status=no,location=no,menubar=no,toolbar=no`);
            upgradeBtn.textContent = '決済確認中...';
            let attempts = 0;
-           const pollTimer = setInterval(async () => {
+           const pollOnce = async () => {
              attempts += 1;
              try {
                const isPro = await verifyDeviceEntitlement();
@@ -1861,7 +1963,7 @@ function createOverlay() {
                  }
                  await persistProEntitlement();
                  setUpgradeButtonIdle();
-                 return;
+                 return true;
                }
              } catch (_) {
                // best effort polling
@@ -1869,10 +1971,15 @@ function createOverlay() {
              const popupClosed = checkoutWindow && checkoutWindow.closed;
              if (attempts >= CHECKOUT_POLL_MAX_ATTEMPTS || popupClosed) {
                clearInterval(pollTimer);
+               sendRuntimeMessage({ type: 'unregisterCheckoutState', checkoutState }).catch(() => {});
                setUpgradeButtonIdle();
              }
-           }, CHECKOUT_POLL_INTERVAL_MS);
+             return false;
+           };
+           const pollTimer = setInterval(pollOnce, CHECKOUT_POLL_INTERVAL_MS);
+           await pollOnce();
         } else {
+           sendRuntimeMessage({ type: 'unregisterCheckoutState', checkoutState }).catch(() => {});
            alert(`決済画面のURL取得に失敗しました: ${data.message || data.error || '不明なエラー'}`);
            setUpgradeButtonIdle();
         }
@@ -2416,20 +2523,37 @@ function createOverlay() {
           ctrlKey: e.ctrlKey,
           shiftKey: e.shiftKey,
           key: e.code,
-          label: ''
+          label: buildShortcutLabelFromEvent(e)
       };
-      
-      const parts = [];
-      if (e.ctrlKey) parts.push('Ctrl');
-      if (e.altKey) parts.push('Alt');
-      if (e.shiftKey) parts.push('Shift');
-      parts.push(e.key.toUpperCase());
-      
-      newConfig.label = parts.join(' + ');
+      if (isSameShortcut(newConfig, inputShortcutConfig)) {
+          alert('コメント入力ショートカットと同じキーは設定できません。');
+          return;
+      }
       shortcutConfig = newConfig;
       
       shortcutInput.value = newConfig.label;
       chrome.storage.local.set({fanza_mock_shortcut: shortcutConfig});
+  });
+  inputShortcutInput.addEventListener('keydown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return;
+
+      const newConfig = {
+          altKey: e.altKey,
+          ctrlKey: e.ctrlKey,
+          shiftKey: e.shiftKey,
+          key: e.code,
+          label: buildShortcutLabelFromEvent(e)
+      };
+      if (isSameShortcut(newConfig, shortcutConfig)) {
+          alert('表示切替ショートカットと同じキーは設定できません。');
+          return;
+      }
+      inputShortcutConfig = newConfig;
+      inputShortcutInput.value = newConfig.label;
+      chrome.storage.local.set({ [INPUT_SHORTCUT_KEY]: inputShortcutConfig });
   });
 
   // Dummy Generator
@@ -2924,13 +3048,27 @@ window.addEventListener('keydown', (e) => {
         }
     }
 
+    if (isShortcutMatch(e, inputShortcutConfig)) {
+        e.preventDefault();
+        e.stopPropagation();
+        const overlay = document.getElementById('fanza-comment-overlay');
+        if (overlay) {
+            if (overlay.style.display === 'none') {
+                focusCommentInputHandler?.();
+            } else if (overlay.classList.contains('minimized')) {
+                focusCommentInputHandler?.();
+            } else if (overlay.toggleMinimize) {
+                overlay.toggleMinimize(true);
+                if (videoElement && videoElement.paused) {
+                    videoElement.play().catch(() => {});
+                }
+            }
+        }
+        return;
+    }
+
     // Check config
-    if (
-        e.code === shortcutConfig.key &&
-        e.altKey === shortcutConfig.altKey &&
-        e.ctrlKey === shortcutConfig.ctrlKey &&
-        e.shiftKey === shortcutConfig.shiftKey
-    ) {
+    if (isShortcutMatch(e, shortcutConfig)) {
         e.preventDefault();
         e.stopPropagation();
 
@@ -2940,8 +3078,7 @@ window.addEventListener('keydown', (e) => {
                 overlay.style.display = 'flex';
                 // Try to focus input (only if not minimized and visible)
                 if (!overlay.classList.contains('minimized')) {
-                    const input = overlay.querySelector('.fc-input-area .fc-input');
-                    if (input) input.focus();
+                    focusCommentInputHandler?.();
                 }
             } else {
                 overlay.style.display = 'none';
@@ -3287,6 +3424,7 @@ async function init() {
     refreshLimitStatus = null;
     refreshAutoBackupStatus = null;
     refreshLoopClearButton = null;
+    focusCommentInputHandler = null;
     videoElement = null;
     activeCommentLoop = null;
     pendingLoopStartCommentId = null;
@@ -3322,6 +3460,7 @@ async function init() {
   refreshLimitStatus = null;
   refreshAutoBackupStatus = null;
   refreshLoopClearButton = null;
+  focusCommentInputHandler = null;
   videoElement = null;
   activeCommentLoop = null;
   pendingLoopStartCommentId = null;
@@ -3364,6 +3503,21 @@ async function init() {
     }, 500);
   }, 1000);
 }
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== 'local' && areaName !== 'sync') {
+    return;
+  }
+
+  const changedKeys = Object.keys(changes || {});
+  if (!changedKeys.some((key) => ENTITLEMENT_KEYS.includes(key) || key === DEV_DISABLE_BETA_FOR_CHECKOUT_TEST)) {
+    return;
+  }
+
+  syncEntitlementsFromStorage().catch((error) => {
+    console.error('Failed to sync entitlements from storage change', error);
+  });
+});
 
 function setupRouteObserver() {
   const handleRouteChange = () => {

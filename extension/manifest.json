@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "神シーンメモ",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "動画プレイヤー上で時間同期コメントを表示する拡張機能",
   "permissions": [
     "storage"
@@ -12,9 +12,6 @@
     "https://www.youtube.com/watch*",
     "https://www.youtube.com/shorts/*",
     "https://www.youtube.com/live/*",
-    "http://localhost/*",
-    "http://127.0.0.1/*",
-    "file:///*",
     "https://wzinimxikcihdqqdvppa.supabase.co/*"
   ],
   "icons": {
@@ -41,10 +38,7 @@
         "https://tv.dmm.com/vod/playback/*",
         "https://www.youtube.com/watch*",
         "https://www.youtube.com/shorts/*",
-        "https://www.youtube.com/live/*",
-        "http://localhost/*",
-        "http://127.0.0.1/*",
-        "file:///*"
+        "https://www.youtube.com/live/*"
       ],
       "js": [
         "content.js"

@@ -72,6 +72,26 @@
             <p id="license-status" class="status-message">ライセンス確認中...</p>
           </div>
         </div>
+
+        <div id="license-code-card" class="recovery-card" style="display: none;">
+          <h3>ライセンスコード</h3>
+          <div class="recovery-code-row">
+            <p id="license-code-value" class="recovery-code">確認中...</p>
+            <button id="copy-license-btn" class="secondary-btn" type="button">コピー</button>
+          </div>
+          <p class="recovery-note">再インストール後の Pro 復元に使います。</p>
+        </div>
+
+        <div id="restore-card" class="recovery-card">
+          <h3>Proを復元する</h3>
+          <p class="recovery-note">購入時のメールアドレスとライセンスコードで、このデバイスに Pro を再適用します。</p>
+          <div class="recovery-form">
+            <input id="restore-email" class="recovery-input" type="email" placeholder="購入時メールアドレス">
+            <input id="restore-license" class="recovery-input" type="text" placeholder="ライセンスコード">
+            <button id="restore-btn" class="secondary-btn primary-secondary" type="button">このデバイスでProを復元</button>
+          </div>
+          <p id="restore-message" class="recovery-message"></p>
+        </div>
       </div>
     </section>
 
@@ -91,6 +111,8 @@
       <button id="close-tab-btn" class="close-btn">タブを閉じる</button>
     </footer>
   </main>
+
+  <div id="toast" class="toast" aria-live="polite"></div>
 
   <script src="onboarding.js"></script>
 </body>

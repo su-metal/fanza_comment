@@ -4,13 +4,23 @@ const BETA_PERIOD_END_ISO = '2026-04-02T14:59:59.000Z'; // 2026-04-02 23:59:59 J
 const ENTITLEMENT_KEY_FIRST_SEEN_AT = 'fanza_memo_first_seen_at';
 const ENTITLEMENT_KEY_BETA_GRANDFATHERED = 'fanza_memo_is_beta_grandfathered';
 const ENTITLEMENT_KEY_PRO_PURCHASED = 'fanza_memo_is_pro_purchased';
+const ENTITLEMENT_KEY_LICENSE_CODE = 'fanza_memo_license_code';
+const ENTITLEMENT_KEY_PURCHASE_EMAIL = 'fanza_memo_purchase_email';
 const DEV_FORCE_SHOW_UPGRADE_FOR_BETA = 'fanza_memo_force_show_upgrade_for_beta';
 const DEV_DISABLE_BETA_FOR_CHECKOUT_TEST = 'fanza_memo_disable_beta_for_checkout_test';
+const CHECKOUT_POLL_INTERVAL_MS = 2000;
+const CHECKOUT_POLL_MAX_ATTEMPTS = 150; // 5 min
 const ENTITLEMENT_KEYS = [
   ENTITLEMENT_KEY_FIRST_SEEN_AT,
   ENTITLEMENT_KEY_BETA_GRANDFATHERED,
   ENTITLEMENT_KEY_PRO_PURCHASED
 ];
+const RECOVERY_KEYS = [
+  ENTITLEMENT_KEY_LICENSE_CODE,
+  ENTITLEMENT_KEY_PURCHASE_EMAIL
+];
+let currentLicenseCode = '';
+let toastTimerId = null;
 
 function getStorageArea(area, keys) {
   return new Promise((resolve) => {
@@ -29,6 +39,22 @@ function buildLicenseApiHeaders() {
     "Content-Type": "application/json",
     apikey: SUPABASE_PUBLISHABLE_KEY
   };
+}
+
+function generateCheckoutState() {
+  return crypto.randomUUID().replace(/-/g, '');
+}
+
+function sendRuntimeMessage(message) {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(message, (response) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      resolve(response || {});
+    });
+  });
 }
 
 async function getDeviceFingerprint() {
@@ -87,6 +113,45 @@ async function persistProEntitlement() {
   ]);
 }
 
+function normalizeLicenseCodeInput(raw) {
+  return String(raw || '')
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, '')
+    .replace(/[^A-Z0-9-]/g, '');
+}
+
+async function getRecoveryState() {
+  const [syncValues, localValues] = await Promise.all([
+    getStorageArea('sync', RECOVERY_KEYS),
+    getStorageArea('local', RECOVERY_KEYS)
+  ]);
+
+  return {
+    licenseCode: normalizeLicenseCodeInput(
+      localValues[ENTITLEMENT_KEY_LICENSE_CODE] || syncValues[ENTITLEMENT_KEY_LICENSE_CODE] || ''
+    ),
+    purchaseEmail: String(
+      localValues[ENTITLEMENT_KEY_PURCHASE_EMAIL] || syncValues[ENTITLEMENT_KEY_PURCHASE_EMAIL] || ''
+    ).trim()
+  };
+}
+
+async function persistRecoveryState({ licenseCode, purchaseEmail } = {}) {
+  const patch = {};
+  if (typeof licenseCode === 'string') {
+    patch[ENTITLEMENT_KEY_LICENSE_CODE] = normalizeLicenseCodeInput(licenseCode);
+  }
+  if (typeof purchaseEmail === 'string') {
+    patch[ENTITLEMENT_KEY_PURCHASE_EMAIL] = purchaseEmail.trim();
+  }
+  if (!Object.keys(patch).length) return;
+  await Promise.all([
+    setStorageArea('local', patch),
+    setStorageArea('sync', patch)
+  ]);
+}
+
 async function clearProEntitlement() {
   const patch = { [ENTITLEMENT_KEY_PRO_PURCHASED]: false };
   await Promise.all([
@@ -112,6 +177,61 @@ function setUpgradeButtonText(label) {
   }
 }
 
+function setRestoreMessage(message = '', isError = false) {
+  const restoreMessageEl = document.getElementById('restore-message');
+  if (!restoreMessageEl) return;
+  restoreMessageEl.textContent = message;
+  restoreMessageEl.classList.toggle('error', !!isError);
+}
+
+function showToast(message) {
+  const toastEl = document.getElementById('toast');
+  if (!toastEl) return;
+  toastEl.textContent = message;
+  toastEl.classList.add('visible');
+  if (toastTimerId) {
+    clearTimeout(toastTimerId);
+  }
+  toastTimerId = setTimeout(() => {
+    toastEl.classList.remove('visible');
+  }, 1800);
+}
+
+function updateLicenseUi({ isPro = false, licenseCode = currentLicenseCode, showRestore = false } = {}) {
+  currentLicenseCode = normalizeLicenseCodeInput(licenseCode || currentLicenseCode);
+  const licenseCodeCard = document.getElementById('license-code-card');
+  const licenseCodeValue = document.getElementById('license-code-value');
+  const restoreCard = document.getElementById('restore-card');
+  const restoreLicenseInput = document.getElementById('restore-license');
+
+  if (licenseCodeValue) {
+    licenseCodeValue.textContent = currentLicenseCode || '未取得';
+  }
+  if (restoreLicenseInput && currentLicenseCode && !restoreLicenseInput.value) {
+    restoreLicenseInput.value = currentLicenseCode;
+  }
+  if (licenseCodeCard) {
+    licenseCodeCard.style.display = isPro && currentLicenseCode ? 'block' : 'none';
+  }
+  if (restoreCard) {
+    restoreCard.style.display = showRestore ? 'block' : 'none';
+  }
+}
+
+async function hydrateRecoveryUi() {
+  const recoveryState = await getRecoveryState();
+  currentLicenseCode = recoveryState.licenseCode;
+  const restoreEmailInput = document.getElementById('restore-email');
+  const restoreLicenseInput = document.getElementById('restore-license');
+  if (restoreEmailInput && recoveryState.purchaseEmail) {
+    restoreEmailInput.value = recoveryState.purchaseEmail;
+  }
+  if (restoreLicenseInput && recoveryState.licenseCode) {
+    restoreLicenseInput.value = recoveryState.licenseCode;
+  }
+  updateLicenseUi({ isPro: false, licenseCode: recoveryState.licenseCode, showRestore: true });
+}
+
 function updateUI(state, infoText = '', options = {}) {
   const statusEl = document.getElementById('license-status');
   const actionContainer = document.getElementById('action-container');
@@ -122,6 +242,7 @@ function updateUI(state, infoText = '', options = {}) {
     statusEl.innerHTML = '<span style="color:#e1306c; font-weight:bold;">Pro (購入済み / 無制限)</span>';
     actionContainer.style.display = 'none';
     limitsInfoEl.textContent = infoText || '';
+    updateLicenseUi({ isPro: true, showRestore: false });
     return;
   }
 
@@ -132,6 +253,7 @@ function updateUI(state, infoText = '', options = {}) {
     if (showUpgradeForBeta) {
       setUpgradeButtonText('Pro版を購入して確認');
     }
+    updateLicenseUi({ isPro: false, showRestore: false });
     return;
   }
 
@@ -139,6 +261,7 @@ function updateUI(state, infoText = '', options = {}) {
   actionContainer.style.display = 'block';
   limitsInfoEl.textContent = infoText;
   setUpgradeButtonText('✨ Pro版にアップグレード');
+  updateLicenseUi({ isPro: false, showRestore: true });
 }
 
 async function checkStatus() {
@@ -157,6 +280,10 @@ async function checkStatus() {
 
     if (data.ok && data.is_pro) {
       await persistProEntitlement();
+      if (data.license_code) {
+        await persistRecoveryState({ licenseCode: data.license_code });
+        updateLicenseUi({ isPro: true, licenseCode: data.license_code });
+      }
       updateUI('pro');
       return;
     }
@@ -199,7 +326,74 @@ async function checkStatus() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  hydrateRecoveryUi();
   checkStatus();
+
+  document.getElementById('open-onboarding-btn')?.addEventListener('click', () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL('onboarding.html') });
+  });
+
+  document.getElementById('copy-license-btn')?.addEventListener('click', async () => {
+    if (!currentLicenseCode) return;
+    try {
+      await navigator.clipboard.writeText(currentLicenseCode);
+      showToast('ライセンスコードをコピーしました');
+    } catch (_) {
+      setRestoreMessage('コピーに失敗しました。手動で控えてください。', true);
+    }
+  });
+
+  document.getElementById('restore-btn')?.addEventListener('click', async () => {
+    const restoreBtn = document.getElementById('restore-btn');
+    const restoreEmailInput = document.getElementById('restore-email');
+    const restoreLicenseInput = document.getElementById('restore-license');
+    const email = String(restoreEmailInput?.value || '').trim();
+    const licenseCode = normalizeLicenseCodeInput(restoreLicenseInput?.value || '');
+    if (!email || !licenseCode) {
+      setRestoreMessage('メールアドレスとライセンスコードを入力してください。', true);
+      return;
+    }
+
+    restoreBtn.disabled = true;
+    setRestoreMessage('復元を確認中です...');
+    try {
+      const fp = await getDeviceFingerprint();
+      const response = await fetch(`${API_BASE_URL}/activate`, {
+        method: "POST",
+        headers: buildLicenseApiHeaders(),
+        body: JSON.stringify({
+          email,
+          license_code: licenseCode,
+          device_fingerprint: fp,
+          app_version: chrome.runtime.getManifest().version
+        })
+      });
+      const data = await response.json();
+      if (response.ok && data.ok && data.entitlement?.is_pro) {
+        await persistProEntitlement();
+        await persistRecoveryState({
+          licenseCode: data.license_code || licenseCode,
+          purchaseEmail: email
+        });
+        updateLicenseUi({ isPro: true, licenseCode: data.license_code || licenseCode });
+        setRestoreMessage('Pro をこのデバイスに復元しました。');
+        updateUI('pro');
+        return;
+      }
+
+      const messageMap = {
+        invalid_payload: '入力内容を確認してください。',
+        license_not_found: 'ライセンスコードが見つかりません。',
+        email_mismatch: '購入時メールアドレスが一致しません。',
+        license_not_active: 'このライセンスは現在利用できません。'
+      };
+      setRestoreMessage(messageMap[data.error] || 'Pro の復元に失敗しました。', true);
+    } catch (err) {
+      setRestoreMessage(`通信エラーが発生しました${err && err.message ? `: ${err.message}` : ''}`, true);
+    } finally {
+      restoreBtn.disabled = false;
+    }
+  });
 
   document.getElementById('upgrade-btn')?.addEventListener('click', async () => {
     const btn = document.getElementById('upgrade-btn');
@@ -208,10 +402,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const fp = await getDeviceFingerprint();
+      const checkoutState = generateCheckoutState();
+      await sendRuntimeMessage({ type: 'registerCheckoutState', checkoutState });
       const response = await fetch(`${API_BASE_URL}/create-checkout-session`, {
         method: "POST",
         headers: buildLicenseApiHeaders(),
-        body: JSON.stringify({ device_fingerprint: fp })
+        body: JSON.stringify({ device_fingerprint: fp, checkout_state: checkoutState })
       });
       const data = await response.json();
 
@@ -223,8 +419,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const popup = window.open(data.url, 'stripe_checkout_popup', `width=${width},height=${height},left=${left},top=${top},status=no,location=no,menubar=no,toolbar=no`);
 
         let attempts = 0;
-        const maxAttempts = 60;
-        const pollInterval = setInterval(async () => {
+        const pollOnce = async () => {
           attempts++;
 
           const currentFp = await getDeviceFingerprint();
@@ -242,18 +437,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 popup.close();
               }
               await persistProEntitlement();
+              if (vData.license_code) {
+                await persistRecoveryState({ licenseCode: vData.license_code });
+                updateLicenseUi({ isPro: true, licenseCode: vData.license_code });
+              }
               updateUI('pro');
-              return;
+              return true;
             }
           } catch (e) {}
 
-          if (attempts >= maxAttempts || (popup && popup.closed)) {
+          if (attempts >= CHECKOUT_POLL_MAX_ATTEMPTS || (popup && popup.closed)) {
             clearInterval(pollInterval);
+            sendRuntimeMessage({ type: 'unregisterCheckoutState', checkoutState }).catch(() => {});
             btn.disabled = false;
             checkStatus();
           }
-        }, 5000);
+          return false;
+        };
+        const pollInterval = setInterval(pollOnce, CHECKOUT_POLL_INTERVAL_MS);
+        await pollOnce();
       } else {
+        sendRuntimeMessage({ type: 'unregisterCheckoutState', checkoutState }).catch(() => {});
         alert("エラーが発生しました: " + (data.message || data.error || "不明なエラー"));
         btn.disabled = false;
         checkStatus();

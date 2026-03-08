@@ -156,6 +156,126 @@
       text-align: center; 
       line-height: 1.4;
     }
+
+    .sub-card {
+      background: var(--card-bg);
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow);
+      margin-top: 16px;
+    }
+
+    .sub-card h4 {
+      margin: 0 0 10px;
+      font-size: 13px;
+    }
+
+    .code-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .code-value {
+      flex: 1;
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text-main);
+      word-break: break-all;
+      background: #f7fafc;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .secondary-btn {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: #fff;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .tertiary-btn {
+      width: 100%;
+      margin-top: 12px;
+      padding: 11px 12px;
+      border-radius: 10px;
+      border: 1px dashed #d7dee7;
+      background: #fff;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-sub);
+    }
+
+    .secondary-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .restore-details summary {
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .restore-help,
+    .restore-message {
+      margin: 10px 0 0;
+      font-size: 12px;
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+
+    .restore-message.error {
+      color: #c53030;
+    }
+
+    .restore-form {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .restore-input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      font-size: 13px;
+      color: var(--text-main);
+      background: #fff;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 16px;
+      transform: translateX(-50%) translateY(12px);
+      background: rgba(44, 62, 80, 0.96);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
   </style>
 </head>
 <body>
@@ -175,11 +295,37 @@
       </div>
     </div>
 
+    <div id="license-code-card" class="sub-card" style="display: none;">
+      <h4>ライセンスコード</h4>
+      <div class="code-row">
+        <p id="license-code-value" class="code-value">確認中...</p>
+        <button id="copy-license-btn" class="secondary-btn" type="button">コピー</button>
+      </div>
+      <p class="help-text">再インストール後の Pro 復元に使います。</p>
+    </div>
+
     <div id="action-container" class="action-container" style="display: none;">
       <button id="upgrade-btn" class="upgrade-btn">✨ Pro版にアップグレード</button>
       <p class="help-text">保存枠が無制限になる買い切り版です。<br>購入後、このデバイスに自動適用されます。<br>※ 2026-04-02 23:59:59（JST）までの初回利用ユーザーはベータ特典で無制限です。</p>
     </div>
+
+    <div id="restore-card" class="sub-card">
+      <details id="restore-details" class="restore-details">
+        <summary>Proを復元する</summary>
+        <p class="restore-help">購入時のメールアドレスとライセンスコードで、このデバイスに Pro を再適用します。</p>
+        <div class="restore-form">
+          <input id="restore-email" class="restore-input" type="email" placeholder="購入時メールアドレス">
+          <input id="restore-license" class="restore-input" type="text" placeholder="ライセンスコード">
+          <button id="restore-btn" class="secondary-btn" type="button">このデバイスでProを復元</button>
+        </div>
+        <p id="restore-message" class="restore-message"></p>
+      </details>
+    </div>
+
+    <button id="open-onboarding-btn" class="tertiary-btn" type="button">使い方 / Pro案内を開く</button>
   </div>
+
+  <div id="toast" class="toast" aria-live="polite"></div>
 
   <script src="popup.js"></script>
 </body>
