@@ -5,7 +5,7 @@
 神シーンメモは、動画視聴中の思考を邪魔せずに「神シーンをすぐ残せる」ことを最優先とする。  
 保存データはユーザー端末ローカルが原則で、外部DBは課金判定にのみ使う。
 
-## 現状サマリ（2026-03-07）
+## 現状サマリ（2026-03-08）
 
 - コメント本文は `chrome.storage.local` に保存し、JSONバックアップ/復元で移行する
 - 保存・削除・JSON復元前に、ローカルへ自動バックアップのスナップショットを保持する
@@ -15,6 +15,9 @@
 - 開発確認時のみ `chrome.storage.local` の `fanza_memo_force_show_upgrade_for_beta=true` で、ベータ特典者にも一時的に課金導線を表示できる
 - 決済確認を無料状態で試す必要がある場合は `chrome.storage.local` の `fanza_memo_disable_beta_for_checkout_test=true` でベータ特典を一時無効化できる
 - 拡張は Supabase 版ライセンスAPIの `verify-device` / `create-checkout-session` を呼び出し、購入済みProを端末へ反映する
+- `create-checkout-session` で Stripe Checkout の `allow_promotion_codes=true` を有効化し、本番環境でも promotion code を入力して割引適用できる
+- Stripe webhook の失効処理は `stripe_payment_intent_id` に加えて `stripe_checkout_session_id` でも追跡し、無料Checkout系イベントでも entitlement を無効化できる
+- 拡張の Pro キャッシュは `verify-device` が `false` を返した時に自動で解除し、失効済みライセンス表示が端末に残留しない
 - 拡張から Supabase Edge Function を呼ぶ際は `apikey` ヘッダーに publishable key を付与し、`license-api` は `verify_jwt=false` で運用する
 - 課金基盤は Supabase 方針に一本化済み
 - 対応プレイヤーは YouTube / FANZA / DMM TV のローカルメモ用途を含む

@@ -87,6 +87,14 @@ async function persistProEntitlement() {
   ]);
 }
 
+async function clearProEntitlement() {
+  const patch = { [ENTITLEMENT_KEY_PRO_PURCHASED]: false };
+  await Promise.all([
+    setStorageArea('local', patch),
+    setStorageArea('sync', patch)
+  ]);
+}
+
 async function shouldShowUpgradeForBeta() {
   const localValues = await getStorageArea('local', [DEV_FORCE_SHOW_UPGRADE_FOR_BETA]);
   return !!localValues[DEV_FORCE_SHOW_UPGRADE_FOR_BETA];
@@ -139,11 +147,6 @@ async function checkStatus() {
   const showUpgradeForBeta = await shouldShowUpgradeForBeta();
   const disableBetaForCheckoutTest = await shouldDisableBetaForCheckoutTest();
 
-  if (entitlement.isProPurchased) {
-    updateUI('pro');
-    return;
-  }
-
   try {
     const response = await fetch(`${API_BASE_URL}/verify-device`, {
       method: "POST",
@@ -157,8 +160,16 @@ async function checkStatus() {
       updateUI('pro');
       return;
     }
+
+    if (entitlement.isProPurchased) {
+      await clearProEntitlement();
+    }
   } catch (err) {
     console.error(err);
+    if (entitlement.isProPurchased) {
+      updateUI('pro', '(通信エラー)');
+      return;
+    }
     if (entitlement.isBetaGrandfathered && !disableBetaForCheckoutTest) {
       updateUI('beta', '通信なしでも無制限', { showUpgradeForBeta });
       return;

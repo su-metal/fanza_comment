@@ -184,6 +184,9 @@
 - `POST /functions/v1/license-api/create-checkout-session`
 - `POST /functions/v1/license-api/verify-device`
 - 拡張からの呼び出しは Supabase publishable key を `apikey` ヘッダーで付与し、`license-api` は `verify_jwt=false` で公開する
+- `create-checkout-session` は Stripe Checkout の `allow_promotion_codes=true` を有効化し、promotion code 入力欄を表示できる
+- Stripe webhook の entitlement 失効処理は `stripe_payment_intent_id` に加えて `stripe_checkout_session_id` も利用し、無料Checkout由来の失効イベントにも対応する
+- 拡張は `verify-device` の結果が `is_pro=false` だった場合、ローカルの購入済みキャッシュを解除して無料状態へ戻す
 
 必須シークレット/環境値:
 

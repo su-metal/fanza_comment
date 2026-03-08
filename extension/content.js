@@ -1114,6 +1114,31 @@ async function persistProEntitlement() {
   refreshLimitStatus?.();
 }
 
+async function clearProEntitlement() {
+  const patch = { [ENTITLEMENT_KEY_PRO_PURCHASED]: false };
+  await Promise.all([setStorageLocal(patch), setStorageSync(patch)]);
+  entitlementState = { ...entitlementState, isProPurchased: false };
+  refreshLimitStatus?.();
+}
+
+async function syncProEntitlementFromServer() {
+  if (!entitlementState.isProPurchased) {
+    return false;
+  }
+
+  try {
+    const isPro = await verifyDeviceEntitlement();
+    if (isPro) {
+      return true;
+    }
+
+    await clearProEntitlement();
+    return false;
+  } catch (_) {
+    return true;
+  }
+}
+
 // Video ID Extraction
 function getSiteKey() {
   const host = window.location.hostname;
@@ -3306,6 +3331,7 @@ async function init() {
   lastRenderedSearchQuery = '';
 
   await loadEntitlements();
+  await syncProEntitlementFromServer();
   await loadComments();
   
   findVideoIntervalId = setInterval(() => {

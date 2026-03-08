@@ -315,6 +315,7 @@ async function handleCreateCheckoutSession(req: Request, corsHeaders: Record<str
       success_url: successUrl,
       cancel_url: cancelUrl,
       customer_email: email ? email : undefined,
+      allow_promotion_codes: true,
       metadata: {
         device_fingerprint: deviceFingerprint,
       },
@@ -408,6 +409,38 @@ async function handleStripeWebhook(req: Request, corsHeaders: Record<string, str
     { onConflict: "event_id" }
   );
 
+  async function updateEntitlementStatusByStripeRefs(params: {
+    status: "revoked" | "refunded";
+    paymentIntentId?: string;
+    checkoutSessionId?: string;
+  }) {
+    const paymentIntentId = String(params.paymentIntentId || "").trim();
+    const checkoutSessionId = String(params.checkoutSessionId || "").trim();
+
+    if (!paymentIntentId && !checkoutSessionId) {
+      return;
+    }
+
+    let query = supabase
+      .from("license_entitlements")
+      .update({ status: params.status, updated_at: nowIso })
+      .eq("app_id", APP_ID);
+
+    if (paymentIntentId) {
+      query = query.eq("stripe_payment_intent_id", paymentIntentId);
+    } else {
+      query = query.eq("stripe_checkout_session_id", checkoutSessionId);
+    }
+
+    const { error } = await query;
+    if (error) {
+      console.error(
+        `[Stripe Webhook] Failed to update entitlement status=${params.status}, pi=${paymentIntentId}, session=${checkoutSessionId}`,
+        error
+      );
+    }
+  }
+
   if (eventType === "checkout.session.completed") {
     const session = event.data?.object || {};
     const email = String(session.customer_details?.email || session.customer_email || "")
@@ -459,13 +492,28 @@ async function handleStripeWebhook(req: Request, corsHeaders: Record<string, str
   } else if (eventType === "charge.refunded") {
     const charge = event.data?.object || {};
     const paymentIntentId = String(charge.payment_intent || "");
-    if (paymentIntentId) {
-      await supabase
-        .from("license_entitlements")
-        .update({ status: "refunded", updated_at: nowIso })
-        .eq("app_id", APP_ID)
-        .eq("stripe_payment_intent_id", paymentIntentId);
-    }
+    await updateEntitlementStatusByStripeRefs({
+      status: "refunded",
+      paymentIntentId,
+    });
+  } else if (eventType === "checkout.session.expired") {
+    const session = event.data?.object || {};
+    const paymentIntentId = String(session.payment_intent || "");
+    const checkoutSessionId = String(session.id || "");
+    await updateEntitlementStatusByStripeRefs({
+      status: "revoked",
+      paymentIntentId,
+      checkoutSessionId,
+    });
+  } else if (eventType === "checkout.session.async_payment_failed") {
+    const session = event.data?.object || {};
+    const paymentIntentId = String(session.payment_intent || "");
+    const checkoutSessionId = String(session.id || "");
+    await updateEntitlementStatusByStripeRefs({
+      status: "revoked",
+      paymentIntentId,
+      checkoutSessionId,
+    });
   }
 
   await supabase
