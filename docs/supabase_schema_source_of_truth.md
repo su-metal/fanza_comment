@@ -72,6 +72,7 @@
 
 - `idx_license_entitlements_app_status on license_entitlements(app_id, status)`
 - `idx_license_entitlements_payment_intent on license_entitlements(stripe_payment_intent_id)`
+- `idx_license_entitlements_checkout_session on license_entitlements(stripe_checkout_session_id)`
 - `idx_license_claims_license_id on license_claims(license_id)`
 
 ## 5. RLS（Row Level Security）設計
@@ -98,3 +99,4 @@
   - `POST /functions/v1/license-api/activate`
   - `POST /functions/v1/license-api/verify`
   - `POST /functions/v1/license-api/stripe-webhook`
+- Stripe webhook は `charge.refunded` に加えて `checkout.session.expired` / `checkout.session.async_payment_failed` を処理し、無料Checkoutでは `stripe_checkout_session_id` でも entitlement を失効できる

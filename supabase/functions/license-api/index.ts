@@ -37,7 +37,7 @@ function buildCorsHeaders(req: Request) {
   const allowedOrigins = resolveAllowedOrigins();
   const origin = req.headers.get("origin") || "";
   const headers: Record<string, string> = {
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey, x-client-info",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
   };
   if (allowedOrigins.includes(origin)) {
@@ -218,6 +218,7 @@ async function handleActivate(req: Request, corsHeaders: Record<string, string>)
     {
       ok: true,
       entitlement: { is_pro: true, status: "active" },
+      license_code: licenseCode,
       token,
       expires_at: new Date(exp * 1000).toISOString(),
     },
@@ -283,6 +284,7 @@ async function handleCreateCheckoutSession(req: Request, corsHeaders: Record<str
   const body = await req.json().catch(() => ({}));
   const deviceFingerprint = String(body.device_fingerprint || "");
   const email = String(body.email || "");
+  const checkoutState = String(body.checkout_state || "").trim();
 
   if (!deviceFingerprint) {
     return jsonResponse(400, { ok: false, error: "missing_device_fingerprint" }, corsHeaders);
@@ -297,8 +299,9 @@ async function handleCreateCheckoutSession(req: Request, corsHeaders: Record<str
 
   // 固定URLを使ってStripeの戻り先を安定化させる
   // (req.url 依存だと環境差分で不正パスになるケースがある)
-  const successUrl = `${LICENSE_API_PUBLIC_BASE_URL}?redirect=success`;
-  const cancelUrl = `${LICENSE_API_PUBLIC_BASE_URL}?redirect=cancel`;
+  const stateSuffix = checkoutState ? `&checkout_state=${encodeURIComponent(checkoutState)}` : "";
+  const successUrl = `${LICENSE_API_PUBLIC_BASE_URL}?redirect=success${stateSuffix}`;
+  const cancelUrl = `${LICENSE_API_PUBLIC_BASE_URL}?redirect=cancel${stateSuffix}`;
   
   console.log(`[CreateCheckout] successUrl: ${successUrl}`);
 
@@ -307,7 +310,7 @@ async function handleCreateCheckoutSession(req: Request, corsHeaders: Record<str
       payment_method_types: ["card"],
       line_items: [
         {
-          price: "price_1T7BNdPY3cl7ynNzdaJW1yu8",
+          price: "price_1T8IEHPa0VuZQWboXMu2EuXf",
           quantity: 1,
         },
       ],
@@ -315,6 +318,7 @@ async function handleCreateCheckoutSession(req: Request, corsHeaders: Record<str
       success_url: successUrl,
       cancel_url: cancelUrl,
       customer_email: email ? email : undefined,
+      allow_promotion_codes: true,
       metadata: {
         device_fingerprint: deviceFingerprint,
       },
@@ -351,12 +355,12 @@ async function handleVerifyDevice(req: Request, corsHeaders: Record<string, stri
   for (const claim of claims) {
     const { data: license } = await supabase
       .from("license_entitlements")
-      .select("status, product")
+      .select("status, product, license_code")
       .eq("id", claim.license_id)
       .maybeSingle();
 
     if (license && license.status === "active" && license.product === PRODUCT_ID) {
-      return jsonResponse(200, { ok: true, is_pro: true }, corsHeaders);
+      return jsonResponse(200, { ok: true, is_pro: true, license_code: license.license_code }, corsHeaders);
     }
   }
 
@@ -407,6 +411,38 @@ async function handleStripeWebhook(req: Request, corsHeaders: Record<string, str
     },
     { onConflict: "event_id" }
   );
+
+  async function updateEntitlementStatusByStripeRefs(params: {
+    status: "revoked" | "refunded";
+    paymentIntentId?: string;
+    checkoutSessionId?: string;
+  }) {
+    const paymentIntentId = String(params.paymentIntentId || "").trim();
+    const checkoutSessionId = String(params.checkoutSessionId || "").trim();
+
+    if (!paymentIntentId && !checkoutSessionId) {
+      return;
+    }
+
+    let query = supabase
+      .from("license_entitlements")
+      .update({ status: params.status, updated_at: nowIso })
+      .eq("app_id", APP_ID);
+
+    if (paymentIntentId) {
+      query = query.eq("stripe_payment_intent_id", paymentIntentId);
+    } else {
+      query = query.eq("stripe_checkout_session_id", checkoutSessionId);
+    }
+
+    const { error } = await query;
+    if (error) {
+      console.error(
+        `[Stripe Webhook] Failed to update entitlement status=${params.status}, pi=${paymentIntentId}, session=${checkoutSessionId}`,
+        error
+      );
+    }
+  }
 
   if (eventType === "checkout.session.completed") {
     const session = event.data?.object || {};
@@ -459,13 +495,28 @@ async function handleStripeWebhook(req: Request, corsHeaders: Record<string, str
   } else if (eventType === "charge.refunded") {
     const charge = event.data?.object || {};
     const paymentIntentId = String(charge.payment_intent || "");
-    if (paymentIntentId) {
-      await supabase
-        .from("license_entitlements")
-        .update({ status: "refunded", updated_at: nowIso })
-        .eq("app_id", APP_ID)
-        .eq("stripe_payment_intent_id", paymentIntentId);
-    }
+    await updateEntitlementStatusByStripeRefs({
+      status: "refunded",
+      paymentIntentId,
+    });
+  } else if (eventType === "checkout.session.expired") {
+    const session = event.data?.object || {};
+    const paymentIntentId = String(session.payment_intent || "");
+    const checkoutSessionId = String(session.id || "");
+    await updateEntitlementStatusByStripeRefs({
+      status: "revoked",
+      paymentIntentId,
+      checkoutSessionId,
+    });
+  } else if (eventType === "checkout.session.async_payment_failed") {
+    const session = event.data?.object || {};
+    const paymentIntentId = String(session.payment_intent || "");
+    const checkoutSessionId = String(session.id || "");
+    await updateEntitlementStatusByStripeRefs({
+      status: "revoked",
+      paymentIntentId,
+      checkoutSessionId,
+    });
   }
 
   await supabase
@@ -482,8 +533,16 @@ function handlePaymentSuccess() {
   return Response.redirect("https://www.youtube.com/?fanza_checkout=success", 303);
 }
 
+function handlePaymentSuccessWithState(checkoutState: string) {
+  return Response.redirect(`https://www.youtube.com/?fanza_checkout=success&checkout_state=${encodeURIComponent(checkoutState)}`, 303);
+}
+
 function handlePaymentCancel() {
   return Response.redirect("https://www.youtube.com/?fanza_checkout=cancel", 303);
+}
+
+function handlePaymentCancelWithState(checkoutState: string) {
+  return Response.redirect(`https://www.youtube.com/?fanza_checkout=cancel&checkout_state=${encodeURIComponent(checkoutState)}`, 303);
 }
 
 Deno.serve(async (req) => {
@@ -497,8 +556,9 @@ Deno.serve(async (req) => {
   // 1. GET リダイレクト用エンドポイント (Stripeから戻ってくる)
   // クエリパラメータ方式 (?redirect=success) 
   if (req.method === "GET") {
-    if (redirect === "success") return handlePaymentSuccess();
-    if (redirect === "cancel") return handlePaymentCancel();
+    const checkoutState = String(url.searchParams.get("checkout_state") || "").trim();
+    if (redirect === "success") return checkoutState ? handlePaymentSuccessWithState(checkoutState) : handlePaymentSuccess();
+    if (redirect === "cancel") return checkoutState ? handlePaymentCancelWithState(checkoutState) : handlePaymentCancel();
     // パス方式も念のため残す
     if (path.endsWith("/payment-success")) return handlePaymentSuccess();
     if (path.endsWith("/payment-cancel")) return handlePaymentCancel();

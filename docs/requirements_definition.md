@@ -1,7 +1,7 @@
 # 神シーンメモ 要件定義書（現行実装反映版）
 
 作成日: 2026-03-04  
-最終更新日: 2026-03-04  
+最終更新日: 2026-03-07  
 対象リポジトリ: `fanza_comment`
 
 ## 1. 文書の目的
@@ -56,6 +56,11 @@
 - オーバーレイは非表示/再表示をショートカットで切り替えできること
 - 初期ショートカットは `Alt + C` であること
 - 最小化位置を設定から変更できること（既定は左上）
+- popup から `onboarding.html` を任意に開ける導線を提供し、使い方とPro案内をいつでも参照できること
+- コメント入力ショートカットを設定できること（既定 `Alt + Shift + M`）
+- コメント入力ショートカット押下時、非表示なら表示して入力欄へフォーカスし、最小化中なら展開して入力欄へフォーカスすること
+- コメント入力ショートカット押下時、展開済みなら最小化し、動画が停止中であれば再生を再開すること
+- 表示ON/OFFショートカットと同一キーの設定を禁止すること
 
 ### FR-02: コメント投稿
 
@@ -110,7 +115,10 @@
 
 - 無料枠は 50 コメントであること
 - 初回利用時刻が `2026-04-02 23:59:59 JST` 以前ならベータ特典を付与すること
-- 現行のPro判定はローカルフラグ参照であり、サーバー検証未接続であること
+- 購入済みPro判定は端末ローカルフラグを基本とし、`verify-device` の結果で再同期できること
+- 課金UIでは `無料 / ベータ特典 / 購入済みPro` を区別表示し、ベータ特典者には購入導線を表示しないこと
+- 開発確認用として `chrome.storage.local.fanza_memo_force_show_upgrade_for_beta=true` のときのみ、ベータ特典者にも一時的に購入導線を表示できること
+- 開発確認用として `chrome.storage.local.fanza_memo_disable_beta_for_checkout_test=true` のときは、ベータ特典者を一時的に無料扱いとして決済導線と上限制御を確認できること
 
 ### FR-10: コメントデータの将来拡張耐性
 
@@ -129,7 +137,7 @@
 ### NFR-02: 権限最小化
 
 - 拡張権限は `storage` のみ
-- Host permissions は対象動画URLおよびローカル検証用URLに限定する
+- Host permissions は対象動画URLおよび課金判定用の Supabase license API に限定する
 
 ### NFR-03: 後方互換
 
@@ -178,6 +186,14 @@
 - `POST /functions/v1/license-api/activate`
 - `POST /functions/v1/license-api/verify`
 - `POST /functions/v1/license-api/stripe-webhook`
+- `POST /functions/v1/license-api/create-checkout-session`
+- `POST /functions/v1/license-api/verify-device`
+- 拡張からの呼び出しは Supabase publishable key を `apikey` ヘッダーで付与し、`license-api` は `verify_jwt=false` で公開する
+- `create-checkout-session` は Stripe Checkout の `allow_promotion_codes=true` を有効化し、promotion code 入力欄を表示できる
+- Stripe webhook の entitlement 失効処理は `stripe_payment_intent_id` に加えて `stripe_checkout_session_id` も利用し、無料Checkout由来の失効イベントにも対応する
+- 拡張は `verify-device` の結果が `is_pro=false` だった場合、ローカルの購入済みキャッシュを解除して無料状態へ戻す
+- 拡張は購入済み端末の `license_code` を表示でき、購入時メールアドレス + ライセンスコードで `activate` を呼んで再アクティベートできる
+- `Proを復元` 導線は無料版でのみ表示し、ベータ特典および購入済みProでは表示しない
 
 必須シークレット/環境値:
 
@@ -189,8 +205,8 @@
 
 ## 9. 現状の制約・既知ギャップ
 
-- 課金判定APIは Supabase 側に実装済みだが、拡張UIからは未接続
-- そのため現行の Pro 判定はローカルフラグ依存
+- コメント保存上限の実効判定はローカル entitlement を基準とする
+- 購入済みProの端末反映は `verify-device` の応答とローカルフラグに依存する
 - 共有機能は未提供（将来向けデータ項目のみ先行整備）
 
 ## 10. 受け入れ基準（現行版）

@@ -39,6 +39,9 @@ create index if not exists idx_license_entitlements_app_status
 create index if not exists idx_license_entitlements_payment_intent
   on license_entitlements(stripe_payment_intent_id);
 
+create index if not exists idx_license_entitlements_checkout_session
+  on license_entitlements(stripe_checkout_session_id);
+
 create index if not exists idx_license_claims_license_id
   on license_claims(license_id);
 
