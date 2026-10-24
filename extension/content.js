@@ -18,6 +18,182 @@ const AUTO_BACKUP_INDEX_KEY = 'fanza_memo_auto_backup_index';
 const AUTO_BACKUP_LAST_SIGNATURE_KEY = 'fanza_memo_auto_backup_last_signature';
 const AUTO_BACKUP_PREFIX = 'fanza_memo_auto_backup_';
 const AUTO_BACKUP_MAX_COUNT = 5;
+const NAVIGATION_FORCE_MINIMIZE_SESSION_KEY = 'fanza_memo_force_minimize_on_navigation';
+const OVERLAY_HOST_ID = 'fanza-comment-overlay-host';
+const DEFAULT_I18N_FALLBACK = '';
+const CONTENT_LOCALE_MESSAGES = {
+  ja: {
+    contentAutoBackupNotCreated: '未作成',
+    contentEntitlementBeta: 'ベータ特典',
+    contentEntitlementFree: '無料',
+    contentHeaderDefault: 'シーン・メモ',
+    contentHeaderPro: 'シーン・メモ (Pro)',
+    contentOverlayLoopClear: 'ABリピ解除',
+    contentOverlayLoopClearTitle: 'A/Bリピート解除',
+    contentOverlayAutoMin: '自動最小化',
+    contentOverlaySettings: '設定',
+    contentOverlayMinimize: '最小化',
+    contentOverlayHide: '非表示',
+    contentOverlaySearchPlaceholder: 'コメント検索...',
+    contentOverlaySearchClear: '検索をクリア',
+    contentOverlaySettingsTitle: '設定',
+    contentOverlaySettingsClose: '設定を閉じる',
+    contentOverlayUpgradeTitle: '買い切り500円で制限解除',
+    contentOverlayUpgradeButton: 'Pro版アップグレード (制限なし)',
+    contentOverlayVideoFilterPlaceholder: 'コメント済み動画を検索...',
+    contentOverlayVideoMore: 'もっと見る',
+    contentOverlayVideoMoreRemaining: 'もっと見る（残り$1件）',
+    contentOverlayVideoLess: '折りたたむ',
+    contentOverlayToggleShortcut: '表示切替ショートカット:',
+    contentOverlayShortcutHelp: 'クリック後にキーを押して設定',
+    contentOverlayInputShortcut: 'コメント入力ショートカット:',
+    contentOverlayInputShortcutHelp: '最小化中でも入力欄を開いてフォーカス',
+    contentOverlayDefaultAutoMin: '自動最小化をデフォルトでON',
+    contentOverlayMinimizePosition: '最小化位置',
+    contentOverlayMinimizeTopLeft: '左上（既定）',
+    contentOverlayMinimizeCurrent: '現在位置',
+    contentOverlayMinimizeTopRight: '右上',
+    contentOverlayMinimizeBottomLeft: '左下',
+    contentOverlayMinimizeBottomRight: '右下',
+    contentOverlayLightTheme: 'ライトテーマを使用する',
+    contentOverlayExportJson: 'JSON保存',
+    contentOverlayImportJson: 'JSON復元',
+    contentOverlayBackupNote: '大事なメモは定期的にJSON保存してください。',
+    contentOverlayAutoBackupChecking: '自動バックアップ: 確認中...',
+    contentOverlayAutoBackupNone: '自動バックアップ: まだありません',
+    contentOverlayAutoBackupLabel: '自動バックアップ: $1',
+    contentOverlayExportAutoBackup: '最新自動バックアップを書き出す',
+    contentOverlayDummyComments: '+ ダミーコメント100件追加',
+    contentOverlayClearAll: '全コメント削除',
+    contentOverlayCommentPlaceholder: 'コメント...',
+    contentOverlayFreeRemaining: '無料枠 残り $1/$2',
+    contentOverlayCheckoutUrlError: '決済画面のURL取得に失敗しました: $1',
+    contentSummaryCurrent: '現在:',
+    contentSummaryCommentedVideos: 'コメント済み動画:',
+    contentSummarySiteComments: 'このサイトの保存コメント:',
+    contentSummaryAllComments: '全サイト合計:',
+    contentSummaryItemCount: '$1 件',
+    contentNoSavedVideos: 'まだコメント保存はありません。',
+    contentNoMatchingVideos: '一致する動画がありません。',
+    contentVideoLabel: '$1 の動画',
+    contentVideoDeleteTitle: 'この動画のコメントを削除',
+    contentCurrentSuffix: ' (現在)',
+    contentCommentCount: 'コメント $1 件',
+    contentDeleteVideoConfirm: 'この動画のコメントをすべて削除しますか？',
+    contentShortcutConflictInput: 'コメント入力ショートカットと同じキーは設定できません。',
+    contentShortcutConflictToggle: '表示切替ショートカットと同じキーは設定できません。',
+    contentFreeLimitReached: '無料プランの上限（$1件）に達しています。',
+    contentDummyAdded: 'ダミーコメントを $1 件追加しました',
+    contentExportJsonFailed: 'JSON保存に失敗しました。',
+    contentNoAutoBackupToExport: '書き出せる自動バックアップがありません。',
+    contentExportAutoBackupFailed: '自動バックアップの書き出しに失敗しました。',
+    contentImportNoData: '復元可能なデータがJSONに含まれていません。',
+    contentImportConfirm: 'JSONから $1 件の設定/コメントを復元します。現在データは置き換えられます。続行しますか？',
+    contentImportSuccess: 'JSON復元が完了しました。',
+    contentImportFailed: 'JSON復元に失敗しました。ファイル形式を確認してください。',
+    contentFreePlanLimitMessage: '無料プランは$1件までです。コメントを削除するか、Proをご利用ください。',
+    contentLoopStart: '開始',
+    contentLoopEnd: '終了',
+    contentLoopPending: '開始候補',
+    contentDeleteTitle: '削除',
+    contentEditTitle: '編集',
+    contentDeleteCommentConfirm: 'このコメントを削除しますか？',
+    contentLoopStartTitle: 'リピート開始点にする',
+    contentLoopEndTitle: 'リピート終了点にする',
+    contentLoopChooseStartFirst: '先に開始点 A を選択',
+    upgradeButtonProcessing: '処理中...',
+    upgradeButtonChecking: '決済確認中...',
+    networkErrorWithMessage: '通信エラーが発生しました: $1',
+    networkErrorSimple: '通信エラーが発生しました',
+    unknownError: '不明なエラー'
+  },
+  en: {
+    contentAutoBackupNotCreated: 'Not created',
+    contentEntitlementBeta: 'Beta perk',
+    contentEntitlementFree: 'Free',
+    contentHeaderDefault: 'Scene Memo',
+    contentHeaderPro: 'Scene Memo (Pro)',
+    contentOverlayLoopClear: 'Clear AB loop',
+    contentOverlayLoopClearTitle: 'Clear A/B repeat',
+    contentOverlayAutoMin: 'Auto minimize',
+    contentOverlaySettings: 'Settings',
+    contentOverlayMinimize: 'Minimize',
+    contentOverlayHide: 'Hide',
+    contentOverlaySearchPlaceholder: 'Search comments...',
+    contentOverlaySearchClear: 'Clear search',
+    contentOverlaySettingsTitle: 'Settings',
+    contentOverlaySettingsClose: 'Close settings',
+    contentOverlayUpgradeTitle: 'Unlock limits for a one-time $3.99',
+    contentOverlayUpgradeButton: 'Upgrade to Pro (Unlimited)',
+    contentOverlayVideoFilterPlaceholder: 'Search commented videos...',
+    contentOverlayVideoMore: 'Show more',
+    contentOverlayVideoMoreRemaining: 'Show more ($1 left)',
+    contentOverlayVideoLess: 'Collapse',
+    contentOverlayToggleShortcut: 'Toggle shortcut:',
+    contentOverlayShortcutHelp: 'Click, then press the key you want to use',
+    contentOverlayInputShortcut: 'Comment input shortcut:',
+    contentOverlayInputShortcutHelp: 'Open and focus the input even while minimized',
+    contentOverlayDefaultAutoMin: 'Enable auto minimize by default',
+    contentOverlayMinimizePosition: 'Minimized position',
+    contentOverlayMinimizeTopLeft: 'Top left (default)',
+    contentOverlayMinimizeCurrent: 'Current position',
+    contentOverlayMinimizeTopRight: 'Top right',
+    contentOverlayMinimizeBottomLeft: 'Bottom left',
+    contentOverlayMinimizeBottomRight: 'Bottom right',
+    contentOverlayLightTheme: 'Use light theme',
+    contentOverlayExportJson: 'Export JSON',
+    contentOverlayImportJson: 'Import JSON',
+    contentOverlayBackupNote: 'Back up important memos as JSON on a regular basis.',
+    contentOverlayAutoBackupChecking: 'Auto backup: checking...',
+    contentOverlayAutoBackupNone: 'Auto backup: none yet',
+    contentOverlayAutoBackupLabel: 'Auto backup: $1',
+    contentOverlayExportAutoBackup: 'Export latest auto backup',
+    contentOverlayDummyComments: '+ Add 100 dummy comments',
+    contentOverlayClearAll: 'Delete all comments',
+    contentOverlayCommentPlaceholder: 'Comment...',
+    contentOverlayFreeRemaining: 'Free slots left $1/$2',
+    contentOverlayCheckoutUrlError: 'Failed to get checkout URL: $1',
+    contentSummaryCurrent: 'Current:',
+    contentSummaryCommentedVideos: 'Commented videos:',
+    contentSummarySiteComments: 'Saved comments on this site:',
+    contentSummaryAllComments: 'All sites total:',
+    contentSummaryItemCount: '$1 items',
+    contentNoSavedVideos: 'No saved comments yet.',
+    contentNoMatchingVideos: 'No matching videos found.',
+    contentVideoLabel: '$1 video',
+    contentVideoDeleteTitle: 'Delete comments for this video',
+    contentCurrentSuffix: ' (Current)',
+    contentCommentCount: '$1 comments',
+    contentDeleteVideoConfirm: 'Delete all comments for this video?',
+    contentShortcutConflictInput: 'You cannot use the same key as the comment input shortcut.',
+    contentShortcutConflictToggle: 'You cannot use the same key as the visibility toggle shortcut.',
+    contentFreeLimitReached: 'You have reached the free plan limit ($1 comments).',
+    contentDummyAdded: 'Added $1 dummy comments',
+    contentExportJsonFailed: 'Failed to export JSON.',
+    contentNoAutoBackupToExport: 'There is no auto backup available to export.',
+    contentExportAutoBackupFailed: 'Failed to export the auto backup.',
+    contentImportNoData: 'No restorable data was found in the JSON file.',
+    contentImportConfirm: 'Restore $1 settings/comments from JSON? Current data will be replaced.',
+    contentImportSuccess: 'JSON restore completed.',
+    contentImportFailed: 'Failed to restore JSON. Check the file format.',
+    contentFreePlanLimitMessage: 'The free plan allows up to $1 comments. Delete some comments or use Pro.',
+    contentLoopStart: 'Start',
+    contentLoopEnd: 'End',
+    contentLoopPending: 'Start candidate',
+    contentDeleteTitle: 'Delete',
+    contentEditTitle: 'Edit',
+    contentDeleteCommentConfirm: 'Delete this comment?',
+    contentLoopStartTitle: 'Set as repeat start',
+    contentLoopEndTitle: 'Set as repeat end',
+    contentLoopChooseStartFirst: 'Pick start point A first',
+    upgradeButtonProcessing: 'Processing...',
+    upgradeButtonChecking: 'Checking purchase...',
+    networkErrorWithMessage: 'A network error occurred: $1',
+    networkErrorSimple: 'A network error occurred.',
+    unknownError: 'Unknown error'
+  }
+};
+let contentLocale = 'ja';
 const ENTITLEMENT_KEYS = [
   ENTITLEMENT_KEY_FIRST_SEEN_AT,
   ENTITLEMENT_KEY_BETA_GRANDFATHERED,
@@ -33,6 +209,49 @@ const BACKUP_MANAGED_EXACT_KEYS = [
   ENTITLEMENT_KEY_BETA_GRANDFATHERED,
   ENTITLEMENT_KEY_PRO_PURCHASED
 ];
+
+function normalizeI18nSubstitutions(substitutions) {
+  if (substitutions === undefined || substitutions === null) return [];
+  return Array.isArray(substitutions) ? substitutions : [substitutions];
+}
+
+function substituteContentMessage(template, substitutions) {
+  const values = normalizeI18nSubstitutions(substitutions);
+  return String(template || '').replace(/\$(\d)/g, (_, indexText) => {
+    const index = Number(indexText) - 1;
+    return values[index] !== undefined ? String(values[index]) : '';
+  });
+}
+
+function isJapaneseLocaleHint(locale) {
+  const normalized = String(locale || '').trim().toLowerCase();
+  return normalized.startsWith('ja') || normalized.endsWith('-jp');
+}
+
+function isJapaneseTimezoneHint() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone === 'Asia/Tokyo';
+  } catch (_) {
+    return false;
+  }
+}
+
+async function resolveContentLocale() {
+  return isJapaneseTimezoneHint() ? 'ja' : 'en';
+}
+
+function t(key, substitutions, fallback = DEFAULT_I18N_FALLBACK) {
+  const contentMessage = CONTENT_LOCALE_MESSAGES[contentLocale]?.[key];
+  if (contentMessage) {
+    return substituteContentMessage(contentMessage, substitutions);
+  }
+  const runtimeTranslator = window.extI18n?.t;
+  if (typeof runtimeTranslator === 'function') {
+    return runtimeTranslator(key, substitutions, fallback);
+  }
+  const message = chrome?.i18n?.getMessage?.(key, normalizeI18nSubstitutions(substitutions));
+  return message || fallback || key;
+}
 
 function isBackupManagedKey(key) {
   if (typeof key !== 'string' || key.length === 0) return false;
@@ -90,6 +309,149 @@ function getStorageSync(keys) {
       resolve(result || {});
     });
   });
+}
+
+function markForceMinimizeOnNextNavigation() {
+  try {
+    sessionStorage.setItem(NAVIGATION_FORCE_MINIMIZE_SESSION_KEY, '1');
+  } catch (_) {}
+}
+
+function consumeForceMinimizeOnNavigation() {
+  try {
+    const shouldForce = sessionStorage.getItem(NAVIGATION_FORCE_MINIMIZE_SESSION_KEY) === '1';
+    if (shouldForce) {
+      sessionStorage.removeItem(NAVIGATION_FORCE_MINIMIZE_SESSION_KEY);
+    }
+    return shouldForce;
+  } catch (_) {
+    return false;
+  }
+}
+
+function getOverlayHostElement() {
+  return document.getElementById(OVERLAY_HOST_ID);
+}
+
+function getOverlayShadowRoot() {
+  return getOverlayHostElement()?.shadowRoot || null;
+}
+
+function getOverlayElement() {
+  return getOverlayShadowRoot()?.querySelector('#fanza-comment-overlay') || document.getElementById('fanza-comment-overlay');
+}
+
+function getJumpPreviewElement() {
+  return getOverlayShadowRoot()?.querySelector('#fc-jump-preview') || document.getElementById('fc-jump-preview');
+}
+
+function setBootDebugState(state, detail = '') {
+  try {
+    document.documentElement.setAttribute('data-fanza-memo-boot', state);
+    if (detail) {
+      document.documentElement.setAttribute('data-fanza-memo-boot-detail', detail);
+    } else {
+      document.documentElement.removeAttribute('data-fanza-memo-boot-detail');
+    }
+  } catch (_) {}
+}
+
+function removeExistingOverlayUi() {
+  const overlayHost = getOverlayHostElement();
+  if (overlayHost) {
+    overlayHost.remove();
+  }
+  const fallbackOverlay = document.getElementById('fanza-comment-overlay');
+  if (fallbackOverlay) {
+    fallbackOverlay.remove();
+  }
+  const fallbackPreview = document.getElementById('fc-jump-preview');
+  if (fallbackPreview) {
+    fallbackPreview.remove();
+  }
+}
+
+function getDocumentFullscreenHost() {
+  return (
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.mozFullScreenElement ||
+    document.msFullscreenElement ||
+    null
+  );
+}
+
+function resolvePreferredVideoElement() {
+  const candidates = Array.from(document.querySelectorAll('video'));
+  if (candidates.length === 0) return null;
+
+  const fullscreenHost = getDocumentFullscreenHost();
+  let bestVideo = null;
+  let bestScore = -Infinity;
+
+  for (const candidate of candidates) {
+    if (!candidate || !candidate.isConnected) continue;
+    const rect = candidate.getBoundingClientRect();
+    const area = Math.max(0, rect.width) * Math.max(0, rect.height);
+    if (area <= 0) continue;
+
+    let score = area;
+    if (candidate.readyState > 0) score += 1_000_000;
+    if (!candidate.paused) score += 500_000;
+    if (fullscreenHost && fullscreenHost.contains(candidate)) score += 10_000_000_000;
+    if (candidate === videoElement) score += 10_000;
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestVideo = candidate;
+    }
+  }
+
+  return bestVideo || null;
+}
+
+function detachVideoTimeUpdateHandler() {
+  if (videoElement && videoTimeUpdateHandler) {
+    videoElement.removeEventListener('timeupdate', videoTimeUpdateHandler);
+  }
+  videoTimeUpdateHandler = null;
+}
+
+function handleActiveVideoTimeUpdate() {
+  const activeVideo = videoElement;
+  if (!activeVideo) return;
+  syncActiveCommentLoop();
+  if (activeCommentLoop && Number.isFinite(activeVideo.currentTime) && activeVideo.currentTime >= activeCommentLoop.end - 0.05) {
+    activeVideo.currentTime = activeCommentLoop.start;
+    if (activeVideo.paused) {
+      activeVideo.play().catch(() => {});
+    }
+  }
+  if (getOverlayElement()?.querySelector('#fc-list')) {
+    renderComments(activeVideo.currentTime);
+  }
+}
+
+function bindVideoElement(nextVideo) {
+  if (!nextVideo) return false;
+  if (videoElement === nextVideo && videoTimeUpdateHandler) return false;
+
+  detachVideoTimeUpdateHandler();
+  videoElement = nextVideo;
+  videoTimeUpdateHandler = handleActiveVideoTimeUpdate;
+  videoElement.addEventListener('timeupdate', videoTimeUpdateHandler);
+  return true;
+}
+
+function syncActiveVideoElement() {
+  const nextVideo = resolvePreferredVideoElement();
+  if (!nextVideo) return false;
+  return bindVideoElement(nextVideo);
+}
+
+function getActiveVideoElement() {
+  syncActiveVideoElement();
+  return videoElement;
 }
 
 function setStorageSync(items) {
@@ -171,10 +533,10 @@ function buildAutoBackupFileName(snapshot) {
 }
 
 function formatAutoBackupLabel(isoString) {
-  if (!isoString) return '未作成';
+  if (!isoString) return t('contentAutoBackupNotCreated', undefined, 'Not created');
   const date = new Date(isoString);
-  if (Number.isNaN(date.getTime())) return '未作成';
-  return new Intl.DateTimeFormat('ja-JP', {
+  if (Number.isNaN(date.getTime())) return t('contentAutoBackupNotCreated', undefined, 'Not created');
+  return new Intl.DateTimeFormat(undefined, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -416,6 +778,7 @@ const style = document.createElement('style');
 style.id = 'fanza-comment-inline-style';
 style.textContent = `
   #fanza-comment-overlay {
+    all: initial;
     position: absolute;
     bottom: 20px;
     right: 20px;
@@ -436,6 +799,14 @@ style.textContent = `
     -webkit-backdrop-filter: blur(24px);
     border: 1px solid rgba(255, 255, 255, 0.12); 
     resize: both;
+    box-sizing: border-box;
+    line-height: 1.4;
+    text-align: left;
+    isolation: isolate;
+  }
+  #fanza-comment-overlay,
+  #fanza-comment-overlay * {
+    box-sizing: border-box;
   }
   
   /* --- Light Theme --- */
@@ -545,7 +916,7 @@ style.textContent = `
     padding: 12px 14px;
     background: rgba(255, 255, 255, 0.08);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    display: flex;
+    display: flex !important;
     justify-content: space-between;
     align-items: center;
     cursor: grab;
@@ -571,20 +942,28 @@ style.textContent = `
     flex: 1;
     overflow-y: auto;
     padding: 12px;
-    display: flex;
-    flex-direction: column;
+    display: flex !important;
+    flex-direction: column !important;
     gap: 10px;
   }
   .fc-settings {
     flex: 1;
     padding: 0 14px 14px;
     display: none;
-    flex-direction: column;
+    flex-direction: column !important;
     gap: 12px;
     font-size: 13px;
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
+  }
+  #fanza-comment-overlay.fc-settings-open .fc-list,
+  #fanza-comment-overlay.fc-settings-open .fc-input-area,
+  #fanza-comment-overlay.fc-settings-open .fc-search-area {
+    display: none !important;
+  }
+  #fanza-comment-overlay.fc-settings-open .fc-settings {
+    display: flex !important;
   }
   .fc-settings h4 {
     margin: 0 0 4px 0;
@@ -697,11 +1076,14 @@ style.textContent = `
     padding: 12px;
     background: rgba(255, 255, 255, 0.03);
     border-top: 1px solid rgba(255, 255, 255, 0.12);
-    display: flex;
+    display: flex !important;
+    align-items: center !important;
     gap: 8px;
   }
   .fc-input {
-    flex: 1;
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
     background: rgba(0, 0, 0, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: #fff;
@@ -710,6 +1092,9 @@ style.textContent = `
     outline: none;
     font-size: 13px;
     transition: all 0.2s ease;
+    margin: 0 !important;
+    appearance: none;
+    -webkit-appearance: none;
   }
   .fc-input:focus {
     border-color: #e1306c;
@@ -781,7 +1166,7 @@ style.textContent = `
   #fanza-comment-overlay.minimized .fc-settings { display: none !important; }
   
   .fc-header-btns {
-    display: flex;
+    display: flex !important;
     gap: 6px;
     align-items: center;
     flex-shrink: 0;
@@ -799,12 +1184,15 @@ style.textContent = `
   .fc-header-btns button {
     width: 24px;
     height: 24px;
-    display: flex;
+    display: flex !important;
     align-items: center;
     justify-content: center;
     border-radius: 4px;
     transition: background 0.2s, color 0.2s;
     color: #94a3b8 !important; /* Slate 400 */
+    margin: 0 !important;
+    appearance: none;
+    -webkit-appearance: none;
   }
   .fc-header-btns button:hover {
     background: rgba(255,255,255,0.1) !important;
@@ -821,6 +1209,9 @@ style.textContent = `
     border-radius: 999px;
     color: #fbbf24 !important;
     background: rgba(245, 158, 11, 0.12) !important;
+  }
+  .fc-header-btns .fc-loop-clear-btn.is-hidden {
+    display: none !important;
   }
   .fc-header-btns .fc-loop-clear-btn:hover {
     color: #fff7ed !important;
@@ -892,14 +1283,15 @@ style.textContent = `
     padding: 8px 12px;
     border-bottom: 1px solid rgba(255,255,255,0.06);
     background: rgba(255,255,255,0.02);
-    display: flex;
-    align-items: center;
+    display: flex !important;
+    align-items: center !important;
     gap: 8px;
     box-sizing: border-box;
   }
   .fc-search-input {
-    flex: 1;
-    min-width: 0;
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
     background: rgba(0,0,0,0.3);
     border: 1px solid rgba(255,255,255,0.1);
     color: #f1f5f9;
@@ -909,6 +1301,21 @@ style.textContent = `
     outline: none;
     transition: all 0.2s;
     box-sizing: border-box;
+    margin: 0 !important;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .fc-input-area .fc-btn {
+    flex: 0 0 auto !important;
+    width: 44px !important;
+    min-width: 44px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    appearance: none;
+    -webkit-appearance: none;
   }
   .fc-search-input:focus, .fc-search-input.fc-search-active {
     border-color: #38bdf8;
@@ -994,6 +1401,7 @@ let activeCommentLoop = null;
 let pendingLoopStartCommentId = null;
 let lastPageHref = window.location.href;
 let lastVideoId = '';
+let pendingShortcutCommentFocus = false;
 
 // Settings State
 let shortcutConfig = {
@@ -1068,13 +1476,13 @@ function isFreeLimitReached() {
 
 function getEntitlementLabel() {
   if (entitlementState.isProPurchased) return 'Pro';
-  if (entitlementState.isBetaGrandfathered) return 'ベータ特典';
-  return '無料';
+  if (entitlementState.isBetaGrandfathered) return t('contentEntitlementBeta', undefined, 'Beta perk');
+  return t('contentEntitlementFree', undefined, 'Free');
 }
 
 function getHeaderStatusLabel() {
-  if (entitlementState.isProPurchased) return 'シーン・メモ (Pro)';
-  return 'シーン・メモ';
+  if (entitlementState.isProPurchased) return t('contentHeaderPro', undefined, 'Scene Memo (Pro)');
+  return t('contentHeaderDefault', undefined, 'Scene Memo');
 }
 
 function getUsedCommentCount() {
@@ -1711,97 +2119,134 @@ function formatTime(seconds) {
 }
 
 function createOverlay() {
-  if (document.getElementById('fanza-comment-overlay')) return;
+  if (getOverlayElement()) return;
+
+  const overlayHost = document.createElement('div');
+  overlayHost.id = OVERLAY_HOST_ID;
+  overlayHost.tabIndex = -1;
+  const shadowRoot = overlayHost.attachShadow({ mode: 'open', delegatesFocus: true });
+  const shadowStyle = document.createElement('style');
+  shadowStyle.id = style.id;
+  shadowStyle.textContent = style.textContent;
+  shadowRoot.appendChild(shadowStyle);
 
   const overlay = document.createElement('div');
   overlay.id = 'fanza-comment-overlay';
   overlay.innerHTML = `
     <div class="fc-header">
-      <span id="fc-status">シーン・メモ</span>
+      <span id="fc-status">${t('contentHeaderDefault', undefined, 'Scene Memo')}</span>
       <div class="fc-header-btns">
-        <button id="fc-loop-clear-btn" class="fc-loop-clear-btn" style="background:none;border:none;cursor:pointer;display:none;" title="A/Bリピート解除">ABリピ解除</button>
+        <button id="fc-loop-clear-btn" class="fc-loop-clear-btn" style="background:none;border:none;cursor:pointer;display:none;" title="${t('contentOverlayLoopClearTitle', undefined, 'Clear A/B repeat')}">${t('contentOverlayLoopClear', undefined, 'Clear AB loop')}</button>
         <label class="fc-auto-min-label">
-            <input type="checkbox" id="fc-auto-min"> 自動最小化
+            <input type="checkbox" id="fc-auto-min"> ${t('contentOverlayAutoMin', undefined, 'Auto minimize')}
         </label>
-        <button id="fc-settings-btn" style="background:none;border:none;cursor:pointer;" title="設定">⚙</button>
-        <button id="fc-minimize-btn" style="background:none;border:none;cursor:pointer;" title="最小化">_</button>
-        <button id="fc-close-btn" style="background:none;border:none;cursor:pointer;" title="非表示">×</button>
+        <button id="fc-settings-btn" style="background:none;border:none;cursor:pointer;" title="${t('contentOverlaySettings', undefined, 'Settings')}">⚙</button>
+        <button id="fc-minimize-btn" style="background:none;border:none;cursor:pointer;" title="${t('contentOverlayMinimize', undefined, 'Minimize')}">_</button>
+        <button id="fc-close-btn" style="background:none;border:none;cursor:pointer;" title="${t('contentOverlayHide', undefined, 'Hide')}">×</button>
       </div>
     </div>
     
     <div class="fc-search-area">
-      <input type="text" id="fc-search-input" class="fc-search-input" placeholder="コメント検索...">
-      <button type="button" id="fc-search-clear" class="fc-search-clear is-hidden" title="検索をクリア">×</button>
+      <input type="text" id="fc-search-input" class="fc-search-input" placeholder="${t('contentOverlaySearchPlaceholder', undefined, 'Search comments...')}">
+      <button type="button" id="fc-search-clear" class="fc-search-clear is-hidden" title="${t('contentOverlaySearchClear', undefined, 'Clear search')}">×</button>
     </div>
     
     <div class="fc-list" id="fc-list"></div>
     
     <div class="fc-settings" id="fc-settings">
         <div class="fc-settings-header">
-            <h4 class="fc-settings-title">設定</h4>
-            <button type="button" id="fc-settings-close" class="fc-settings-close" title="設定を閉じる">×</button>
+            <h4 class="fc-settings-title">${t('contentOverlaySettingsTitle', undefined, 'Settings')}</h4>
+            <button type="button" id="fc-settings-close" class="fc-settings-close" title="${t('contentOverlaySettingsClose', undefined, 'Close settings')}">×</button>
         </div>
         <div id="fc-video-summary" style="font-size: 11px; color: #cbd5e1; line-height: 1.4; margin-bottom: 12px;"></div>
-        <button id="fc-upgrade-btn" class="fc-btn fc-btn-pro" style="margin-bottom:12px; display:none; width:100%; font-size:12px;" title="買い切り500円で制限解除">Pro版アップグレード (制限なし)</button>
-        <input type="text" id="fc-video-filter" class="fc-input" placeholder="コメント済み動画を検索..." style="font-size:12px;">
+        <button id="fc-upgrade-btn" class="fc-btn fc-btn-pro" style="margin-bottom:12px; display:none; width:100%; font-size:12px;" title="${t('contentOverlayUpgradeTitle', undefined, 'Unlock limits with a one-time purchase')}">${t('contentOverlayUpgradeButton', undefined, 'Upgrade to Pro (Unlimited)')}</button>
+        <input type="text" id="fc-video-filter" class="fc-input" placeholder="${t('contentOverlayVideoFilterPlaceholder', undefined, 'Search commented videos...')}" style="font-size:12px;">
         <div id="fc-video-index" style="min-height:160px;max-height:220px;overflow:auto;border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:6px;background:rgba(0,0,0,0.2);"></div>
-        <button id="fc-video-more-btn" class="fc-btn" style="width:100%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);box-shadow:none;font-size:12px;margin-top:8px;">もっと見る</button>
+        <button id="fc-video-more-btn" class="fc-btn" style="width:100%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);box-shadow:none;font-size:12px;margin-top:8px;">${t('contentOverlayVideoMore', undefined, 'Show more')}</button>
         <div>
-            <label>表示切替ショートカット:</label>
+            <label>${t('contentOverlayToggleShortcut', undefined, 'Toggle shortcut:')}</label>
             <input type="text" id="fc-shortcut-input" class="fc-input" readonly value="${shortcutConfig.label}" style="cursor:pointer; text-align:center;">
-            <p style="font-size:10px;color:#aaa;">クリック後にキーを押して設定</p>
+            <p style="font-size:10px;color:#aaa;">${t('contentOverlayShortcutHelp', undefined, 'Click, then press the key you want to use')}</p>
         </div>
         <div>
-            <label>コメント入力ショートカット:</label>
+            <label>${t('contentOverlayInputShortcut', undefined, 'Comment input shortcut:')}</label>
             <input type="text" id="fc-input-shortcut-input" class="fc-input" readonly value="${inputShortcutConfig.label}" style="cursor:pointer; text-align:center;">
-            <p style="font-size:10px;color:#aaa;">最小化中でも入力欄を開いてフォーカス</p>
+            <p style="font-size:10px;color:#aaa;">${t('contentOverlayInputShortcutHelp', undefined, 'Open and focus the input even while minimized')}</p>
         </div>
         <div style="margin-top:6px; display:flex; flex-direction:column; gap:6px;">
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
                 <input type="checkbox" id="fc-default-auto-min">
-                自動最小化をデフォルトでON
+                ${t('contentOverlayDefaultAutoMin', undefined, 'Enable auto minimize by default')}
             </label>
             <label style="display:flex;flex-direction:column;gap:4px;">
-                <span>最小化位置</span>
+                <span>${t('contentOverlayMinimizePosition', undefined, 'Minimized position')}</span>
                 <select id="fc-minimize-mode" class="fc-input" style="font-size:12px;">
-                    <option value="top-left">左上（既定）</option>
-                    <option value="current">現在位置</option>
-                    <option value="top-right">右上</option>
-                    <option value="bottom-left">左下</option>
-                    <option value="bottom-right">右下</option>
+                    <option value="top-left">${t('contentOverlayMinimizeTopLeft', undefined, 'Top left (default)')}</option>
+                    <option value="current">${t('contentOverlayMinimizeCurrent', undefined, 'Current position')}</option>
+                    <option value="top-right">${t('contentOverlayMinimizeTopRight', undefined, 'Top right')}</option>
+                    <option value="bottom-left">${t('contentOverlayMinimizeBottomLeft', undefined, 'Bottom left')}</option>
+                    <option value="bottom-right">${t('contentOverlayMinimizeBottomRight', undefined, 'Bottom right')}</option>
                 </select>
             </label>
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
                 <input type="checkbox" id="fc-theme-toggle">
-                ライトテーマを使用する
+                ${t('contentOverlayLightTheme', undefined, 'Use light theme')}
             </label>
         </div>
         <div style="display:flex;gap:6px;margin-top:4px;">
-            <button id="fc-export-json-btn" class="fc-btn" type="button" style="flex:1;font-size:12px;">JSON保存</button>
-            <button id="fc-import-json-btn" class="fc-btn" type="button" style="flex:1;font-size:12px;">JSON復元</button>
+            <button id="fc-export-json-btn" class="fc-btn" type="button" style="flex:1;font-size:12px;">${t('contentOverlayExportJson', undefined, 'Export JSON')}</button>
+            <button id="fc-import-json-btn" class="fc-btn" type="button" style="flex:1;font-size:12px;">${t('contentOverlayImportJson', undefined, 'Import JSON')}</button>
             <input id="fc-import-json-file" type="file" accept="application/json,.json" style="display:none;">
         </div>
         <div style="margin-top:6px;font-size:11px;line-height:1.5;color:#cbd5e1;">
-            大事なメモは定期的にJSON保存してください。
+            ${t('contentOverlayBackupNote', undefined, 'Back up important memos as JSON on a regular basis.')}
         </div>
         <div style="margin-top:8px;padding:8px;border:1px solid rgba(255,255,255,0.12);border-radius:8px;background:rgba(255,255,255,0.04);">
-            <div id="fc-auto-backup-status" style="font-size:11px;color:#cbd5e1;">自動バックアップ: 確認中...</div>
-            <button id="fc-export-auto-backup-btn" class="fc-btn" type="button" style="width:100%;font-size:12px;margin-top:6px;">最新自動バックアップを書き出す</button>
+            <div id="fc-auto-backup-status" style="font-size:11px;color:#cbd5e1;">${t('contentOverlayAutoBackupChecking', undefined, 'Auto backup: checking...')}</div>
+            <button id="fc-export-auto-backup-btn" class="fc-btn" type="button" style="width:100%;font-size:12px;margin-top:6px;">${t('contentOverlayExportAutoBackup', undefined, 'Export latest auto backup')}</button>
         </div>
         <div id="fc-settings-footer" style="padding-top:16px; margin-top:auto; background: none;">
-             <button id="fc-generate-dummy-btn" class="fc-btn" style="width:100%; font-size:12px; display:none; margin-bottom:10px;">+ ダミーコメント100件追加</button>
-             <button id="fc-clear-all-btn" class="fc-btn" style="width:100%; background:rgba(239, 68, 68, 0.04); border-color:rgba(239, 68, 68, 0.12); color:#fca5a5; font-size:12px;">全コメント削除</button>
+             <button id="fc-generate-dummy-btn" class="fc-btn" style="width:100%; font-size:12px; display:none; margin-bottom:10px;">${t('contentOverlayDummyComments', undefined, '+ Add 100 dummy comments')}</button>
+             <button id="fc-clear-all-btn" class="fc-btn" style="width:100%; background:rgba(239, 68, 68, 0.04); border-color:rgba(239, 68, 68, 0.12); color:#fca5a5; font-size:12px;">${t('contentOverlayClearAll', undefined, 'Delete all comments')}</button>
         </div>
     </div>
 
     <div class="fc-input-area">
-      <input type="text" class="fc-input" placeholder="コメント..." maxlength="120">
+      <input type="text" class="fc-input" placeholder="${t('contentOverlayCommentPlaceholder', undefined, 'Comment...')}" maxlength="120">
       <button class="fc-btn">+</button>
     </div>
   `;
   
-  // Append to body (or player container if possible, but body is safer for z-index)
-  document.body.appendChild(overlay);
+  const getFullscreenHost = () => (
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.mozFullScreenElement ||
+    document.msFullscreenElement ||
+    null
+  );
+
+  const isOverlayMountedInFullscreen = () => overlay.dataset.mountContext === 'fullscreen';
+
+  const setOverlayPositionMode = () => {
+    overlay.style.position = isOverlayMountedInFullscreen() ? 'fixed' : 'absolute';
+  };
+
+  const ensureOverlayMountRoot = () => {
+    const fullscreenHost = getFullscreenHost();
+    const nextRoot = fullscreenHost || document.body;
+    const nextContext = fullscreenHost ? 'fullscreen' : 'document';
+    if (overlayHost.parentElement !== nextRoot) {
+      nextRoot.appendChild(overlayHost);
+    }
+    overlay.dataset.mountContext = nextContext;
+    setOverlayPositionMode();
+  };
+
+  const toOverlayLeft = (clientLeft) => `${clientLeft + (isOverlayMountedInFullscreen() ? 0 : window.scrollX)}px`;
+  const toOverlayTop = (clientTop) => `${clientTop + (isOverlayMountedInFullscreen() ? 0 : window.scrollY)}px`;
+
+  shadowRoot.appendChild(overlay);
+  ensureOverlayMountRoot();
 
   // Input setup
   const btn = overlay.querySelector('.fc-btn'); // This selects the first one (Post button? No, first one is in settings now? NO settings button has class fc-btn too!)
@@ -1843,21 +2288,51 @@ function createOverlay() {
   let videoIndexQuery = '';
   let showAllVideoCards = false;
 
+  const focusCommentInputWithRetry = (attempt = 0) => {
+    if (!overlay.isConnected || overlay.style.display === 'none') return;
+
+    if (document.activeElement !== overlayHost) {
+      overlayHost.focus({ preventScroll: true });
+    }
+
+    const shadowActiveElement = getOverlayShadowRoot()?.activeElement;
+    if (shadowActiveElement !== input) {
+      input.focus({ preventScroll: true });
+    }
+
+    if (typeof input.setSelectionRange === 'function') {
+      const caretPos = input.value.length;
+      input.setSelectionRange(caretPos, caretPos);
+    } else if (typeof input.select === 'function' && input.value) {
+      input.select();
+    }
+
+    if (attempt >= 4) return;
+    if (getOverlayShadowRoot()?.activeElement === input) return;
+
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        focusCommentInputWithRetry(attempt + 1);
+      });
+    }, [0, 20, 60, 120, 220][attempt] ?? 220);
+  };
+
   const focusCommentInput = () => {
     if (overlay.style.display === 'none') {
       overlay.style.display = 'flex';
     }
-    if (settingsDiv && settingsDiv.style.display === 'flex') {
+    if (overlay.classList.contains('fc-settings-open')) {
       closeSettingsPanel();
     }
     if (isMinimized && overlay.toggleMinimize) {
       overlay.toggleMinimize(false);
     }
+    const activeVideo = getActiveVideoElement();
+    if (activeVideo && !activeVideo.paused) {
+      activeVideo.pause();
+    }
     requestAnimationFrame(() => {
-      input.focus({ preventScroll: true });
-      if (typeof input.select === 'function') {
-        input.select();
-      }
+      focusCommentInputWithRetry();
     });
   };
   focusCommentInputHandler = focusCommentInput;
@@ -1870,15 +2345,15 @@ function createOverlay() {
       if (upgradeBtn) upgradeBtn.style.display = 'none';
       return;
     }
-    statusEl.textContent = `無料枠 残り ${getRemainingCommentSlots()}/${FREE_COMMENT_LIMIT}`;
+    statusEl.textContent = t('contentOverlayFreeRemaining', [String(getRemainingCommentSlots()), String(FREE_COMMENT_LIMIT)], `Free slots left ${getRemainingCommentSlots()}/${FREE_COMMENT_LIMIT}`);
     if (upgradeBtn) upgradeBtn.style.display = 'block';
   };
   refreshLimitStatus = updateLimitStatus;
 
   const updateLoopClearButton = () => {
     if (!loopClearBtn) return;
-    const shouldShow = !!(activeCommentLoop || pendingLoopStartCommentId);
-    loopClearBtn.style.display = shouldShow ? 'inline-flex' : 'none';
+    const shouldShow = !!activeCommentLoop;
+    loopClearBtn.classList.toggle('is-hidden', !shouldShow);
   };
   refreshLoopClearButton = updateLoopClearButton;
 
@@ -1886,11 +2361,11 @@ function createOverlay() {
     if (!autoBackupStatusEl) return;
     const latest = await getLatestAutoBackupSnapshot();
     if (!latest) {
-      autoBackupStatusEl.textContent = '自動バックアップ: まだありません';
+      autoBackupStatusEl.textContent = t('contentOverlayAutoBackupNone', undefined, 'Auto backup: none yet');
       if (exportAutoBackupBtn) exportAutoBackupBtn.disabled = true;
       return;
     }
-    autoBackupStatusEl.textContent = `自動バックアップ: ${formatAutoBackupLabel(latest.createdAt)}`;
+    autoBackupStatusEl.textContent = t('contentOverlayAutoBackupLabel', [formatAutoBackupLabel(latest.createdAt)], `Auto backup: ${formatAutoBackupLabel(latest.createdAt)}`);
     if (exportAutoBackupBtn) exportAutoBackupBtn.disabled = false;
   };
   refreshAutoBackupStatus = updateAutoBackupStatus;
@@ -1909,17 +2384,12 @@ function createOverlay() {
   }
 
   const openSettingsPanel = () => {
-    listDiv.style.display = 'none';
-    inputAreaDiv.style.display = 'none';
-    overlay.querySelector('.fc-search-area').style.display = 'none';
-    settingsDiv.style.display = 'flex';
+    overlay.classList.add('fc-settings-open');
+    settingsDiv.scrollTop = 0;
   };
 
   const closeSettingsPanel = () => {
-    settingsDiv.style.display = 'none';
-    listDiv.style.display = 'flex';
-    inputAreaDiv.style.display = 'flex';
-    overlay.querySelector('.fc-search-area').style.display = 'flex';
+    overlay.classList.remove('fc-settings-open');
   };
 
   const upgradeBtn = overlay.querySelector('#fc-upgrade-btn');
@@ -1927,20 +2397,24 @@ function createOverlay() {
     upgradeBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const setUpgradeButtonIdle = () => {
-        upgradeBtn.textContent = 'Pro版アップグレード';
+        upgradeBtn.textContent = t('contentOverlayUpgradeButton', undefined, 'Upgrade to Pro (Unlimited)');
         upgradeBtn.disabled = false;
       };
       try {
         const fp = await getDeviceFingerprint();
         const checkoutState = generateCheckoutState();
         await sendRuntimeMessage({ type: 'registerCheckoutState', checkoutState });
-        upgradeBtn.textContent = '処理中...';
+        upgradeBtn.textContent = t('upgradeButtonProcessing', undefined, 'Processing...');
         upgradeBtn.disabled = true;
         
         const response = await fetch(`${LICENSE_API_BASE_URL}/create-checkout-session`, {
           method: "POST",
           headers: buildLicenseApiHeaders(),
-          body: JSON.stringify({ device_fingerprint: fp, checkout_state: checkoutState })
+          body: JSON.stringify({
+            device_fingerprint: fp,
+            checkout_state: checkoutState,
+            runtime_locale: contentLocale === 'ja' ? 'ja' : 'en'
+          })
         });
         const data = await response.json();
         
@@ -1950,7 +2424,7 @@ function createOverlay() {
            const left = Math.round((window.screen.width - width) / 2);
            const top = Math.round((window.screen.height - height) / 2);
            const checkoutWindow = window.open(data.url, 'stripe_checkout', `width=${width},height=${height},left=${left},top=${top},status=no,location=no,menubar=no,toolbar=no`);
-           upgradeBtn.textContent = '決済確認中...';
+           upgradeBtn.textContent = t('upgradeButtonChecking', undefined, 'Checking purchase...');
            let attempts = 0;
            const pollOnce = async () => {
              attempts += 1;
@@ -1980,11 +2454,13 @@ function createOverlay() {
            await pollOnce();
         } else {
            sendRuntimeMessage({ type: 'unregisterCheckoutState', checkoutState }).catch(() => {});
-           alert(`決済画面のURL取得に失敗しました: ${data.message || data.error || '不明なエラー'}`);
+           alert(t('contentOverlayCheckoutUrlError', [data.message || data.error || t('unknownError', undefined, 'Unknown error')], `Failed to get checkout URL: ${data.message || data.error || 'Unknown error'}`));
            setUpgradeButtonIdle();
         }
       } catch (err) {
-        alert(`通信エラーが発生しました。${err && err.message ? ` ${err.message}` : ''}`);
+        alert(err && err.message
+          ? t('networkErrorWithMessage', [err.message], `A network error occurred: ${err.message}`)
+          : t('networkErrorSimple', undefined, 'A network error occurred.'));
         setUpgradeButtonIdle();
       }
     });
@@ -2018,22 +2494,22 @@ function createOverlay() {
     const normalizedQuery = videoIndexQuery.trim().toLowerCase();
 
     videoSummaryDiv.innerHTML = `
-      <div><strong>現在:</strong> ${escapeHtml(currentTitle)}</div>
+      <div><strong>${escapeHtml(t('contentSummaryCurrent', undefined, 'Current:'))}</strong> ${escapeHtml(currentTitle)}</div>
       <div style="color:#bbb;">${escapeHtml(currentSiteLabel)} / ${escapeHtml(videoId)}</div>
-      <div style="margin-top:4px;"><strong>コメント済み動画:</strong> ${siteEntries.length} 件</div>
-      <div style="margin-top:2px;"><strong>このサイトの保存コメント:</strong> ${siteCommentCount} 件</div>
-      <div style="margin-top:2px;"><strong>全サイト合計:</strong> ${getUsedCommentCount()} / ${FREE_COMMENT_LIMIT} 件</div>
+      <div style="margin-top:4px;"><strong>${escapeHtml(t('contentSummaryCommentedVideos', undefined, 'Commented videos:'))}</strong> ${escapeHtml(t('contentSummaryItemCount', [String(siteEntries.length)], `${siteEntries.length} items`))}</div>
+      <div style="margin-top:2px;"><strong>${escapeHtml(t('contentSummarySiteComments', undefined, 'Saved comments on this site:'))}</strong> ${escapeHtml(t('contentSummaryItemCount', [String(siteCommentCount)], `${siteCommentCount} items`))}</div>
+      <div style="margin-top:2px;"><strong>${escapeHtml(t('contentSummaryAllComments', undefined, 'All sites total:'))}</strong> ${getUsedCommentCount()} / ${FREE_COMMENT_LIMIT}</div>
     `;
 
     if (siteEntries.length === 0) {
-      videoIndexDiv.innerHTML = '<div style="font-size:11px;color:#bbb;">まだコメント保存はありません。</div>';
+      videoIndexDiv.innerHTML = `<div style="font-size:11px;color:#bbb;">${escapeHtml(t('contentNoSavedVideos', undefined, 'No saved comments yet.'))}</div>`;
       if (videoMoreBtn) videoMoreBtn.style.display = 'none';
       return;
     }
 
     const enrichedEntries = await Promise.all(siteEntries.map(async (entry) => {
       const isCurrentEntry = entry.keySuffix === suffix;
-      const fallbackLabel = `${getSiteLabel(entry.site)} の動画`;
+      const fallbackLabel = t('contentVideoLabel', [getSiteLabel(entry.site)], `${getSiteLabel(entry.site)} video`);
       let resolvedTitle = normalizeVideoTitle(entry.title, fallbackLabel);
       const entryUrl = buildVideoUrlFromEntry(entry);
       const needsTitleBackfill = !entry.title || isPlaceholderTitle(entry.site, entry.title);
@@ -2110,7 +2586,7 @@ function createOverlay() {
     const visibleEntries = showAllVideoCards ? filteredEntries : filteredEntries.slice(0, 5);
 
     if (filteredEntries.length === 0) {
-      videoIndexDiv.innerHTML = '<div style="font-size:11px;color:#bbb;">一致する動画がありません。</div>';
+      videoIndexDiv.innerHTML = `<div style="font-size:11px;color:#bbb;">${escapeHtml(t('contentNoMatchingVideos', undefined, 'No matching videos found.'))}</div>`;
       if (videoMoreBtn) videoMoreBtn.style.display = 'none';
       return;
     }
@@ -2121,12 +2597,14 @@ function createOverlay() {
       } else {
         videoMoreBtn.style.display = 'block';
         const remain = filteredEntries.length - 5;
-        videoMoreBtn.textContent = showAllVideoCards ? '折りたたむ' : `もっと見る（残り${remain}件）`;
+        videoMoreBtn.textContent = showAllVideoCards
+          ? t('contentOverlayVideoLess', undefined, 'Collapse')
+          : t('contentOverlayVideoMoreRemaining', [String(remain)], `Show more (${remain} left)`);
       }
     }
 
     videoIndexDiv.innerHTML = visibleEntries.map((entry) => {
-      const label = `${getSiteLabel(entry.site)} の動画`;
+      const label = t('contentVideoLabel', [getSiteLabel(entry.site)], `${getSiteLabel(entry.site)} video`);
       const title = entry.resolvedTitle || label;
       const isCurrent = entry.keySuffix === suffix;
       const targetUrl = entry.url;
@@ -2134,9 +2612,9 @@ function createOverlay() {
       const safeSuffix = escapeHtml(entry.keySuffix);
       return `
         <div class="fc-video-index-item ${isCurrent ? 'fc-current-video' : ''}" data-url="${safeUrl}" data-suffix="${safeSuffix}" style="position:relative;padding:5px 28px 5px 6px;border-radius:4px;margin-bottom:4px;background:${isCurrent ? 'rgba(68,187,255,0.25)' : 'rgba(255,255,255,0.02)'};cursor:pointer;">
-          <button type="button" class="fc-video-index-delete" data-suffix="${safeSuffix}" title="この動画のコメントを削除" style="position:absolute;top:4px;right:4px;width:18px;height:18px;border:1px solid rgba(255,255,255,0.24);border-radius:4px;background:rgba(0,0,0,0.3);color:#ddd;cursor:pointer;line-height:14px;padding:0;font-size:12px;">×</button>
-          <div style="font-size:11px;color:${isCurrent ? '#dff3ff' : '#fff'};line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;">${escapeHtml(title)}${isCurrent ? ' (現在)' : ''}</div>
-          <div style="font-size:10px;color:#9ec5ff;">コメント ${entry.count} 件</div>
+          <button type="button" class="fc-video-index-delete" data-suffix="${safeSuffix}" title="${t('contentVideoDeleteTitle', undefined, 'Delete comments for this video')}" style="position:absolute;top:4px;right:4px;width:18px;height:18px;border:1px solid rgba(255,255,255,0.24);border-radius:4px;background:rgba(0,0,0,0.3);color:#ddd;cursor:pointer;line-height:14px;padding:0;font-size:12px;">×</button>
+          <div style="font-size:11px;color:${isCurrent ? '#dff3ff' : '#fff'};line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;">${escapeHtml(title)}${isCurrent ? t('contentCurrentSuffix', undefined, ' (Current)') : ''}</div>
+          <div style="font-size:10px;color:#9ec5ff;">${escapeHtml(t('contentCommentCount', [String(entry.count)], `${entry.count} comments`))}</div>
           <div style="font-size:10px;color:#8fa4b8;">${escapeHtml(getSiteLabel(entry.site))}</div>
         </div>
       `;
@@ -2145,6 +2623,7 @@ function createOverlay() {
     const navigateToItem = (item) => {
         const targetUrl = item.getAttribute('data-url');
         if (!targetUrl || targetUrl === window.location.href) return;
+        markForceMinimizeOnNextNavigation();
         window.location.assign(targetUrl);
     };
 
@@ -2168,7 +2647,7 @@ function createOverlay() {
         stopDeleteEvent(e);
         const keySuffix = btn.getAttribute('data-suffix');
         if (!keySuffix) return;
-        if (!confirm('この動画のコメントをすべて削除しますか？')) return;
+        if (!confirm(t('contentDeleteVideoConfirm', undefined, 'Delete all comments for this video?'))) return;
         const commentsKey = `${VIDEO_MEMO_COMMENTS_PREFIX}${keySuffix}`;
         const metaKey = `${VIDEO_MEMO_META_PREFIX}${keySuffix}`;
         chrome.storage.local.remove([commentsKey, metaKey], () => {
@@ -2205,26 +2684,27 @@ function createOverlay() {
   }
   let minimizeAnchor = 'bottom';
   let minimizeMode = 'top-left';
+  const shouldForceMinimizeAfterNavigation = consumeForceMinimizeOnNavigation();
   let jumpPreviewTimer = null;
-  let jumpPreviewEl = document.getElementById('fc-jump-preview');
+  let jumpPreviewEl = shadowRoot.querySelector('#fc-jump-preview');
   if (!jumpPreviewEl) {
     jumpPreviewEl = document.createElement('div');
     jumpPreviewEl.id = 'fc-jump-preview';
     jumpPreviewEl.className = 'fc-jump-preview';
     jumpPreviewEl.style.display = 'none';
-    document.body.appendChild(jumpPreviewEl);
+    shadowRoot.appendChild(jumpPreviewEl);
   }
 
   const placeOverlayInsideVideo = () => {
     const vRect = getPlaybackBoundsRect();
     const oRect = overlay.getBoundingClientRect();
     const margin = 20;
-    const left = (vRect.right - oRect.width - margin) + window.scrollX;
-    const top = (vRect.bottom - oRect.height - margin) + window.scrollY;
+    const left = vRect.right - oRect.width - margin;
+    const top = vRect.bottom - oRect.height - margin;
     overlay.style.right = 'auto';
     overlay.style.bottom = 'auto';
-    overlay.style.left = `${left}px`;
-    overlay.style.top = `${top}px`;
+    overlay.style.left = toOverlayLeft(left);
+    overlay.style.top = toOverlayTop(top);
   };
 
   const clampOverlayToVideo = () => {
@@ -2253,8 +2733,8 @@ function createOverlay() {
 
     overlay.style.right = 'auto';
     overlay.style.bottom = 'auto';
-    overlay.style.left = `${x + window.scrollX}px`;
-    overlay.style.top = `${y + window.scrollY}px`;
+    overlay.style.left = toOverlayLeft(x);
+    overlay.style.top = toOverlayTop(y);
   };
 
   showJumpPreview = (comment) => {
@@ -2294,6 +2774,7 @@ function createOverlay() {
     const defaultAutoMin = !!result.fanza_mock_default_auto_min;
     let autoMinState = defaultAutoMin;
     let isLightTheme = false;
+    const shouldStartMinimizedOnPlayerOpen = true;
 
     if (savedPos) {
         try {
@@ -2309,7 +2790,7 @@ function createOverlay() {
             if (width) overlay.style.width = width;
             if (height) overlay.style.height = height;
 
-            if (isMin) {
+            if (isMin || shouldForceMinimizeAfterNavigation || shouldStartMinimizedOnPlayerOpen) {
                 isMinimized = true;
                 overlay.classList.add('minimized');
                 minBtn.textContent = '□';
@@ -2330,6 +2811,14 @@ function createOverlay() {
         } catch(e) {}
     } else {
         placeOverlayInsideVideo();
+        if (shouldForceMinimizeAfterNavigation || shouldStartMinimizedOnPlayerOpen) {
+          isMinimized = true;
+          overlay.classList.add('minimized');
+          minBtn.textContent = '□';
+          overlay._expandedLeft = overlay.style.left;
+          overlay._expandedTop = overlay.style.top;
+          requestAnimationFrame(() => applyMinimizedPosition());
+        }
     }
 
     // Auto-min checkbox logic
@@ -2376,6 +2865,7 @@ function createOverlay() {
 
     const ro = new ResizeObserver(() => {
         if (!isMinimized && overlay.isConnected) {
+            ensureOverlayMountRoot();
             saveUIState();
         }
     });
@@ -2387,12 +2877,31 @@ function createOverlay() {
 
   window.addEventListener('resize', () => {
     if (!overlay.isConnected || overlay.style.display === 'none') return;
+    ensureOverlayMountRoot();
     if (isMinimized) {
       applyMinimizedPosition();
     } else {
       clampOverlayToVideo();
     }
-    saveUIState();
+    if (!getFullscreenHost()) {
+      saveUIState();
+    }
+  });
+
+  document.addEventListener('fullscreenchange', () => {
+    syncActiveVideoElement();
+    ensureOverlayMountRoot();
+    requestAnimationFrame(() => {
+      if (!overlay.isConnected || overlay.style.display === 'none') return;
+      if (isMinimized) {
+        applyMinimizedPosition();
+      } else {
+        clampOverlayToVideo();
+      }
+      if (!getFullscreenHost()) {
+        saveUIState();
+      }
+    });
   });
 
   // Save UI State helper
@@ -2407,13 +2916,13 @@ function createOverlay() {
           minimizeMode,
           theme: overlay.querySelector('#fc-theme-toggle')?.checked
       };
-      chrome.storage.local.set({ fanza_mock_ui_pos: state });
+      if (!getFullscreenHost()) {
+        chrome.storage.local.set({ fanza_mock_ui_pos: state });
+      }
   };
 
   const applyMinimizedPosition = () => {
       const vRect = getPlaybackBoundsRect();
-      const currentScrollY = window.scrollY;
-      const currentScrollX = window.scrollX;
       const overlayRect = overlay.getBoundingClientRect();
 
       if (minimizeMode === 'current') {
@@ -2424,25 +2933,25 @@ function createOverlay() {
 
       const positions = {
           'top-left': {
-              left: vRect.left + currentScrollX,
-              top: vRect.top + currentScrollY
+              left: vRect.left,
+              top: vRect.top
           },
           'top-right': {
-              left: vRect.right - overlayRect.width + currentScrollX,
-              top: vRect.top + currentScrollY
+              left: vRect.right - overlayRect.width,
+              top: vRect.top
           },
           'bottom-left': {
-              left: vRect.left + currentScrollX,
-              top: vRect.bottom - overlayRect.height + currentScrollY
+              left: vRect.left,
+              top: vRect.bottom - overlayRect.height
           },
           'bottom-right': {
-              left: vRect.right - overlayRect.width + currentScrollX,
-              top: vRect.bottom - overlayRect.height + currentScrollY
+              left: vRect.right - overlayRect.width,
+              top: vRect.bottom - overlayRect.height
           }
       };
       const target = positions[minimizeMode] || positions['top-left'];
-      overlay.style.left = `${target.left}px`;
-      overlay.style.top = `${target.top}px`;
+      overlay.style.left = toOverlayLeft(target.left);
+      overlay.style.top = toOverlayTop(target.top);
   };
 
   // Minimize/expand with top-left anchor:
@@ -2526,7 +3035,7 @@ function createOverlay() {
           label: buildShortcutLabelFromEvent(e)
       };
       if (isSameShortcut(newConfig, inputShortcutConfig)) {
-          alert('コメント入力ショートカットと同じキーは設定できません。');
+          alert(t('contentShortcutConflictInput', undefined, 'You cannot use the same key as the comment input shortcut.'));
           return;
       }
       shortcutConfig = newConfig;
@@ -2548,7 +3057,7 @@ function createOverlay() {
           label: buildShortcutLabelFromEvent(e)
       };
       if (isSameShortcut(newConfig, shortcutConfig)) {
-          alert('表示切替ショートカットと同じキーは設定できません。');
+          alert(t('contentShortcutConflictToggle', undefined, 'You cannot use the same key as the visibility toggle shortcut.'));
           return;
       }
       inputShortcutConfig = newConfig;
@@ -2572,7 +3081,7 @@ function createOverlay() {
           
           const addableCount = hasUnlimitedAccess() ? 100 : Math.max(0, Math.min(100, getRemainingCommentSlots()));
           if (addableCount === 0) {
-              alert(`無料プランの上限（${FREE_COMMENT_LIMIT}件）に達しています。`);
+              alert(t('contentFreeLimitReached', [String(FREE_COMMENT_LIMIT)], `You have reached the free plan limit (${FREE_COMMENT_LIMIT} comments).`));
               refreshLimitStatus?.();
               return;
           }
@@ -2596,7 +3105,7 @@ function createOverlay() {
           refreshVideoIndex?.();
           renderComments(videoElement.currentTime);
           refreshLimitStatus?.();
-          alert(`ダミーコメントを ${newComments.length} 件追加しました`);
+          alert(t('contentDummyAdded', [String(newComments.length)], `Added ${newComments.length} dummy comments`));
       });
   }
 
@@ -2605,7 +3114,7 @@ function createOverlay() {
   if (clearBtn) {
       clearBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          if (confirm('この動画のコメントをすべて削除しますか？')) {
+          if (confirm(t('contentDeleteVideoConfirm', undefined, 'Delete all comments for this video?'))) {
               comments = [];
               saveComments();
               refreshVideoIndex?.();
@@ -2629,7 +3138,7 @@ function createOverlay() {
         saveTextAsFile(buildBackupFileName(), JSON.stringify(backup, null, 2));
       } catch (error) {
         console.error('Failed to export backup', error);
-        alert('JSON保存に失敗しました。');
+        alert(t('contentExportJsonFailed', undefined, 'Failed to export JSON.'));
       }
     });
   }
@@ -2640,13 +3149,13 @@ function createOverlay() {
       try {
         const latest = await getLatestAutoBackupSnapshot();
         if (!latest || !latest.snapshot) {
-          alert('書き出せる自動バックアップがありません。');
+          alert(t('contentNoAutoBackupToExport', undefined, 'There is no auto backup available to export.'));
           return;
         }
         saveTextAsFile(buildAutoBackupFileName(latest.snapshot), JSON.stringify(latest.snapshot, null, 2));
       } catch (error) {
         console.error('Failed to export auto backup', error);
-        alert('自動バックアップの書き出しに失敗しました。');
+        alert(t('contentExportAutoBackupFailed', undefined, 'Failed to export the auto backup.'));
       }
     });
   }
@@ -2674,10 +3183,10 @@ function createOverlay() {
         const currentManagedKeys = Object.keys(currentAll).filter((key) => isBackupManagedKey(key));
 
         if (importKeys.length === 0) {
-          alert('復元可能なデータがJSONに含まれていません。');
+          alert(t('contentImportNoData', undefined, 'No restorable data was found in the JSON file.'));
           return;
         }
-        if (!confirm(`JSONから ${importKeys.length} 件の設定/コメントを復元します。現在データは置き換えられます。続行しますか？`)) {
+        if (!confirm(t('contentImportConfirm', [String(importKeys.length)], `Restore ${importKeys.length} settings/comments from JSON? Current data will be replaced.`))) {
           return;
         }
 
@@ -2693,10 +3202,10 @@ function createOverlay() {
         refreshAutoBackupStatus?.();
         lastRenderedCommentCount = 0;
         renderComments(videoElement ? videoElement.currentTime : 0);
-        alert('JSON復元が完了しました。');
+        alert(t('contentImportSuccess', undefined, 'JSON restore completed.'));
       } catch (error) {
         console.error('Failed to import backup', error);
-        alert('JSON復元に失敗しました。ファイル形式を確認してください。');
+        alert(t('contentImportFailed', undefined, 'Failed to restore JSON. Check the file format.'));
       }
     });
   }
@@ -2743,8 +3252,8 @@ function createOverlay() {
       clientX = Math.max(minX, Math.min(maxX, clientX));
       clientY = Math.max(minY, Math.min(maxY, clientY));
 
-      overlay.style.left = `${clientX + window.scrollX}px`;
-      overlay.style.top = `${clientY + window.scrollY}px`;
+      overlay.style.left = toOverlayLeft(clientX);
+      overlay.style.top = toOverlayTop(clientY);
   };
 
   const onMouseUp = () => {
@@ -2756,10 +3265,11 @@ function createOverlay() {
 
   const postComment = () => {
     const text = input.value.trim();
+    const activeVideo = getActiveVideoElement();
     console.log("Attempting to post:", text); // Debug
-    if (!text || !videoElement) return;
+    if (!text || !activeVideo) return;
     if (isFreeLimitReached()) {
-      alert(`無料プランは${FREE_COMMENT_LIMIT}件までです。コメントを削除するか、Proをご利用ください。`);
+      alert(t('contentFreePlanLimitMessage', [String(FREE_COMMENT_LIMIT)], `The free plan allows up to ${FREE_COMMENT_LIMIT} comments. Delete some comments or use Pro.`));
       refreshLimitStatus?.();
       return;
     }
@@ -2767,7 +3277,7 @@ function createOverlay() {
     // Add to local mock list
     const newComment = createLocalComment(
       text,
-      videoElement.currentTime,
+      activeVideo.currentTime,
       getCommentMigrationContext()
     );
     
@@ -2792,7 +3302,7 @@ function createOverlay() {
     refreshLimitStatus?.();
     
     input.value = '';
-    renderComments(videoElement.currentTime);
+    renderComments(activeVideo.currentTime);
     
     console.log("Posted:", newComment);
   };
@@ -2809,10 +3319,11 @@ function createOverlay() {
     e.stopPropagation();
     lastCommentPointerDownAt = Date.now();
     commentRefocusTried = false;
-    if (videoElement && !videoElement.paused) {
-      videoElement.pause();
+    const activeVideo = getActiveVideoElement();
+    if (activeVideo && !activeVideo.paused) {
+      activeVideo.pause();
     }
-    if (document.activeElement !== input) {
+    if (getOverlayShadowRoot()?.activeElement !== input) {
       e.preventDefault();
       input.focus({ preventScroll: true });
     }
@@ -2826,16 +3337,18 @@ function createOverlay() {
     }
     if (e.key === 'Escape' || e.key === 'Esc') {
       input.blur();
-      if (videoElement && videoElement.paused) {
-        videoElement.play().catch(() => {});
+      const activeVideo = getActiveVideoElement();
+      if (activeVideo && activeVideo.paused) {
+        activeVideo.play().catch(() => {});
       }
       e.preventDefault();
     }
   }, { capture: true }); // Use capture to beat player global listeners
   
   input.addEventListener('focus', () => {
-    if (videoElement && !videoElement.paused) {
-      videoElement.pause();
+    const activeVideo = getActiveVideoElement();
+    if (activeVideo && !activeVideo.paused) {
+      activeVideo.pause();
     }
   });
 
@@ -2845,7 +3358,7 @@ function createOverlay() {
     if (Date.now() - lastCommentPointerDownAt > 700) return;
     commentRefocusTried = true;
     setTimeout(() => {
-      if (document.activeElement !== input) {
+      if (getOverlayShadowRoot()?.activeElement !== input) {
         input.focus({ preventScroll: true });
       }
     }, 0);
@@ -2854,7 +3367,7 @@ function createOverlay() {
   input.addEventListener('keyup', (e) => e.stopPropagation(), { capture: true });
   input.addEventListener('keypress', (e) => e.stopPropagation(), { capture: true });
   overlay.addEventListener('keydown', (e) => {
-    if ((e.key === 'Escape' || e.key === 'Esc') && settingsDiv.style.display === 'flex') {
+    if ((e.key === 'Escape' || e.key === 'Esc') && overlay.classList.contains('fc-settings-open')) {
       closeSettingsPanel();
       e.preventDefault();
       e.stopPropagation();
@@ -2886,7 +3399,7 @@ function createOverlay() {
     let isSearchMode = false;
     let wasPlayingBeforeSearch = false;
     searchInput.readOnly = false;
-    searchInput.placeholder = 'コメント検索...';
+    searchInput.placeholder = t('contentOverlaySearchPlaceholder', undefined, 'Search comments...');
 
     const updateSearchFromInput = () => {
       searchQuery = searchInput.value.toLowerCase();
@@ -2908,22 +3421,24 @@ function createOverlay() {
 
     const endSearchMode = () => {
       setSearchMode(false);
-      if (document.activeElement === searchInput) {
+      if (getOverlayShadowRoot()?.activeElement === searchInput) {
         searchInput.blur();
       }
-      if (wasPlayingBeforeSearch && videoElement && videoElement.paused) {
-        videoElement.play().catch(() => {});
+      const activeVideo = getActiveVideoElement();
+      if (wasPlayingBeforeSearch && activeVideo && activeVideo.paused) {
+        activeVideo.play().catch(() => {});
       }
       wasPlayingBeforeSearch = false;
     };
 
     const beginSearchMode = () => {
+      const activeVideo = getActiveVideoElement();
       if (!isSearchMode) {
-        wasPlayingBeforeSearch = !!(videoElement && !videoElement.paused);
+        wasPlayingBeforeSearch = !!(activeVideo && !activeVideo.paused);
       }
       setSearchMode(true);
-      if (wasPlayingBeforeSearch && videoElement && !videoElement.paused) {
-        videoElement.pause();
+      if (wasPlayingBeforeSearch && activeVideo && !activeVideo.paused) {
+        activeVideo.pause();
       }
     };
 
@@ -2953,8 +3468,9 @@ function createOverlay() {
         searchInput.value = '';
         updateSearchFromInput();
         endSearchMode();
-        if (videoElement) {
-          videoElement.play().catch(() => {});
+        const activeVideo = getActiveVideoElement();
+        if (activeVideo) {
+          activeVideo.play().catch(() => {});
         }
       }, { capture: true });
     }
@@ -3001,7 +3517,7 @@ function createOverlay() {
 
 // Global shortcut for toggling visibility
 window.addEventListener('keydown', (e) => {
-    const activeEl = document.activeElement;
+    const activeEl = getOverlayShadowRoot()?.activeElement || document.activeElement;
     const isTypingInOverlayInput = !!(activeEl && (
       activeEl.id === 'fc-search-input' ||
       activeEl.id === 'fc-shortcut-input' ||
@@ -3010,10 +3526,11 @@ window.addEventListener('keydown', (e) => {
     ));
 
     // Comment jump: Ctrl + Left/Right
-    if (!isTypingInOverlayInput && videoElement && e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
+    const activeVideoForJump = getActiveVideoElement();
+    if (!isTypingInOverlayInput && activeVideoForJump && e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
         if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
             const isRight = e.key === 'ArrowRight' || e.code === 'ArrowRight';
-            const current = Number(videoElement.currentTime || 0);
+            const current = Number(activeVideoForJump.currentTime || 0);
             const EPS = 0.001;
             const timeline = comments
               .map(c => Number(c.t))
@@ -3035,7 +3552,7 @@ window.addEventListener('keydown', (e) => {
             }
 
             if (target !== null) {
-              videoElement.currentTime = target;
+              activeVideoForJump.currentTime = target;
               const targetComment = comments.find(c => Math.abs(Number(c.t) - target) <= EPS);
               if (targetComment && typeof showJumpPreview === 'function') {
                 showJumpPreview(targetComment);
@@ -3050,18 +3567,23 @@ window.addEventListener('keydown', (e) => {
 
     if (isShortcutMatch(e, inputShortcutConfig)) {
         e.preventDefault();
+        e.stopImmediatePropagation();
         e.stopPropagation();
-        const overlay = document.getElementById('fanza-comment-overlay');
+        const overlay = getOverlayElement();
         if (overlay) {
             if (overlay.style.display === 'none') {
+                pendingShortcutCommentFocus = true;
                 focusCommentInputHandler?.();
             } else if (overlay.classList.contains('minimized')) {
+                pendingShortcutCommentFocus = true;
                 focusCommentInputHandler?.();
             } else if (overlay.toggleMinimize) {
                 overlay.toggleMinimize(true);
-                if (videoElement && videoElement.paused) {
-                    videoElement.play().catch(() => {});
+                const activeVideo = getActiveVideoElement();
+                if (activeVideo && activeVideo.paused) {
+                    activeVideo.play().catch(() => {});
                 }
+                pendingShortcutCommentFocus = false;
             }
         }
         return;
@@ -3072,7 +3594,7 @@ window.addEventListener('keydown', (e) => {
         e.preventDefault();
         e.stopPropagation();
 
-        const overlay = document.getElementById('fanza-comment-overlay');
+        const overlay = getOverlayElement();
         if (overlay) {
             if (overlay.style.display === 'none') {
                 overlay.style.display = 'flex';
@@ -3084,12 +3606,16 @@ window.addEventListener('keydown', (e) => {
                 overlay.style.display = 'none';
                 
                 // Return focus to video/body so spacebar still works for player
-                if (document.activeElement && overlay.contains(document.activeElement)) {
+                const shadowActiveElement = getOverlayShadowRoot()?.activeElement;
+                if (shadowActiveElement && typeof shadowActiveElement.blur === 'function') {
+                    shadowActiveElement.blur();
+                } else if (document.activeElement && getOverlayHostElement()?.contains(document.activeElement)) {
                     document.activeElement.blur();
                 }
                 
-                if (videoElement) {
-                    videoElement.focus();
+                const activeVideo = getActiveVideoElement();
+                if (activeVideo) {
+                    activeVideo.focus();
                 } else {
                     if (!document.body.getAttribute('tabindex')) {
                         document.body.setAttribute('tabindex', '-1');
@@ -3100,6 +3626,17 @@ window.addEventListener('keydown', (e) => {
         }
     }
 }, true); // Capture phase to ensure we get it
+
+window.addEventListener('keyup', (e) => {
+    if (!pendingShortcutCommentFocus) return;
+    if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) return;
+    if (e.key === 'Alt' || e.key === 'Shift' || e.key === 'Control' || e.key === 'Meta') {
+        pendingShortcutCommentFocus = false;
+        requestAnimationFrame(() => {
+            focusCommentInputHandler?.();
+        });
+    }
+}, true);
 
 // Keep track of last rendered state to avoid full DOM rebuilds
 let lastRenderedCommentCount = 0;
@@ -3178,8 +3715,8 @@ function applyLoopRange(startCommentId, endCommentId) {
 }
 
 function renderComments(currentTime) {
-  const list = document.getElementById('fc-list');
-  const overlay = document.getElementById('fanza-comment-overlay');
+  const overlay = getOverlayElement();
+  const list = overlay?.querySelector('#fc-list');
   if (!list || !overlay) return;
   refreshLimitStatus?.();
   syncActiveCommentLoop();
@@ -3258,7 +3795,11 @@ function renderComments(currentTime) {
           const loopChip = (!isLoopStart && !isLoopEnd && !isPendingLoopStart) ? null : document.createElement('span');
           if (loopChip) {
               loopChip.className = `fc-loop-chip ${isLoopStart || isPendingLoopStart ? 'fc-loop-chip-start' : 'fc-loop-chip-end'}`;
-              loopChip.textContent = isLoopStart ? '開始' : isLoopEnd ? '終了' : '開始候補';
+              loopChip.textContent = isLoopStart
+                ? t('contentLoopStart', undefined, 'Start')
+                : isLoopEnd
+                  ? t('contentLoopEnd', undefined, 'End')
+                  : t('contentLoopPending', undefined, 'Start candidate');
           }
 
           const textSpan = document.createElement('span');
@@ -3267,10 +3808,10 @@ function renderComments(currentTime) {
           const delBtn = document.createElement('span');
           delBtn.className = 'fc-delete-btn';
           delBtn.innerHTML = '&times;';
-          delBtn.title = '削除';
+          delBtn.title = t('contentDeleteTitle', undefined, 'Delete');
           delBtn.onclick = (e) => {
               e.stopPropagation();
-              if (confirm('このコメントを削除しますか？')) {
+              if (confirm(t('contentDeleteCommentConfirm', undefined, 'Delete this comment?'))) {
                   comments = comments.filter(comm => comm.id !== c.id);
                   saveComments();
                   refreshVideoIndex?.();
@@ -3281,12 +3822,13 @@ function renderComments(currentTime) {
           const editBtn = document.createElement('span');
           editBtn.className = 'fc-edit-btn';
           editBtn.innerHTML = '✎';
-          editBtn.title = '編集';
+          editBtn.title = t('contentEditTitle', undefined, 'Edit');
           editBtn.onclick = (e) => {
               e.stopPropagation();
-              if (videoElement) {
-                videoElement.currentTime = c.t;
-                videoElement.pause();
+              const activeVideo = getActiveVideoElement();
+              if (activeVideo) {
+                activeVideo.currentTime = c.t;
+                activeVideo.pause();
               }
               editingCommentId = c.id;
               lastRenderedCommentCount = 0; // Force rebuild to show input
@@ -3302,7 +3844,7 @@ function renderComments(currentTime) {
           if (isLoopStart) loopStartBtn.classList.add('is-active', 'is-a');
           if (isPendingLoopStart && !isLoopStart) loopStartBtn.classList.add('is-active', 'is-pending');
           loopStartBtn.innerHTML = 'A';
-          loopStartBtn.title = 'リピート開始点にする';
+          loopStartBtn.title = t('contentLoopStartTitle', undefined, 'Set as repeat start');
           loopStartBtn.onclick = (e) => {
               e.stopPropagation();
               if (!canBeLoopStart) return;
@@ -3326,16 +3868,19 @@ function renderComments(currentTime) {
           loopEndBtn.className = 'fc-loop-point-btn';
           if (isLoopEnd) loopEndBtn.classList.add('is-active', 'is-b');
           loopEndBtn.innerHTML = 'B';
-          loopEndBtn.title = pendingLoopStartCommentId ? 'リピート終了点にする' : '先に開始点 A を選択';
+          loopEndBtn.title = pendingLoopStartCommentId
+            ? t('contentLoopEndTitle', undefined, 'Set as repeat end')
+            : t('contentLoopChooseStartFirst', undefined, 'Pick start point A first');
           loopEndBtn.onclick = (e) => {
               e.stopPropagation();
               if (isLoopEnd) {
                   activeCommentLoop = null;
                   pendingLoopStartCommentId = null;
               } else if (pendingLoopStartCommentId && applyLoopRange(pendingLoopStartCommentId, c.id)) {
-                  if (videoElement) {
-                      videoElement.currentTime = activeCommentLoop.start;
-                      videoElement.play().catch(() => {});
+                  const activeVideo = getActiveVideoElement();
+                  if (activeVideo) {
+                      activeVideo.currentTime = activeCommentLoop.start;
+                      activeVideo.play().catch(() => {});
                   }
               }
               lastRenderedCommentCount = 0;
@@ -3352,9 +3897,10 @@ function renderComments(currentTime) {
           item.appendChild(textSpan);
           
           item.addEventListener('click', () => {
-            if(videoElement) {
-              videoElement.currentTime = c.t;
-              videoElement.play().catch(()=>{});
+            const activeVideo = getActiveVideoElement();
+            if(activeVideo) {
+              activeVideo.currentTime = c.t;
+              activeVideo.play().catch(()=>{});
               
               const autoMin = overlay.querySelector('#fc-auto-min');
               if (autoMin && autoMin.checked && overlay.toggleMinimize) {
@@ -3388,7 +3934,7 @@ function renderComments(currentTime) {
   }
 
   // Auto scroll to active?
-  const activeEl = document.activeElement;
+  const activeEl = getOverlayShadowRoot()?.activeElement || document.activeElement;
   const isTypingInOverlayInput = !!(activeEl && (
     activeEl.id === 'fc-search-input' ||
     activeEl.classList?.contains('fc-edit-input') ||
@@ -3402,8 +3948,10 @@ function renderComments(currentTime) {
   }
 }
 
-async function init() {
+async function init(forceRefresh = false) {
+  setBootDebugState('init_start');
   if (!isSupportedPlaybackPage()) {
+    setBootDebugState('unsupported_page');
     if (findVideoIntervalId) {
       clearInterval(findVideoIntervalId);
       findVideoIntervalId = null;
@@ -3412,14 +3960,8 @@ async function init() {
       clearInterval(renderIntervalId);
       renderIntervalId = null;
     }
-    if (videoElement && videoTimeUpdateHandler) {
-      videoElement.removeEventListener('timeupdate', videoTimeUpdateHandler);
-      videoTimeUpdateHandler = null;
-    }
-    const existingOverlay = document.getElementById('fanza-comment-overlay');
-    if (existingOverlay) existingOverlay.remove();
-    const existingPreview = document.getElementById('fc-jump-preview');
-    if (existingPreview) existingPreview.remove();
+    detachVideoTimeUpdateHandler();
+    removeExistingOverlayUi();
     refreshVideoIndex = null;
     refreshLimitStatus = null;
     refreshAutoBackupStatus = null;
@@ -3432,9 +3974,11 @@ async function init() {
   }
 
   const currentVideoId = getVideoId();
+  setBootDebugState('page_supported', `${getSiteKey()}:${currentVideoId || 'unknown'}`);
   console.log("Video Memo: Init", getSiteKey(), currentVideoId);
 
-  if (lastVideoId === currentVideoId && document.getElementById('fanza-comment-overlay')) {
+  if (!forceRefresh && lastVideoId === currentVideoId && getOverlayElement()) {
+    setBootDebugState('already_initialized');
     return;
   }
   lastVideoId = currentVideoId;
@@ -3447,15 +3991,9 @@ async function init() {
     clearInterval(renderIntervalId);
     renderIntervalId = null;
   }
-  if (videoElement && videoTimeUpdateHandler) {
-    videoElement.removeEventListener('timeupdate', videoTimeUpdateHandler);
-    videoTimeUpdateHandler = null;
-  }
+  detachVideoTimeUpdateHandler();
 
-  const existingOverlay = document.getElementById('fanza-comment-overlay');
-  if (existingOverlay) existingOverlay.remove();
-  const existingPreview = document.getElementById('fc-jump-preview');
-  if (existingPreview) existingPreview.remove();
+  removeExistingOverlayUi();
   refreshVideoIndex = null;
   refreshLimitStatus = null;
   refreshAutoBackupStatus = null;
@@ -3472,36 +4010,40 @@ async function init() {
   await loadEntitlements();
   await syncProEntitlementFromServer();
   await loadComments();
+  setBootDebugState('waiting_for_video');
   
   findVideoIntervalId = setInterval(() => {
-    const v = document.querySelector('video');
-    if (!v) return;
+    const didBindNewVideo = syncActiveVideoElement();
+    const activeVideo = videoElement;
+    if (!activeVideo) {
+      setBootDebugState('waiting_for_video');
+      return;
+    }
 
-    console.log("Video Memo: Video found", v);
-    videoElement = v;
-    videoTimeUpdateHandler = () => {
-      syncActiveCommentLoop();
-      if (activeCommentLoop && Number.isFinite(v.currentTime) && v.currentTime >= activeCommentLoop.end - 0.05) {
-        v.currentTime = activeCommentLoop.start;
-        if (v.paused) {
-          v.play().catch(() => {});
+    if (didBindNewVideo) {
+      setBootDebugState('video_bound');
+      console.log("Video Memo: Video bound", activeVideo);
+    }
+
+    if (!getOverlayElement()) {
+      createOverlay();
+      setBootDebugState('overlay_created');
+    }
+
+    if (didBindNewVideo && getOverlayElement()?.querySelector('#fc-list')) {
+      renderComments(activeVideo.currentTime);
+      setBootDebugState('ready');
+    }
+
+    if (!renderIntervalId) {
+      renderIntervalId = setInterval(() => {
+        const currentVideo = getActiveVideoElement();
+        if (getOverlayElement()?.querySelector('#fc-list') && currentVideo) {
+          renderComments(currentVideo.currentTime);
         }
-      }
-      if (document.getElementById('fc-list')) {
-        renderComments(v.currentTime);
-      }
-    };
-    v.addEventListener('timeupdate', videoTimeUpdateHandler);
-    clearInterval(findVideoIntervalId);
-    findVideoIntervalId = null;
-    createOverlay();
-    
-    renderIntervalId = setInterval(() => {
-      if (document.getElementById('fc-list')) {
-         renderComments(v.currentTime);
-      }
-    }, 500);
-  }, 1000);
+      }, 500);
+    }
+  }, 500);
 }
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
@@ -3532,12 +4074,18 @@ function setupRouteObserver() {
   window.addEventListener('yt-page-data-updated', handleRouteChange, true);
 }
 
+async function bootExtension() {
+  setBootDebugState('boot_start');
+  contentLocale = await resolveContentLocale();
+  setBootDebugState('locale_ready', contentLocale);
+  setupRouteObserver();
+  init();
+}
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-      setupRouteObserver();
-      init();
+      bootExtension();
     });
 } else {
-    setupRouteObserver();
-    init();
+    bootExtension();
 }

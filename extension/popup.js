@@ -19,8 +19,15 @@ const RECOVERY_KEYS = [
   ENTITLEMENT_KEY_LICENSE_CODE,
   ENTITLEMENT_KEY_PURCHASE_EMAIL
 ];
+const t = window.extI18n?.t || ((key, _subs, fallback = '') => fallback || key);
 let currentLicenseCode = '';
 let toastTimerId = null;
+
+function setStatusHtml(element, color, message, bold = true) {
+  if (!element) return;
+  const fontWeight = bold ? 'bold' : 'normal';
+  element.innerHTML = `<span style="color:${color}; font-weight:${fontWeight};">${message}</span>`;
+}
 
 function getStorageArea(area, keys) {
   return new Promise((resolve) => {
@@ -39,6 +46,10 @@ function buildLicenseApiHeaders() {
     "Content-Type": "application/json",
     apikey: SUPABASE_PUBLISHABLE_KEY
   };
+}
+
+function getRuntimeLocaleForCheckout() {
+  return window.extI18n?.getLocale?.() === 'ja' ? 'ja' : 'en';
 }
 
 function generateCheckoutState() {
@@ -205,7 +216,7 @@ function updateLicenseUi({ isPro = false, licenseCode = currentLicenseCode, show
   const restoreLicenseInput = document.getElementById('restore-license');
 
   if (licenseCodeValue) {
-    licenseCodeValue.textContent = currentLicenseCode || '未取得';
+    licenseCodeValue.textContent = currentLicenseCode || t('licenseCodeUnavailable', undefined, 'Unavailable');
   }
   if (restoreLicenseInput && currentLicenseCode && !restoreLicenseInput.value) {
     restoreLicenseInput.value = currentLicenseCode;
@@ -239,7 +250,7 @@ function updateUI(state, infoText = '', options = {}) {
   const showUpgradeForBeta = !!options.showUpgradeForBeta;
 
   if (state === 'pro') {
-    statusEl.innerHTML = '<span style="color:#e1306c; font-weight:bold;">Pro (購入済み / 無制限)</span>';
+    setStatusHtml(statusEl, '#e1306c', t('statusProPurchased', undefined, 'Pro (Purchased / Unlimited)'));
     actionContainer.style.display = 'none';
     limitsInfoEl.textContent = infoText || '';
     updateLicenseUi({ isPro: true, showRestore: false });
@@ -247,20 +258,22 @@ function updateUI(state, infoText = '', options = {}) {
   }
 
   if (state === 'beta') {
-    statusEl.innerHTML = '<span style="color:#d97706; font-weight:bold;">ベータ特典 (無制限)</span>';
+    setStatusHtml(statusEl, '#d97706', t('statusBetaUnlimited', undefined, 'Beta perk (Unlimited)'));
     actionContainer.style.display = showUpgradeForBeta ? 'block' : 'none';
-    limitsInfoEl.textContent = infoText || (showUpgradeForBeta ? '開発確認用に購入導線を表示中' : '期限内の初回利用ユーザー');
+    limitsInfoEl.textContent = infoText || (showUpgradeForBeta
+      ? t('infoDevShowUpgrade', undefined, 'Purchase CTA shown for development checks')
+      : t('infoBetaEligible', undefined, 'First used within the beta period'));
     if (showUpgradeForBeta) {
-      setUpgradeButtonText('Pro版を購入して確認');
+      setUpgradeButtonText(t('upgradeButtonVerify', undefined, 'Buy Pro and verify'));
     }
     updateLicenseUi({ isPro: false, showRestore: false });
     return;
   }
 
-  statusEl.innerHTML = '<span style="color:#444;">無料版</span>';
+  setStatusHtml(statusEl, '#444', t('statusFree', undefined, 'Free'), false);
   actionContainer.style.display = 'block';
   limitsInfoEl.textContent = infoText;
-  setUpgradeButtonText('✨ Pro版にアップグレード');
+  setUpgradeButtonText(t('upgradeButton', undefined, 'Upgrade to Pro'));
   updateLicenseUi({ isPro: false, showRestore: true });
 }
 
@@ -294,14 +307,14 @@ async function checkStatus() {
   } catch (err) {
     console.error(err);
     if (entitlement.isProPurchased) {
-      updateUI('pro', '(通信エラー)');
+      updateUI('pro', t('infoNetworkError', undefined, '(Network error)'));
       return;
     }
     if (entitlement.isBetaGrandfathered && !disableBetaForCheckoutTest) {
-      updateUI('beta', '通信なしでも無制限', { showUpgradeForBeta });
+      updateUI('beta', t('infoOfflineUnlimited', undefined, 'Unlimited even while offline'), { showUpgradeForBeta });
       return;
     }
-    updateUI('free', '(通信エラー)');
+    updateUI('free', t('infoNetworkError', undefined, '(Network error)'));
     return;
   }
 
@@ -321,11 +334,12 @@ async function checkStatus() {
       }
     }
     const remaining = Math.max(0, 50 - count);
-    updateUI('free', `(残り ${remaining} 件)`);
+    updateUI('free', t('infoRemainingCount', [String(remaining)], `(${remaining} left)`));
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await window.extI18n?.apply(document);
   hydrateRecoveryUi();
   checkStatus();
 
@@ -337,9 +351,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!currentLicenseCode) return;
     try {
       await navigator.clipboard.writeText(currentLicenseCode);
-      showToast('ライセンスコードをコピーしました');
+      showToast(t('copyLicenseSuccess', undefined, 'License code copied'));
     } catch (_) {
-      setRestoreMessage('コピーに失敗しました。手動で控えてください。', true);
+      setRestoreMessage(t('copyLicenseFailure', undefined, 'Copy failed. Please save it manually.'), true);
     }
   });
 
@@ -350,12 +364,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const email = String(restoreEmailInput?.value || '').trim();
     const licenseCode = normalizeLicenseCodeInput(restoreLicenseInput?.value || '');
     if (!email || !licenseCode) {
-      setRestoreMessage('メールアドレスとライセンスコードを入力してください。', true);
+      setRestoreMessage(t('restoreMissingFields', undefined, 'Enter both your email address and license code.'), true);
       return;
     }
 
     restoreBtn.disabled = true;
-    setRestoreMessage('復元を確認中です...');
+    setRestoreMessage(t('restoreChecking', undefined, 'Checking your restore request...'));
     try {
       const fp = await getDeviceFingerprint();
       const response = await fetch(`${API_BASE_URL}/activate`, {
@@ -376,20 +390,25 @@ document.addEventListener('DOMContentLoaded', () => {
           purchaseEmail: email
         });
         updateLicenseUi({ isPro: true, licenseCode: data.license_code || licenseCode });
-        setRestoreMessage('Pro をこのデバイスに復元しました。');
+        setRestoreMessage(t('restoreSuccess', undefined, 'Pro has been restored on this device.'));
         updateUI('pro');
         return;
       }
 
       const messageMap = {
-        invalid_payload: '入力内容を確認してください。',
-        license_not_found: 'ライセンスコードが見つかりません。',
-        email_mismatch: '購入時メールアドレスが一致しません。',
-        license_not_active: 'このライセンスは現在利用できません。'
+        invalid_payload: t('restoreInvalidPayload', undefined, 'Check the entered values.'),
+        license_not_found: t('restoreLicenseNotFound', undefined, 'License code not found.'),
+        email_mismatch: t('restoreEmailMismatch', undefined, 'The email address does not match the purchase.'),
+        license_not_active: t('restoreLicenseNotActive', undefined, 'This license is not currently active.')
       };
-      setRestoreMessage(messageMap[data.error] || 'Pro の復元に失敗しました。', true);
+      setRestoreMessage(messageMap[data.error] || t('restoreFailed', undefined, 'Failed to restore Pro.'), true);
     } catch (err) {
-      setRestoreMessage(`通信エラーが発生しました${err && err.message ? `: ${err.message}` : ''}`, true);
+      setRestoreMessage(
+        err && err.message
+          ? t('networkErrorWithMessage', [err.message], `A network error occurred: ${err.message}`)
+          : t('networkErrorSimple', undefined, 'A network error occurred.'),
+        true
+      );
     } finally {
       restoreBtn.disabled = false;
     }
@@ -398,17 +417,21 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('upgrade-btn')?.addEventListener('click', async () => {
     const btn = document.getElementById('upgrade-btn');
     btn.disabled = true;
-    btn.textContent = '準備中...';
+    btn.textContent = t('upgradeButtonPreparing', undefined, 'Preparing...');
 
     try {
       const fp = await getDeviceFingerprint();
       const checkoutState = generateCheckoutState();
       await sendRuntimeMessage({ type: 'registerCheckoutState', checkoutState });
-      const response = await fetch(`${API_BASE_URL}/create-checkout-session`, {
-        method: "POST",
-        headers: buildLicenseApiHeaders(),
-        body: JSON.stringify({ device_fingerprint: fp, checkout_state: checkoutState })
-      });
+        const response = await fetch(`${API_BASE_URL}/create-checkout-session`, {
+          method: "POST",
+          headers: buildLicenseApiHeaders(),
+          body: JSON.stringify({
+            device_fingerprint: fp,
+            checkout_state: checkoutState,
+            runtime_locale: getRuntimeLocaleForCheckout()
+          })
+        });
       const data = await response.json();
 
       if (data.ok && data.url) {
@@ -458,12 +481,22 @@ document.addEventListener('DOMContentLoaded', () => {
         await pollOnce();
       } else {
         sendRuntimeMessage({ type: 'unregisterCheckoutState', checkoutState }).catch(() => {});
-        alert("エラーが発生しました: " + (data.message || data.error || "不明なエラー"));
+        alert(
+          t(
+            'genericErrorWithDetail',
+            [data.message || data.error || t('unknownError', undefined, 'Unknown error')],
+            `An error occurred: ${data.message || data.error || 'Unknown error'}`
+          )
+        );
         btn.disabled = false;
         checkStatus();
       }
     } catch (err) {
-      alert(`通信エラーが発生しました${err && err.message ? `: ${err.message}` : ''}`);
+      alert(
+        err && err.message
+          ? t('networkErrorWithMessage', [err.message], `A network error occurred: ${err.message}`)
+          : t('networkErrorSimple', undefined, 'A network error occurred.')
+      );
       btn.disabled = false;
       checkStatus();
     }

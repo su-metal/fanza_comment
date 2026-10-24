@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "神シーンメモ",
-  "version": "1.0.0",
-  "description": "動画プレイヤー上で時間同期コメントを表示する拡張機能",
+  "name": "__MSG_extName__",
+  "version": "1.0.2",
+  "description": "__MSG_extDescription__",
+  "default_locale": "ja",
   "permissions": [
     "storage"
   ],
@@ -31,6 +32,19 @@
   "background": {
     "service_worker": "background.js"
   },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "_locales/ja/messages.json",
+        "_locales/en/messages.json"
+      ],
+      "matches": [
+        "https://www.dmm.co.jp/*",
+        "https://tv.dmm.com/*",
+        "https://www.youtube.com/*"
+      ]
+    }
+  ],
   "content_scripts": [
     {
       "matches": [
@@ -41,6 +55,7 @@
         "https://www.youtube.com/live/*"
       ],
       "js": [
+        "i18n.js",
         "content.js"
       ],
       "css": [

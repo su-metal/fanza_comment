@@ -285,6 +285,7 @@ async function handleCreateCheckoutSession(req: Request, corsHeaders: Record<str
   const deviceFingerprint = String(body.device_fingerprint || "");
   const email = String(body.email || "");
   const checkoutState = String(body.checkout_state || "").trim();
+  const runtimeLocale = String(body.runtime_locale || "").trim().toLowerCase() === "ja" ? "ja" : "en";
 
   if (!deviceFingerprint) {
     return jsonResponse(400, { ok: false, error: "missing_device_fingerprint" }, corsHeaders);
@@ -293,6 +294,16 @@ async function handleCreateCheckoutSession(req: Request, corsHeaders: Record<str
   const stripeKey = Deno.env.get("STRIPE_API_KEY") || "";
   if (!stripeKey) {
     return jsonResponse(500, { ok: false, error: "missing_stripe_key" }, corsHeaders);
+  }
+  const stripePriceIdJpy = Deno.env.get("STRIPE_PRICE_ID_JPY") || Deno.env.get("STRIPE_PRICE_ID") || "";
+  const stripePriceIdUsd = Deno.env.get("STRIPE_PRICE_ID_USD") || Deno.env.get("STRIPE_PRICE_ID") || "";
+  const stripePriceId = runtimeLocale === "ja" ? stripePriceIdJpy : stripePriceIdUsd;
+  if (!stripePriceId) {
+    return jsonResponse(
+      500,
+      { ok: false, error: runtimeLocale === "ja" ? "missing_stripe_price_id_jpy" : "missing_stripe_price_id_usd" },
+      corsHeaders
+    );
   }
 
   const stripe = new Stripe(stripeKey);
@@ -310,7 +321,7 @@ async function handleCreateCheckoutSession(req: Request, corsHeaders: Record<str
       payment_method_types: ["card"],
       line_items: [
         {
-          price: "price_1T8IEHPa0VuZQWboXMu2EuXf",
+          price: stripePriceId,
           quantity: 1,
         },
       ],
@@ -321,6 +332,7 @@ async function handleCreateCheckoutSession(req: Request, corsHeaders: Record<str
       allow_promotion_codes: true,
       metadata: {
         device_fingerprint: deviceFingerprint,
+        runtime_locale: runtimeLocale,
       },
     });
 

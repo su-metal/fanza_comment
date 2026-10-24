@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>神シーンメモ</title>
+  <title data-i18n="popupTitle">Scene Memo</title>
   <style>
     :root {
       --primary-gradient: linear-gradient(135deg, #e1306c 0%, #f77737 100%);
@@ -36,14 +36,7 @@
     .header-icon {
       width: 28px;
       height: 28px;
-      background: var(--primary-gradient);
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: bold;
-      font-size: 18px;
+      object-fit: contain;
     }
 
     h3 { 
@@ -280,53 +273,54 @@
 </head>
 <body>
   <div class="header">
-    <div class="header-icon">神</div>
-    <h3>神シーンメモ</h3>
+    <img class="header-icon" src="icons/icon-32.png" alt="Logo">
+    <h3 data-i18n="popupTitle">Scene Memo</h3>
   </div>
 
   <div class="content">
-    <p class="description">動画の再生時間に同期したコメントをローカルに記録・表示します。無料枠は50件、Proで無制限です。</p>
+    <p class="description" data-i18n="popupDescription">Save and show local comments synced to video playback. Free includes 50 comments, Pro removes the limit.</p>
     
     <div class="status-card">
-      <div class="status-title">License Status</div>
+      <div class="status-title" data-i18n="popupPlanStatusTitle">Plan status</div>
       <div class="status-content">
-        <p class="status-text" id="license-status">確認中...</p>
+        <p class="status-text" id="license-status" data-i18n="statusChecking">Checking...</p>
         <p class="limits-text" id="limits-info"></p>
       </div>
     </div>
 
     <div id="license-code-card" class="sub-card" style="display: none;">
-      <h4>ライセンスコード</h4>
+      <h4 data-i18n="licenseCodeLabel">License code</h4>
       <div class="code-row">
-        <p id="license-code-value" class="code-value">確認中...</p>
-        <button id="copy-license-btn" class="secondary-btn" type="button">コピー</button>
+        <p id="license-code-value" class="code-value" data-i18n="statusChecking">Checking...</p>
+        <button id="copy-license-btn" class="secondary-btn" type="button" data-i18n="copyButton">Copy</button>
       </div>
-      <p class="help-text">再インストール後の Pro 復元に使います。</p>
+      <p class="help-text" data-i18n="licenseCodeHelp">Use this to restore Pro after reinstalling.</p>
     </div>
 
     <div id="action-container" class="action-container" style="display: none;">
-      <button id="upgrade-btn" class="upgrade-btn">✨ Pro版にアップグレード</button>
-      <p class="help-text">保存枠が無制限になる買い切り版です。<br>購入後、このデバイスに自動適用されます。<br>※ 2026-04-02 23:59:59（JST）までの初回利用ユーザーはベータ特典で無制限です。</p>
+      <button id="upgrade-btn" class="upgrade-btn" data-i18n="upgradeButton">✨ Pro版にアップグレード</button>
+      <p class="help-text" data-i18n-html="popupUpgradeHelpHtml">保存枠が無制限になる買い切り版です。<br>購入後、このデバイスに自動適用されます。<br>※ 2026-04-02 23:59:59（JST）までの初回利用ユーザーはベータ特典で無制限です。</p>
     </div>
 
     <div id="restore-card" class="sub-card">
       <details id="restore-details" class="restore-details">
-        <summary>Proを復元する</summary>
-        <p class="restore-help">購入時のメールアドレスとライセンスコードで、このデバイスに Pro を再適用します。</p>
+        <summary data-i18n="restoreSummary">Restore Pro</summary>
+        <p class="restore-help" data-i18n="restoreHelp">Re-apply Pro on this device using your purchase email and license code.</p>
         <div class="restore-form">
-          <input id="restore-email" class="restore-input" type="email" placeholder="購入時メールアドレス">
-          <input id="restore-license" class="restore-input" type="text" placeholder="ライセンスコード">
-          <button id="restore-btn" class="secondary-btn" type="button">このデバイスでProを復元</button>
+          <input id="restore-email" class="restore-input" type="email" placeholder="Purchase email" data-i18n-placeholder="restoreEmailPlaceholder">
+          <input id="restore-license" class="restore-input" type="text" placeholder="License code" data-i18n-placeholder="restoreLicensePlaceholder">
+          <button id="restore-btn" class="secondary-btn" type="button" data-i18n="restoreButton">Restore Pro on this device</button>
         </div>
         <p id="restore-message" class="restore-message"></p>
       </details>
     </div>
 
-    <button id="open-onboarding-btn" class="tertiary-btn" type="button">使い方 / Pro案内を開く</button>
+    <button id="open-onboarding-btn" class="tertiary-btn" type="button" data-i18n="openOnboardingButton">Open guide / Pro info</button>
   </div>
 
   <div id="toast" class="toast" aria-live="polite"></div>
 
+  <script src="i18n.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
