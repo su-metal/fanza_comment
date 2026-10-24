@@ -1,0 +1,1 @@
+(() => {let theme='dark';try{const saved=localStorage.getItem('scene-memo-lp-theme');if(saved==='light'||saved==='dark')theme=saved;}catch{}document.documentElement.dataset.theme=theme;const color=document.querySelector('meta[name="theme-color"]');if(color)color.content=theme==='light'?'#fffafc':'#0c090c';})();

@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "timezone": "Asia/Tokyo",
+  "run_days": ["MO", "TH"],
+  "run_time": "09:00",
+  "destinations": {
+    "x_account_url": "https://x.com/awawawawawadama",
+    "x_connection": "not_connected",
+    "article_destination": null,
+    "lp_candidate_url": "https://scene-memo.pages.dev/",
+    "lp_url_verified": true,
+    "analytics_connection": "not_connected"
+  },
+  "items": [
+    {
+      "id": "ja-scene-bookmark-001",
+      "channel": "x",
+      "locale": "ja",
+      "status": "draft",
+      "proposed_slot": "2026-10-26T09:00:00+09:00",
+      "text": "FANZAの「あの場面、どこだっけ？」に。\nChrome拡張「神シーンメモ」で、場面を時刻付きメモに保存。次はクリックですぐ戻れます。\nPC版Chrome向けの非公式ツール。合計50件まで無料、ZIPから手動導入。",
+      "link_utm_content": "ja-scene-bookmark-001",
+      "evidence": ["docs/requirements_definition.md:FR-02", "docs/requirements_definition.md:FR-04", "docs/requirements_definition.md:4.3", "docs/requirements_definition.md:FR-09"],
+      "remote_id": null,
+      "public_url": null,
+      "hold_reason": "投稿先は @awawawawawadama と指定済み。公式API接続と対象アカウントの照合が必要。"
+    },
+    {
+      "id": "ja-ab-repeat-001",
+      "channel": "x",
+      "locale": "ja",
+      "status": "draft",
+      "proposed_slot": "2026-10-29T09:00:00+09:00",
+      "text": "見返したい区間を、毎回シークバーで探していませんか。\n「神シーンメモ」は、保存した2つのメモをA・Bに指定して区間リピート。\nFANZAの対応プレーヤー・PC版Chrome向けの非公式拡張です。ZIPから手動導入。",
+      "link_utm_content": "ja-ab-repeat-001",
+      "evidence": ["docs/requirements_definition.md:FR-05.5", "docs/requirements_definition.md:2", "docs/requirements_definition.md:4.3"],
+      "remote_id": null,
+      "public_url": null,
+      "hold_reason": "投稿先は @awawawawawadama と指定済み。公式API接続と対象アカウントの照合が必要。"
+    },
+    {
+      "id": "ja-fanza-scene-guide-001",
+      "channel": "article",
+      "locale": "ja",
+      "status": "draft",
+      "title": "FANZAのブラウザ再生で、見返したい場面を時刻付きメモに残す方法",
+      "source_path": "docs/marketing/drafts/2026-10-24-fanza-scene-guide.md",
+      "remote_id": null,
+      "public_url": null,
+      "hold_reason": "記事の公開先が未指定。LP・ZIPの公開URLは確認済み。"
+    }
+  ]
+}

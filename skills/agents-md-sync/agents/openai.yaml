@@ -1,0 +1,4 @@
+interface:
+  display_name: "AGENTS.md Sync"
+  short_description: "Keep AGENTS.md and specs aligned."
+  default_prompt: "Use this skill when a repository treats AGENTS.md as a living north-star document and requires AGENTS.md plus its paired requirements/spec document to be updated together after product, policy, or implementation changes."
