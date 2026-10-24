@@ -40,7 +40,7 @@
 ## データと外部通信
 ・コメント本文、コメント時刻、UI設定は `chrome.storage.local` に保存されます。
 ・コメント本文は開発者サーバーへ送信しません。
-・外部通信は、動画タイトル補完（YouTube oEmbed等）と Pro版のライセンス確認・再アクティベート・Stripe Checkout 開始（Supabase license API）のためにのみ行います。
+・外部通信は、動画タイトル補完（YouTube oEmbed等）と Pro版のライセンス確認・再アクティベート・Stripe Checkout 開始（Firebase license API）のためにのみ行います。
 
 ## 単一用途
 本拡張機能の単一用途は、YouTube および DMM系動画プレイヤーの再生中に、再生時間に紐づくメモをユーザー端末内へ記録・表示することです。
@@ -55,7 +55,7 @@
 - `host_permissions`:
 YouTube および DMM系動画プレイヤーの再生ページ上でメモUIを表示し、再生時間と連動させるために使用します。
 
-- `https://wzinimxikcihdqqdvppa.supabase.co/*`:
+- `https://asia-northeast1-fanza-comment-lic-20260303.cloudfunctions.net/*`:
 Pro版のライセンス確認と Stripe Checkout 開始のために使用します。
 
 コメント本文は開発者サーバーへ送信せず、ユーザー端末内に保存されます。

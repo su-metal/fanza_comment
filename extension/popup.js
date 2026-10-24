@@ -1,5 +1,4 @@
-const API_BASE_URL = "https://wzinimxikcihdqqdvppa.supabase.co/functions/v1/license-api";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_qBIjjA5UN3H62B8dWdqo0w_PRTqVZCq";
+const API_BASE_URL = "https://asia-northeast1-fanza-comment-lic-20260303.cloudfunctions.net/licenseApi";
 const BETA_PERIOD_END_ISO = '2026-04-02T14:59:59.000Z'; // 2026-04-02 23:59:59 JST
 const ENTITLEMENT_KEY_FIRST_SEEN_AT = 'fanza_memo_first_seen_at';
 const ENTITLEMENT_KEY_BETA_GRANDFATHERED = 'fanza_memo_is_beta_grandfathered';
@@ -44,7 +43,6 @@ function setStorageArea(area, values) {
 function buildLicenseApiHeaders() {
   return {
     "Content-Type": "application/json",
-    apikey: SUPABASE_PUBLISHABLE_KEY
   };
 }
 

@@ -1,7 +1,13 @@
-# Supabaseスキーマ正本（Source of Truth）
+# Supabase旧環境スキーマ（Firebase移行元）
 
-このドキュメントは、`supabase/schema.sql` を基準にした課金判定専用スキーマの正本です。  
-実装・運用上の最終的な真実は常に `supabase/schema.sql` とし、本書はその説明資料です。
+このドキュメントは、配布中v1.0.2が利用するSupabase課金APIと、Firebaseへ移行する既存データの説明資料です。
+移行元スキーマの正本は `supabase/schema.sql` です。Firebase移行後の目標構成・進捗・手順は `docs/firebase_migration.md` を参照してください。
+
+## 移行状態
+
+- 2026-10-24時点で、本番APIはSupabase。公開中v1.0.2の互換性維持と移行元データ保持のため、このスキーマとAPIを削除しない
+- Firebaseプロジェクト `fanza-comment-lic-20260303` にはFunctions / Firestore Rulesをデプロイし、Stripe webhookも有効化済み。初回は既存購入者がいないためSupabaseデータ移行を省略する。本番Checkout/返金は未確認で、公開中v1.0.2は引き続きSupabase APIを利用する
+- Firebase移行完了後も、旧拡張v1.0.2をサポートする期間はSupabase APIを停止しない
 
 ## 1. 前提
 

@@ -1,0 +1,39 @@
+# Dependency installs
+node_modules/
+
+# Build and test output
+dist/
+coverage/
+playwright-report/
+test-results/
+functions/lib/
+
+# Local environment variables and credentials
+.env
+.env.*
+!.env.example
+!.env.*.example
+.secret.local
+.secret.*
+.npmrc
+!.npmrc.example
+*.pem
+*.key
+*.p12
+*.pfx
+service-account*.json
+*service-account*.json
+*serviceAccount*.json
+*credentials*.json
+*-firebase-adminsdk-*.json
+
+# Firebase local state and logs
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+ui-debug.log
+
+# Operating-system files
+.DS_Store
+Thumbs.db

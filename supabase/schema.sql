@@ -1,7 +1,7 @@
--- Source of Truth:
+-- Legacy source schema retained for released extension v1.0.2 and Firebase migration.
 -- - Comments are NOT stored in Supabase.
 -- - Comments are stored/restored as local JSON only.
--- - Supabase is used only for paid entitlement judgement.
+-- - Supabase is used only for paid entitlement judgement during the migration window.
 
 create extension if not exists "uuid-ossp";
 

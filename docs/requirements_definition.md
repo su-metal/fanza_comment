@@ -143,6 +143,7 @@
 - 無料枠は 50 コメントであること
 - 初回利用時刻が `2026-04-02 23:59:59 JST` 以前ならベータ特典を付与すること
 - 購入済みPro判定は端末ローカルフラグを基本とし、`verify-device` の結果で再同期できること
+- Firebase版API（v1.0.3以降）は1ライセンスにつき有効な端末claimを1件とし、別端末でactivateすると利用先を移す。旧端末のclaimを解除し、次回verify-deviceの応答でProキャッシュを解除すること
 - 課金UIでは `無料 / ベータ特典 / 購入済みPro` を区別表示し、ベータ特典者には購入導線を表示しないこと
 - 開発確認用として `chrome.storage.local.fanza_memo_force_show_upgrade_for_beta=true` のときのみ、ベータ特典者にも一時的に購入導線を表示できること
 - 開発確認用として `chrome.storage.local.fanza_memo_disable_beta_for_checkout_test=true` のときは、ベータ特典者を一時的に無料扱いとして決済導線と上限制御を確認できること
@@ -164,7 +165,7 @@
 ### NFR-02: 権限最小化
 
 - 拡張権限は `storage` のみ
-- Host permissions は対象動画URLおよび課金判定用の Supabase license API に限定する
+- Host permissions は対象動画URLおよび課金判定用Firebase license APIに限定する。公開中v1.0.2はSupabaseホスト権限を含む
 
 ### NFR-03: 後方互換
 
@@ -174,6 +175,13 @@
 ### NFR-04: 可用性（ローカル動作）
 
 - ネットワーク不通時でもコメント機能（投稿/編集/検索/保存）は利用可能であること
+
+### NFR-05: 開発環境の再現性と同期
+
+- ローカルCodexとCodex Cloudのどちらでも、既存GitHubリポジトリからコミット済みのソース・開発指示を取得して作業できること
+- Node.js 22と各 `package-lock.json` を基準に依存関係を `npm ci` で再現し、ビルド・Emulator・拡張機能の起動手順を `docs/development_environment.md` に記載すること
+- コメント本文などChromeローカルデータ、`.env*`、`.secret.local`、サービスアカウント鍵、依存ディレクトリや生成物をGitHubへ同期しないこと
+- ローカルとクラウドの同時編集による競合を避けるため作業ブランチを分けること。Push前には対象リポジトリ・ブランチ・コミット・差分についてユーザー確認を得ること
 
 ## 7. データ要件
 
@@ -190,14 +198,16 @@
 - `share_id`（将来用）
 - `created_at` / `updated_at`
 
-### 7.2 課金判定データ（Supabase）
+### 7.2 課金判定データ（Firebase移行先 / Supabase移行元）
 
-- Project URL: `https://wzinimxikcihdqqdvppa.supabase.co`
+- Firebase移行先: `fanza-comment-lic-20260303`
+- 移行元Supabase URL: `https://wzinimxikcihdqqdvppa.supabase.co`（公開中v1.0.2が引き続き利用）
 - App Identifier: `app_id = fanza_comment`
-- テーブル:
+- Firebase Firestoreコレクション:
   - `license_entitlements`
   - `license_claims`
   - `webhook_events`
+- ライセンスコード索引: `license_code_indexes/fanza_comment/codes/{license_code}`
 - コメント本文は保存しない
 
 ## 8. 外部インターフェース要件
@@ -208,39 +218,53 @@
 - `permissions: ["storage"]`
 - content script: `extension/content.js`（`run_at: document_start`）
 
-### 8.2 Supabase Edge Function（実装済み）
+### 8.2 Firebase Cloud Functions（本番デプロイ済み、Stripe test mode/Emulator E2E確認済み。activate/restore・端末移行はEmulatorで確認済み。本番決済は未確認）
 
-- `POST /functions/v1/license-api/activate`
-- `POST /functions/v1/license-api/verify`
-- `POST /functions/v1/license-api/stripe-webhook`
-- `POST /functions/v1/license-api/create-checkout-session`
-- `POST /functions/v1/license-api/verify-device`
-- 拡張からの呼び出しは Supabase publishable key を `apikey` ヘッダーで付与し、`license-api` は `verify_jwt=false` で公開する
-- `create-checkout-session` は Stripe Checkout の `allow_promotion_codes=true` を有効化し、promotion code 入力欄を表示できる
-- `create-checkout-session` は拡張から受け取った実行時ロケールに応じて `STRIPE_PRICE_ID_JPY` または `STRIPE_PRICE_ID_USD` を `line_items[].price` に使用する
-- `STRIPE_PRICE_ID` は単一 Price 運用時または移行用 fallback として利用できる
-- Stripe webhook の entitlement 失効処理は `stripe_payment_intent_id` に加えて `stripe_checkout_session_id` も利用し、無料Checkout由来の失効イベントにも対応する
-- 拡張は `verify-device` の結果が `is_pro=false` だった場合、ローカルの購入済みキャッシュを解除して無料状態へ戻す
-- 拡張は購入済み端末の `license_code` を表示でき、購入時メールアドレス + ライセンスコードで `activate` を呼んで再アクティベートできる
-- `Proを復元` 導線は無料版でのみ表示し、ベータ特典および購入済みProでは表示しない
+- プロジェクト: `fanza-comment-lic-20260303`
+- Functions API: `https://asia-northeast1-fanza-comment-lic-20260303.cloudfunctions.net/licenseApi`
+- `POST /activate`, `POST /verify`, `POST /verify-device`, `POST /create-checkout-session`, `POST /stripe-webhook`
+- 実装: `functions/src/index.ts`。Firestore Admin SDKを使い、拡張からFirestoreへ直接接続しない
+- Firestore Rulesはクライアントからの読み書きをすべて拒否する
+- Stripe Checkoutのpromotion code、ロケールに応じた `STRIPE_PRICE_ID_JPY` / `STRIPE_PRICE_ID_USD`、任意の `STRIPE_PRICE_ID` fallbackを維持する
+- Stripe webhookの冪等記録、決済完了時のentitlement作成、返金・期限切れ・非同期決済失敗時の失効を扱う
+- `verify-device` の無料応答で拡張のProキャッシュを解除し、購入メールアドレス + ライセンスコードの `activate` で復元する。Firebase版APIでは別端末にProを移し、旧端末claimを削除する
+- Node.js 22 / Cloud Functions 第2世代 / `asia-northeast1`
+- `firebase.json` でFunctions Emulator / Firestore Emulatorを使用可能にし、ポートはそれぞれ `5001` / `8080`（Emulator UI `4000`）。テスト用設定は `functions/.env.local` / `functions/.secret.local` に置き、Gitと本番デプロイ対象から除外する
 
-必須シークレット/環境値:
+Cloud Functions Secret Manager:
 
-- `SUPABASE_URL`（`https://wzinimxikcihdqqdvppa.supabase.co`）
-- `SUPABASE_SERVICE_ROLE_KEY`
 - `LICENSE_TOKEN_SECRET`
 - `STRIPE_API_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+
+Functionsパラメーター:
+
 - `STRIPE_PRICE_ID_JPY`（`¥500` / 1デバイス用の Stripe Price ID）
 - `STRIPE_PRICE_ID_USD`（`$3.99` / 1デバイス用の Stripe Price ID）
-- `STRIPE_PRICE_ID`（任意。単一 Price 運用時または移行用 fallback）
-- `STRIPE_WEBHOOK_SECRET`
-- `ALLOWED_ORIGINS`（任意。未設定時は `https://www.youtube.com` と `https://m.youtube.com` を許可）
+- `STRIPE_PRICE_ID`（任意の fallback）
+- `ALLOWED_ORIGINS`（任意。YouTube標準オリジンに追加する許可元）
+
+### 8.3 Supabase Edge Function（配布中v1.0.2の現行API・移行元）
+
+- Project URL: `https://wzinimxikcihdqqdvppa.supabase.co`
+- 実装: `supabase/functions/license-api/index.ts`
+- `POST /functions/v1/license-api/activate`, `/verify`, `/verify-device`, `/create-checkout-session`, `/stripe-webhook`
+- 公開中v1.0.2はSupabase publishable keyを `apikey` ヘッダーに付け、Edge Functionは `verify_jwt=false` で呼び出す
+- Firebaseへ移行後も、旧版利用者の購入・復元をサポートする期間はSupabase APIとデータを維持する。既存Stripe webhook（`checkout.session.completed` / `charge.refunded`）を維持し、互換期間中は同じイベントをFirebase webhookにも配信する
+- SupabaseからFirestoreへの移行手順は `docs/firebase_migration.md`。移行元のスキーマ正本は `supabase/schema.sql`
 
 ## 9. 現状の制約・既知ギャップ
 
 - コメント保存上限の実効判定はローカル entitlement を基準とする
 - 購入済みProの端末反映は `verify-device` の応答とローカルフラグに依存する
 - 共有機能は未提供（将来向けデータ項目のみ先行整備）
+- Firebase BillingはBlaze有効を2026-10-24に確認済み。FirestoreデフォルトDBは `nam5`。Firebase Functionsは `asia-northeast1`、Firestoreは異なるリージョンにある。既存購入者なしの確認により初回データ移行は省略する
+- `firestore.rules` はクライアントの読み書きを拒否し、2026-10-24に本番デプロイ済み。FunctionsのTypeScriptビルド成功、本番依存のnpm監査0件を確認済み
+- Firebase Secret Managerに `LICENSE_TOKEN_SECRET` / `STRIPE_API_KEY` / `STRIPE_WEBHOOK_SECRET` を設定し、Firebase Functions `licenseApi` とFirestore Rulesを本番デプロイ済み。本番API CORS `OPTIONS` は `204`、ランダム指紋の読み取り専用 `verify-device` は `200 no_claim_found` で成功した。本番Checkout/返金は未確認。Stripe本番商品のJPY `¥500` / USD `$3.99` Price IDとローカル設定は `docs/firebase_migration.md` を参照。旧キーの失効状態は未確認
+- 2026-10-24にStripe test mode / Firebase Emulator E2Eを確認した。Checkout作成 `200`、決済完了 `checkout.session.completed` webhook `200`、entitlement `active`、同端末 `verify-device is_pro=true` を確認。全額テスト返金後、`charge.refunded` webhook `200`、entitlement `refunded`、`verify-device is_pro=false` / `no_active_license` を確認済み。本番データへテスト書き込みなし
+- Emulatorで合成entitlementのactivate/restore・誤入力・端末移行を確認した。Stripe発行entitlementから拡張UIまでの実購入フローと本番Checkout/返金は未確認のためFirebase移行対象ソースv1.0.3は未配布。公開中v1.0.2はSupabase APIを継続利用する
+- 公開中LP ZIPはv1.0.2のまま。Firebase側の実動作確認前にv1.0.3を配布しない。旧版互換期間はSupabaseを維持し、Stripe webhookを両基盤へ配信する
+- v1.0.2を利用する既存インストールはSupabase APIを継続利用するため、Firebase移行後も旧版互換期間が必要
 
 ## 10. 受け入れ基準（現行版）
 
@@ -251,7 +275,10 @@
 - リロード後もコメントが復元される
 - JSON保存/復元で管理対象データを移行できる
 - コメント本文が外部DBへ保存されない
-- Supabaseスキーマが `supabase/schema.sql` と `docs/supabase_schema_source_of_truth.md` で一致している
+- 現時点では既存購入者がいないため、Firebaseの初期コレクションは空で開始する。将来移行時にSupabase側へ既存購入データが発生している場合は、`license_entitlements` / `license_claims` / `webhook_events` とコード索引の件数・状態を照合する
+- Firebase Rulesがクライアントアクセスを拒否し、Functions経由で購入・復元・verify・失効処理を確認できる
+- Stripe test modeとFirebase Emulatorで、Checkout完了Webhookによるライセンス発行、activate/verify、誤入力拒否、同一端末再activation、別端末移行で旧claim解除・claim 1件維持、test refundによる失効を確認する。本番Stripeキー・本番Webhook secretおよび本番Firestoreにテストデータを書き込まない
+- v1.0.3 ZIPの公開はFirebase APIとStripe webhookの実動作確認後に行う。初回データ移行は不要だが、旧版互換期間のSupabase APIとwebhookを維持する
 
 ## 11. 将来拡張方針（要件レベル）
 
@@ -272,4 +299,4 @@
 
 ---
 
-本書は現行実装の正確な反映を目的とする。仕様変更時は `AGENTS.md`、`supabase/schema.sql`、`docs/supabase_schema_source_of_truth.md` と同時に更新すること。
+本書は現行実装と移行状態の正確な反映を目的とする。課金仕様の変更時は `AGENTS.md` と `docs/firebase_migration.md` を更新する。Supabaseの移行元スキーマ変更は移行期間中に限り `supabase/schema.sql` と `docs/supabase_schema_source_of_truth.md` も同期する。

@@ -5,8 +5,7 @@ const BACKUP_SCHEMA_VERSION = 2;
 const COMMENT_SCHEMA_VERSION = 1;
 const FREE_COMMENT_LIMIT = 50;
 const BETA_PERIOD_END_ISO = '2026-04-02T14:59:59.000Z'; // 2026-04-02 23:59:59 JST
-const LICENSE_API_BASE_URL = 'https://wzinimxikcihdqqdvppa.supabase.co/functions/v1/license-api';
-const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_qBIjjA5UN3H62B8dWdqo0w_PRTqVZCq';
+const LICENSE_API_BASE_URL = 'https://asia-northeast1-fanza-comment-lic-20260303.cloudfunctions.net/licenseApi';
 const CHECKOUT_POLL_INTERVAL_MS = 2000;
 const CHECKOUT_POLL_MAX_ATTEMPTS = 150; // 5 min
 const ENTITLEMENT_KEY_FIRST_SEEN_AT = 'fanza_memo_first_seen_at';
@@ -481,7 +480,6 @@ function getDeviceFingerprint() {
 function buildLicenseApiHeaders() {
   return {
     'Content-Type': 'application/json',
-    apikey: SUPABASE_PUBLISHABLE_KEY,
   };
 }
 
