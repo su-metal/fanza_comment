@@ -3,6 +3,7 @@ window.sceneMemoLocaleReady.then(copy => {
     en: {
       title: "Save FANZA video timestamps in Chrome | Scene Memo",
       description: "Save and search timestamped notes for supported FANZA videos, then jump back to the moments you want to revisit. A desktop Chrome extension with A–B repeat. Free for 50 notes; Pro is a one-time {price} purchase.",
+      pricingPromo: { label: "Launch campaign price", until: "Through January 30, 2027", nextPrice: "¥980 from January 31, 2027" },
       strings: {
         "好きな場面の再生位置を、時刻付きメモで保存。": "Save timestamped notes for FANZA scenes you want to revisit.",
         "保存したメモをクリックすると、その場面から再生。": "Click a saved note to jump back to that moment.",
@@ -19,12 +20,14 @@ window.sceneMemoLocaleReady.then(copy => {
         "FANZA動画の再生位置を保存する方法": "Save timestamps for FANZA scenes",
         "好きな場面に時刻付きメモを残し、あとから検索・頭出しする手順を紹介します。": "See how to save notes at exact moments, search them, and jump back later.",
         "日本語の記事です": "Japanese article",
-        "ガイドを読む": "Read the guide"
+        "ガイドを読む": "Read the guide",
+        "地域に関する注意：FANZA/DMMの地域制限により、日本国外では利用できないサービスや動画があります。VPNやプロキシを使っても利用できるとは限らず、神シーンメモは地域制限を回避しません。": "Regional availability: Some FANZA/DMM services or videos may be unavailable outside Japan. A VPN or proxy does not guarantee access, and Scene Memo does not bypass regional restrictions."
       }
     },
     "zh-CN": {
       title: "保存 FANZA 视频播放位置并添加备注｜神场景笔记",
       description: "为支持的 FANZA 视频保存带时间的备注，搜索并一键回到想重看的片段。支持 A–B 循环的桌面版 Chrome 扩展。免费保存 50 条；Pro 一次性购买 {price}。",
+      pricingPromo: { label: "发布纪念优惠价", until: "截至2027年1月30日", nextPrice: "2027年1月31日起980日元" },
       strings: {
         "好きな場面の再生位置を、時刻付きメモで保存。": "为想重看的 FANZA 场景保存带时间的备注。",
         "保存したメモをクリックすると、その場面から再生。": "点击已保存的备注即可回到对应位置。",
@@ -41,12 +44,14 @@ window.sceneMemoLocaleReady.then(copy => {
         "FANZA動画の再生位置を保存する方法": "如何保存 FANZA 视频的播放位置",
         "好きな場面に時刻付きメモを残し、あとから検索・頭出しする手順を紹介します。": "介绍如何为喜欢的片段添加时间备注，并在之后搜索或跳转回看。",
         "日本語の記事です": "日文文章",
-        "ガイドを読む": "阅读指南"
+        "ガイドを読む": "阅读指南",
+        "地域に関する注意：FANZA/DMMの地域制限により、日本国外では利用できないサービスや動画があります。VPNやプロキシを使っても利用できるとは限らず、神シーンメモは地域制限を回避しません。": "地区使用提示：受 FANZA/DMM 地区限制影响，部分服务或视频在日本境外可能无法使用。使用 VPN 或代理也不保证能够访问；神场景笔记不会绕过地区限制。"
       }
     },
     ko: {
       title: "FANZA 영상 재생 위치를 메모로 저장하기 | Scene Memo",
       description: "지원되는 FANZA 영상에서 다시 보고 싶은 장면의 시간과 메모를 저장하고 검색해 이동하세요. A–B 반복을 지원하는 데스크톱 Chrome 확장 프로그램입니다. 메모 50개까지 무료, Pro는 {price} 일회 결제입니다.",
+      pricingPromo: { label: "출시 기념 캠페인 가격", until: "2027년 1월 30일까지", nextPrice: "2027년 1월 31일부터 980엔" },
       strings: {
         "好きな場面の再生位置を、時刻付きメモで保存。": "FANZA에서 다시 보고 싶은 장면의 시간을 메모로 저장하세요.",
         "保存したメモをクリックすると、その場面から再生。": "저장한 메모를 클릭하면 해당 장면으로 이동합니다.",
@@ -63,7 +68,8 @@ window.sceneMemoLocaleReady.then(copy => {
         "FANZA動画の再生位置を保存する方法": "FANZA 영상 재생 위치 저장 방법",
         "好きな場面に時刻付きメモを残し、あとから検索・頭出しする手順を紹介します。": "좋아하는 장면에 시간 메모를 남기고 나중에 검색해 이동하는 방법을 소개합니다.",
         "日本語の記事です": "일본어 문서",
-        "ガイドを読む": "가이드 읽기"
+        "ガイドを読む": "가이드 읽기",
+        "地域に関する注意：FANZA/DMMの地域制限により、日本国外では利用できないサービスや動画があります。VPNやプロキシを使っても利用できるとは限らず、神シーンメモは地域制限を回避しません。": "지역 이용 안내: FANZA/DMM의 지역 제한으로 일본 외 지역에서는 일부 서비스나 동영상을 이용하지 못할 수 있습니다. VPN 또는 프록시를 사용해도 이용이 보장되지 않으며, Scene Memo는 지역 제한을 우회하지 않습니다."
       }
     }
   };
@@ -71,5 +77,6 @@ window.sceneMemoLocaleReady.then(copy => {
   if (!selected) return;
   copy.title = selected.title;
   copy.description = selected.description;
+  copy.pricingPromo = selected.pricingPromo;
   Object.assign(copy.strings, selected.strings);
 });

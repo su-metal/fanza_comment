@@ -17,7 +17,7 @@
 | 初回データ移行 | ユーザー確認（2026-10-24）で既存購入者なし。entitlement / claim / webhookデータを移行せず、空のFirestoreから開始する |
 | Firebase のシークレット・価格設定 | JPY ¥500 / USD $3.99 Price ID、fallback Price ID、YouTube許可オリジンは `functions/.env.fanza-comment-lic-20260303` にローカル設定済み（Git除外）。3つのSecretはSecret Managerで有効なバージョン1を確認済み |
 | Cloud Functions API | 2026-10-24に必要APIを有効化。Firebase CLIでFunctions一覧を取得できることを確認 |
-| Firebase Functions | `licenseApi` を2026-10-24にNode.js 22 / Functions v2 / `asia-northeast1` へデプロイ済み。CLI一覧で確認。test mode/EmulatorでCheckout・返金失効・activate/restore・端末移行を確認済み。本番Checkout/返金は未確認 |
+| Firebase Functions | `licenseApi` を2026-10-24にNode.js 22 / Functions v2 / `asia-northeast1` へデプロイ済み。CLI一覧で確認。test mode/EmulatorでCheckout・返金失効・activate/restore・端末移行を確認済み。本番Checkout/返金は未確認（任意の追加確認で、配布条件ではない） |
 | Secret Manager API / Secret | 2026-10-24にAPI有効化済み。`LICENSE_TOKEN_SECRET` / `STRIPE_API_KEY` / `STRIPE_WEBHOOK_SECRET` の有効なバージョン1を確認 |
 | Firebase CLI | `npx firebase-tools@latest` から対象プロジェクトへアクセスできることを確認 |
 | Firebase Emulator Suite | `firebase.json` にFunctions `5001` / Firestore `8080` / Emulator UI `4000` を設定。demoプロジェクトで起動し、ランダムfingerprintへの `verify-device` が `200 no_claim_found` を返すことを確認。Stripe test modeの検証専用商品とJPY/USD Priceを作成し、IDをGit除外の `.env.local` に設定済み。`Scene Memo Firebase Emulator Test` 制限付きtest API keyを `Checkout Sessions: write` のみで作成し、キー値をGit除外の `.secret.local` に保存済み。Emulator経由でJPY Checkout作成APIが `200` を返すことを確認（test決済・Webhook発行・返金失効E2E確認済み）。Stripe CLIのSandbox認証とlistener起動を確認し、ローカルWebhook signing secretをGit除外の `.secret.local` に保存済み。テスト用 `.env.local` / `.secret.local` はGitとFunctionsデプロイから除外する |
@@ -26,7 +26,7 @@
 | Functions / Firebase Stripe webhook | `licenseApi` はデプロイ済み。Firebase webhookも承認済みURLで有効化され、`checkout.session.completed` / `charge.refunded` を購読。既存Supabase endpointも有効のまま |
 | 公開LPと配布ZIP | v1.0.2 のまま。Supabase API を使用 |
 
-依存関係は `firebase-admin@14.5.0` / `firebase-functions@7.4.0` / Express型5系に更新し、本番依存のnpm監査は0件。`/activate` の応答も拡張が期待するentitlement形式に合わせた。本番APIのCORSと読み取り専用verify、およびStripe test mode / Firebase Emulator E2Eは確認済み。Emulatorで合成entitlementによるactivate/restore・誤入力・端末移行を確認した。本番Checkout/返金とStripe発行ライセンスを使う実購入フローは未確認。公開中v1.0.2の本番課金APIは引き続きSupabaseであるため、Firebaseのデプロイだけで本番移行完了とは扱わない。
+依存関係は `firebase-admin@14.5.0` / `firebase-functions@7.4.0` / Express型5系に更新し、本番依存のnpm監査は0件。`/activate` の応答も拡張が期待するentitlement形式に合わせた。本番APIのCORSと読み取り専用verify、およびStripe test mode / Firebase Emulator E2Eは確認済み。Emulatorで合成entitlementによるactivate/restore・誤入力・端末移行を確認した。本番Checkout/返金とStripe発行ライセンスを使う実購入フローは未確認だが、任意の追加確認で配布条件ではない。公開中v1.0.2の本番課金APIは引き続きSupabaseであるため、Firebaseのデプロイだけで本番移行完了とは扱わない。
 
 ## 2. 移行先の構成
 
@@ -107,8 +107,8 @@ Supabaseの `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` は移行スクリプ�
 3. Secret Manager APIを有効化し、`LICENSE_TOKEN_SECRET` / 差し替えStripe keyの `STRIPE_API_KEY` / webhook signing secretの `STRIPE_WEBHOOK_SECRET` を登録する（2026-10-24完了）。3件とも有効なバージョン1を確認した。価格IDとデプロイパラメーターはGit除外のローカル設定からFunctionsへ反映する。
 4. 今回は既存購入者なしのため、移行dry-run・Firestoreへの既存データ書き込みを省略する。公開準備期間中にSupabase側で購入が発生した場合は移行対象を再確認する。
 5. JPY/USD Price ID、fallback、許可オリジンを設定してFunctionsをデプロイする（2026-10-24完了）。Firebase向けStripe webhook endpointをSupabase向けendpointと並行して追加する（2026-10-24完了）。Supabase endpointは切替時に削除しない。
-6. Stripe test modeとFirebase EmulatorでCheckout、決済完了Webhook、同じ端末のverify、テスト返金による失効を確認する（2026-10-24完了）。合成entitlementによるactivate/verify、誤入力の拒否、同一端末再activation、別端末へのclaim移行は確認済み。本番Checkout/返金とStripe発行ライセンスから拡張UIまでの実購入フローは未確認。
-7. すべての受け入れ確認後に、拡張v1.0.3のZIPを生成してLPへ公開する。本番ZIPは現在v1.0.2なので、Firebaseの実動作確認前に差し替えない。
+6. Stripe test modeとFirebase EmulatorでCheckout、決済完了Webhook、同じ端末のverify、テスト返金による失効を確認する（2026-10-24完了）。合成entitlementによるactivate/verify、誤入力の拒否、同一端末再activation、別端末へのclaim移行も確認済み。本番Checkout/返金とStripe発行ライセンスから拡張UIまでの実購入フローは未確認だが、任意の追加確認で配布条件ではない。
+7. 受け入れ確認後に拡張v1.0.3のZIPを生成し、ZIP内manifestとLPのバージョン・リンクをそろえてから公開する。公開中ZIPは現在v1.0.2。本番の実購入・返金は公開条件にしない。
 8. v1.0.2の既存インストールはSupabase APIを引き続き呼び出す。互換期間中はSupabase APIとwebhookを維持し、Stripeイベントを両基盤へ配信する。旧API/webhookの停止は旧版の購入・復元をサポートしなくてよいと判断した後に別途行う。
 
 2026-10-24にStripe本番アカウントへFirebase向けwebhook endpointを有効化し、`checkout.session.completed` / `charge.refunded` を購読するよう設定した。既存Supabase endpointは維持している。3つのSecretをSecret Managerへ登録し、`licenseApi` とFirestore Rulesを本番デプロイ済み。Artifact Registryは7日経過した古いイメージを整理する。本番APIではCORS `OPTIONS` が204、ランダム指紋の読み取り専用 `verify-device` が `200 no_claim_found` で成功した。本番StripeでのCheckout/返金は実施していない。Stripe test mode / Firebase EmulatorでのCheckout・Webhook発行・全額返金失効E2Eは2026-10-24に確認済み。さらに合成entitlementによるactivate/restore・誤入力・端末移行を2026-10-24に確認済み（詳細は次項）。
@@ -122,4 +122,4 @@ npx --yes @stripe/cli listen --events 'checkout.session.completed,charge.refunde
 
 Stripe CLIが表示するローカルWebhook署名シークレットを `.secret.local` に保存し、Emulatorを起動し直す。Stripe test modeで作成したJPY/USD Price IDと制限付きテストAPI keyを使って `/create-checkout-session` を呼び、CheckoutではStripe提供のテストカードを使う。Webhookの成功応答とEmulator UI上の `license_entitlements` / `license_code_indexes` / `license_claims` / `webhook_events` を確認し、同じ端末指紋への `verify-device` がProを返すこと、テスト返金後にProが失効することを確認する。Stripe test modeはテストキーとtest Price IDを使い、テストデータは本番データから分離する。テストキーや署名シークレットをチャットやGitへ書かない。
 
-Stripe test mode / Firebase EmulatorのCheckout・Webhook発行・返金失効E2Eと、合成entitlementによるactivate/restore・誤入力・端末移行確認は完了した。本番Checkout/返金およびStripe発行ライセンスから拡張UIまでの実購入フローは未確認のためv1.0.3 ZIPは未公開。過去にStripe画面の読み取り結果へ含まれたキーは使用していないが、旧キーの失効状態は未確認。標準テストSecret keyも画面に表示されたため、他環境で使っている場合は差し替える。Supabaseはv1.0.2互換のため維持する。Supabaseを停止する日付・旧版サポート期間は未決定。初回Firestoreデータ移行はユーザー確認により不要。
+Stripe test mode / Firebase EmulatorのCheckout・Webhook発行・返金失効E2Eと、合成entitlementによるactivate/restore・誤入力・端末移行確認は完了した。本番Checkout/返金およびStripe発行ライセンスから拡張UIまでの実購入フローは未確認だが、任意の追加確認で配布条件ではない。v1.0.3 ZIPは未作成・未公開。ローカルFunctionsビルドと拡張JavaScript構文・ロケールJSONの最終確認は2026-10-25に成功した。LPは現在v1.0.2 ZIPを参照しているため、公開時に配布ZIPとリンクを同期する。過去にStripe画面の読み取り結果へ含まれたキーは使用していないが、旧キーの失効状態は未確認。標準テストSecret keyも画面に表示されたため、他環境で使っている場合は差し替える。Supabaseはv1.0.2互換のため維持する。Supabaseを停止する日付・旧版サポート期間は未決定。初回Firestoreデータ移行はユーザー確認により不要。

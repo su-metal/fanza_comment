@@ -5,14 +5,14 @@
 
 ## 0. 公開状態を先に確認する
 
-- [ ] Cloudflare Pagesの本番へ `robots.txt` と `sitemap.xml` を反映する。
-- [ ] `https://scene-memo.pages.dev/robots.txt` が `text/plain` で表示され、LPのHTMLを返さないことを確認する。
-- [ ] `https://scene-memo.pages.dev/sitemap.xml` がXMLとして表示され、LPのHTMLを返さないことを確認する。
-- [ ] サイトマップ内のURLが実際に公開しているcanonical URLと一致することを確認する。
+- [x] Cloudflare Pagesの本番へ `robots.txt` と `sitemap.xml` を反映する。
+- [x] `https://scene-memo.pages.dev/robots.txt` が期待するrobots.txt本文を返し、LPのHTMLを返さないことを確認する。
+- [x] `https://scene-memo.pages.dev/sitemap.xml` が有効なXMLを返し、LPのHTMLを返さないことを確認する。
+- [x] サイトマップ内のURLが実際に公開しているcanonical URLと一致することを確認する。
 
-現在は本番の2つのURLが正しい静的ファイルを返すことを確認できていない。ここが済むまでは、検索管理ツールへサイトマップを送信しない。
+本番のrobots.txtとサイトマップは確認済み。サイトマップはGoogle Search Consoleへ送信済みだが、取得状態は引き続き確認する。
 
-## 1. Google Search Console
+## 1. Google Search Console（所有権確認済み・サイトマップ処理中）
 
 1. 既存のGoogleアカウントでSearch Consoleを開き、サイトプロパティを追加する。
 2. `https://scene-memo.pages.dev/` を**URLプレフィックス**として登録する。`pages.dev` のDNSを管理していない場合、DNS確認が必要なドメインプロパティではなくURLプレフィックスを使う。
@@ -20,7 +20,7 @@
 4. 所有権確認後、サイトマップ欄へ `https://scene-memo.pages.dev/sitemap.xml` を送信する。
 5. 送信状態、検出URL数、ページのインデックス状態を記録する。表示回数やクリックがまだない場合は「0件」と断定せず、「データ未反映」と区別する。
 
-## 2. Bing Webmaster Tools
+## 2. Bing Webmaster Tools（ユーザー方針で後回し）
 
 1. 既存のMicrosoft、Google、FacebookアカウントのいずれかでBing Webmaster Toolsを開く。
 2. Search Consoleで所有権確認済みなら、**Google Search Consoleからインポート**を優先する。Google側の確認とサイトマップを引き継げる。
@@ -28,14 +28,14 @@
 4. サイトマップがインポートされていない場合だけ、BingのSitemaps画面から `https://scene-memo.pages.dev/sitemap.xml` を送信する。
 5. 登録後は検索パフォーマンスと、利用可能な場合はAI Performanceを確認する。インデックス掲載やAI回答での引用は保証されない。
 
-## 3. Cloudflare Web Analytics（任意）
+## 3. Cloudflare Web Analytics（有効化・本番デプロイ済み、実測値待ち）
 
 1. 既存CloudflareアカウントでWorkers & Pagesを開き、`scene-memo` のPagesプロジェクトを選ぶ。
-2. **Metrics → Web Analytics → Enable** を選ぶ。Pagesは次回デプロイ時に計測スクリプトを挿入する。
-3. 有効化前に公開プライバシー説明を確認し、分析利用について説明が足りなければ先に文面を整える。
+2. Metrics → Web Analytics → Enable は実施済み。次回デプロイへの計測スクリプト挿入と本番デプロイ成功まで確認した。
+3. 公開FAQではページ閲覧・パフォーマンスの計測を説明し、拡張機能内のメモ本文や視聴情報を計測対象としていないことを確認した。
 4. 公開後、Web Analytics画面でページ閲覧とパフォーマンスの基準値を記録する。
 
-この機能はページ閲覧・パフォーマンスの確認用とする。現行のCloudflare Web AnalyticsはUTMクエリ文字列とカスタムイベントを記録しないため、投稿別流入やZIPクリックの数値として扱わない。必要なプライバシー説明が整うまで有効化を保留してよい。
+この機能はページ閲覧・パフォーマンスの確認用とし、投稿別流入やZIPクリックの数値として扱わない。公開FAQでも計測対象をページ閲覧・パフォーマンスに限定して説明済み。計測範囲を変える場合は、先に公開プライバシー説明を更新する。
 
 ## 4. 初回の基準値
 
@@ -55,3 +55,12 @@
 - [Bing Webmaster Tools: サイトマップ送信](https://www.bing.com/webmasters/help/Sitemaps-3b5cf6ed)
 - [Cloudflare Pages: Web Analyticsを有効化](https://developers.cloudflare.com/pages/how-to/web-analytics/)
 
+## 2026-10-25 実施状況（Google優先）
+
+- Google Search ConsoleのURLプレフィックスプロパティ `https://scene-memo.pages.dev/` は所有権確認済み。Search Consoleの通知にも確認完了と表示された。
+- 公開 `/sitemap.xml` は有効なXMLで、トップページと `/guide-fanza.html` の2 URLを含む。公開 `/robots.txt` も期待する本文を返す。
+- サイトマップは送信済みだが、Search Consoleの一覧は最終読み込み 2026/10/25、型「不明」、状態「取得できませんでした」、検出ページ0件。詳細画面にも具体的な原因は表示されていない。
+- トップページとFANZAガイドのURL検査では、ライブテストが成功し、クロール許可・取得・インデックス登録許可を確認した。これはインデックス済みを意味しない。ページのインデックス登録と検索パフォーマンスの各レポートは「データを処理しています。1日後にもう一度ご確認ください」と表示し、検索実績はまだ取得できていない。
+- トップページのインデックス登録リクエストは1日の割り当て上限で拒否された。同日は再試行せず、処理状況を待つ。翌日以降、必要なURLだけを少数ずつ申請する。
+- Bing Webmaster Toolsは保留。Google側のサイトマップ・インデックス状態を先に確認する。
+- Cloudflare Web Analyticsは有効化後の本番デプロイまで成功。実データが画面に届いたかはまだ未確認。

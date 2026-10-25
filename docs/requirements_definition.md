@@ -54,8 +54,8 @@
 - LPから Chrome Web Store を経由しない拡張機能ZIPを直接ダウンロードできること
 - LPで、ZIPの解凍、`chrome://extensions` の表示、デベロッパーモードの有効化、`manifest.json` を含むフォルダの読み込みを案内すること
 - ブラウザーの優先言語から表示言語を判定し、日本語 (`ja`)、簡体字中国語 (`zh`)、韓国語 (`ko`)、それ以外は英語で表示すること
-- ページタイトル・説明、LP本文、FAQ、操作デモを選択言語で表示すること
-- Pro価格は拡張機能と同じく、タイムゾーンが `Asia/Tokyo` なら `¥500`、それ以外は `$3.99` と表示すること
+- ページタイトル・説明、LP本文、FAQ、操作デモ、FANZA/DMMの地域制限に関する注意書きを選択言語で表示すること。注意書きでは、日本国外で利用できないサービス・動画があること、VPN等でも利用は保証されないこと、拡張機能は地域制限を回避しないことを案内する
+- Pro価格は拡張機能と同じく、タイムゾーンが `Asia/Tokyo` なら `¥500`、それ以外は `$3.99` と表示すること。LPでは日本向けに `¥500` のリリース記念キャンペーン価格を `2027年1月30日まで`、`2027年1月31日から¥980` で販売する予定を表示し、価格切替時はLP・拡張機能・Checkoutを同期すること
 - ストア経由の自動更新がないことを利用者に案内すること
 - 配布ZIPのルートに日本語 (`INSTALL.txt`)、英語 (`INSTALL_en.txt`)、簡体字中国語 (`INSTALL_zh-CN.txt`)、韓国語 (`INSTALL_ko.txt`) の手順書を含めること
 
@@ -263,8 +263,8 @@ Functionsパラメーター:
 - `firestore.rules` はクライアントの読み書きを拒否し、2026-10-24に本番デプロイ済み。FunctionsのTypeScriptビルド成功、本番依存のnpm監査0件を確認済み
 - Firebase Secret Managerに `LICENSE_TOKEN_SECRET` / `STRIPE_API_KEY` / `STRIPE_WEBHOOK_SECRET` を設定し、Firebase Functions `licenseApi` とFirestore Rulesを本番デプロイ済み。本番API CORS `OPTIONS` は `204`、ランダム指紋の読み取り専用 `verify-device` は `200 no_claim_found` で成功した。本番Checkout/返金は未確認。Stripe本番商品のJPY `¥500` / USD `$3.99` Price IDとローカル設定は `docs/firebase_migration.md` を参照。旧キーの失効状態は未確認
 - 2026-10-24にStripe test mode / Firebase Emulator E2Eを確認した。Checkout作成 `200`、決済完了 `checkout.session.completed` webhook `200`、entitlement `active`、同端末 `verify-device is_pro=true` を確認。全額テスト返金後、`charge.refunded` webhook `200`、entitlement `refunded`、`verify-device is_pro=false` / `no_active_license` を確認済み。本番データへテスト書き込みなし
-- Emulatorで合成entitlementのactivate/restore・誤入力・端末移行を確認した。Stripe発行entitlementから拡張UIまでの実購入フローと本番Checkout/返金は未確認のためFirebase移行対象ソースv1.0.3は未配布。公開中v1.0.2はSupabase APIを継続利用する
-- 公開中LP ZIPはv1.0.2のまま。Firebase側の実動作確認前にv1.0.3を配布しない。旧版互換期間はSupabaseを維持し、Stripe webhookを両基盤へ配信する
+- Emulatorで合成entitlementのactivate/restore・誤入力・端末移行を確認した。Stripe発行entitlementから拡張UIまでの実購入フローと本番Checkout/返金は未確認だが、これは任意の追加確認で配布条件ではない。公開中v1.0.2はSupabase APIを継続利用する
+- 公開中LP ZIPはv1.0.2のまま。v1.0.3は未配布であり、配布時はFirebase版ソースから作成したZIPとLPリンクをそろえる。旧版互換期間はSupabaseを維持し、Stripe webhookを両基盤へ配信する
 - v1.0.2を利用する既存インストールはSupabase APIを継続利用するため、Firebase移行後も旧版互換期間が必要
 
 ## 10. 受け入れ基準（現行版）
@@ -279,7 +279,7 @@ Functionsパラメーター:
 - 現時点では既存購入者がいないため、Firebaseの初期コレクションは空で開始する。将来移行時にSupabase側へ既存購入データが発生している場合は、`license_entitlements` / `license_claims` / `webhook_events` とコード索引の件数・状態を照合する
 - Firebase Rulesがクライアントアクセスを拒否し、Functions経由で購入・復元・verify・失効処理を確認できる
 - Stripe test modeとFirebase Emulatorで、Checkout完了Webhookによるライセンス発行、activate/verify、誤入力拒否、同一端末再activation、別端末移行で旧claim解除・claim 1件維持、test refundによる失効を確認する。本番Stripeキー・本番Webhook secretおよび本番Firestoreにテストデータを書き込まない
-- v1.0.3 ZIPの公開はFirebase APIとStripe webhookの実動作確認後に行う。初回データ移行は不要だが、旧版互換期間のSupabase APIとwebhookを維持する
+- v1.0.3 ZIPはStripe test mode / Firebase Emulatorの受け入れ確認後に公開できる。本番の実購入・返金は任意の追加確認で、公開条件にしない。初回データ移行は不要だが、旧版互換期間のSupabase APIとwebhookを維持する
 
 ## 11. 将来拡張方針（要件レベル）
 
@@ -294,8 +294,8 @@ Functionsパラメーター:
 - 主軸候補「FANZA 動画 再生位置 保存」に対応する説明をタイトル・本文・FAQへ反映し、保存対象を動画ファイルと誤認させない。ブラウザー優先言語による4言語表示・ZIP配布・導入手順を維持する
 - ガイドは独立URL `guide-fanza.html` とし、LPからの紹介リンク、記事から導入案内・ZIPへのリンクを実装済み。検索数やAI掲載・引用を保証しない
 - 公開先はユーザー指定の Cloudflare Pages `https://scene-memo.pages.dev/`。本番 `main` へ反映済み。LP・ガイド・ZIP・画像・英中韓の言語ファイルのHTTP取得を確認し、英語表示とガイド画面をブラウザーで確認済み
-- robots/sitemapはローカルに追加済みだが、公開URLはHTTP 200でLPのHTMLを返しており未反映。中国語・韓国語の実ブラウザー表示、検索流入・順位・SEO/AIO効果も未確認
-- 多言語固定URL、クロール基盤、YouTube向けガイド、計測は後続の提案として扱う。LP用GitHub Actions + WranglerをPR #7に追加した。`en_language` へのマージとCloudflare Pages用GitHub Secrets設定後に本番自動配信を開始するため、現時点では未稼働。既存の定期実行登録と本番配信を区別する
+- robots.txtとsitemap.xmlはCloudflare Pages本番へ反映済み。公開robots.txtは期待する本文を返し、sitemap.xmlは有効なXMLでトップページとFANZAガイドの2 URLを掲載。Search Consoleの所有権確認とサイトマップ送信は完了したが、2026-10-25時点でGoogle側は「取得できませんでした」、検出ページ0件。両URLのライブテストは成功しクロール・取得・インデックス登録が許可されているが、登録済みとは未確認。ページインデックス・検索パフォーマンスレポートは「データを処理しています。1日後にもう一度ご確認ください」と表示し、検索語や表示・クリックは未取得。Cloudflare Web Analyticsは有効化後の本番デプロイまで成功し、実測値は未確認
+- 多言語固定URLとYouTube向けガイドは後続提案。LP用GitHub Actions + Wranglerによる本番自動配信を導入し、PR #9をen_languageへマージ後、2026-10-25のActions run 40165595407で本番デプロイ成功を確認。中国語・韓国語の実ブラウザー表示、検索流入・順位・SEO/AIO効果は未確認。Googleの処理状況を先に追跡し、Bing Webmaster Toolsは後回しとする
 - SEO効果・検索順位・検索数は未確認。追加費用0円を維持する間はX投稿API認証を確認・利用しない
 
 ---

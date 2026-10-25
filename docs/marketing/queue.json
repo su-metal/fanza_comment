@@ -9,7 +9,7 @@
     "article_destination": null,
     "lp_candidate_url": "https://scene-memo.pages.dev/",
     "lp_url_verified": true,
-    "analytics_connection": "not_connected"
+    "analytics_connection": "connected_pending_data"
   },
   "items": [
     {
@@ -46,6 +46,17 @@
       "remote_id": null,
       "public_url": null,
       "hold_reason": "記事の公開先が未指定。LP・ZIPの公開URLは確認済み。"
+    },
+    {
+      "id": "ja-youtube-timestamp-guide-001",
+      "channel": "article",
+      "locale": "ja",
+      "status": "draft",
+      "title": "YouTubeの見返したい時間を保存する方法｜タイムスタンプメモ",
+      "source_path": "scene-memo-LP/guide-youtube.html",
+      "remote_id": null,
+      "public_url": null,
+      "hold_reason": "Google検索向けのローカル下書き。YouTube公式の開始位置付き共有リンクとの使い分けを説明。公開・インデックス申請は未実施。"
     }
   ]
 }
