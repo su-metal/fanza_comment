@@ -28,7 +28,7 @@
 - `Proを復元` 導線は無料版でのみ表示し、ベータ特典者には表示しない
 - popup から `onboarding.html` を任意に開ける導線を持ち、使い方とPro案内をいつでも参照できる
 - 拡張UIは日本語/英語に対応し、タイムゾーンが `Asia/Tokyo` なら日本語、それ以外は英語で `popup` / `onboarding` / プレーヤー内主要導線の文言を切り替える
-- 拡張の `popup` / `onboarding` / プレーヤー内UIは、LPと共通の暗色・ローズアクセント・細い境界線・システムフォントのデザインに揃える。広告掲載用の拡張画面スクリーンショットはローカルの模擬プレーヤーと説明用サンプルデータで撮影し、利用者のコメントや視聴履歴を使わない。このUI・LP差替えは開発ブランチ上の変更で、GitHub・Cloudflare Pages・配布ZIPには未反映
+- 拡張の `popup` / `onboarding` / プレーヤー内UIは、LPと共通の暗色・ローズアクセント・細い境界線・システムフォントのデザインに揃える。広告掲載用の拡張画面スクリーンショットはローカルの模擬プレーヤーと説明用サンプルデータで撮影し、利用者のコメントや視聴履歴を使わない。このUI・LP差替えはGitHubの作業ブランチにあり、`en_language` へのマージ・Cloudflare Pages本番・配布ZIPには未反映
 - 決済価格はタイムゾーン判定に連動し、`Asia/Tokyo` なら `¥500` の JPY Price、それ以外は `$3.99` の USD Price を自動選択する
 - 公開中v1.0.2の本番課金APIはSupabase。Firebaseプロジェクト `fanza-comment-lic-20260303` は2026-10-24にBlaze有効を確認済み。Firestoreには既存のデフォルトDBがあり、場所は `nam5`、データは空。Functionsの `asia-northeast1` とはリージョンが異なる
 - FirestoreのリモートRulesはクライアントの読み書きをすべて拒否し、2026-10-24に本番デプロイ済み。移行コードはFirestoreデフォルトDBをAdmin SDKで使い、コメント本文は移行対象外。FunctionsのTypeScriptビルドは成功し、本番依存のnpm監査は0件
