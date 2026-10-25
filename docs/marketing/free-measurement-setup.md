@@ -5,19 +5,19 @@
 
 ## 0. 公開状態を先に確認する
 
-- [ ] Cloudflare Pagesの本番へ `robots.txt` と `sitemap.xml` を反映する。
-- [ ] `https://scene-memo.pages.dev/robots.txt` が `text/plain` で表示され、LPのHTMLを返さないことを確認する。
-- [ ] `https://scene-memo.pages.dev/sitemap.xml` がXMLとして表示され、LPのHTMLを返さないことを確認する。
-- [ ] サイトマップ内のURLが実際に公開しているcanonical URLと一致することを確認する。
+- [x] Cloudflare Pagesの本番へ `robots.txt` と `sitemap.xml` を反映する。
+- [x] `https://scene-memo.pages.dev/robots.txt` がrobots.txt本文を返すことをブラウザーで確認する。
+- [x] `https://scene-memo.pages.dev/sitemap.xml` が有効なXMLとして表示され、LP本文を返さないことを確認する。
+- [x] サイトマップ内のURLが `https://scene-memo.pages.dev/` と `https://scene-memo.pages.dev/guide-fanza.html` であることを確認する。
 
-現在は本番の2つのURLが正しい静的ファイルを返すことを確認できていない。ここが済むまでは、検索管理ツールへサイトマップを送信しない。
+2026-10-25時点で公開本文とXML表示を確認済み。HTTPのContent-Typeヘッダーは別途検査していない。Google/Bingへサイトマップを送信する前に、対象ファイルの公開と所有権確認を完了する。
 
 ## 1. Google Search Console
 
-1. 既存のGoogleアカウントでSearch Consoleを開き、サイトプロパティを追加する。
-2. `https://scene-memo.pages.dev/` を**URLプレフィックス**として登録する。`pages.dev` のDNSを管理していない場合、DNS確認が必要なドメインプロパティではなくURLプレフィックスを使う。
-3. Search Consoleが提示する所有権確認方法のうち、利用できるものを選ぶ。HTMLファイル方式なら指定ファイルをサイトのルートへ配置し、HTMLタグ方式なら指定タグをトップページの`<head>`へ追加して本番へ反映する。確認用の値はチャットやリポジトリへ書かず、Googleの画面から直接扱う。
-4. 所有権確認後、サイトマップ欄へ `https://scene-memo.pages.dev/sitemap.xml` を送信する。
+1. Search Consoleにある既存のURLプレフィックス `https://scene-memo.pages.dev/` を使う（2026-10-25時点で所有権は未確認）。
+2. Googleが発行したHTML確認ファイル `googled80bb7700135914b.html` を `scene-memo-LP/` のルートに置いて公開する。Googleの確認ファイルは公開サイトで取得可能にする必要があり、このファイルはリポジトリで公開する。確認用の値はチャットへ貼り付けない。
+3. 公開後、Search Consoleで「確認」を押して所有権を確かめる。確認成功後も、HTML確認ファイルを削除・改名せず公開状態に保つ。
+4. サイトマップ欄へ `https://scene-memo.pages.dev/sitemap.xml` を送信する。
 5. 送信状態、検出URL数、ページのインデックス状態を記録する。表示回数やクリックがまだない場合は「0件」と断定せず、「データ未反映」と区別する。
 
 ## 2. Bing Webmaster Tools
