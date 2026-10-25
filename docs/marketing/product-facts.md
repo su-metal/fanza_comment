@@ -21,7 +21,7 @@
 
 - Chrome Web Storeへ公開するには開発者登録と一回限りの登録料が必要。既に登録済みで追加費用がないかは未確認のため、費用ゼロを優先する間は現行のZIP配布を維持する。
 - X APIの投稿作成は従量課金で、2026-10-25に公式料金ページで1投稿リクエストあたり $0.015 と表示されていた。料金は変わり得るため0円運用では投稿APIを呼び出さず、原稿作成までにとどめて手動投稿を前提とする。
-- Search Consoleはサイト所有者が無料で使える。Cloudflare Web Analyticsも無料で提供され、Cloudflare Pagesでは設定画面から有効化できる。アカウント接続・利用可能状態は未確認。
+- Search ConsoleとBing Webmaster Toolsは無料のサイト所有者向けサービス。Bing Webmaster Toolsには検索パフォーマンスとAI Performanceのレポートがある。Cloudflare Web Analyticsも無料で提供され、Cloudflare Pagesでは設定画面から有効化できる。各アカウントの接続・利用可能状態は未確認。
 - 新規の有料契約、登録料、API従量課金を発生させる操作は行わない。
 
 ### 原稿で避ける表現
@@ -45,10 +45,11 @@
 
 ## 次に必要な計測判断
 
-1. Search Consoleの既存プロパティと所有権確認状態を確認する。
-2. Cloudflare Web AnalyticsをPagesの設定で有効化できるか確認する。これはページ閲覧・パフォーマンスの基準値用とし、UTM・ZIPクリックの計測には使わない。
-3. まず無料計測の範囲でSearch ConsoleとCloudflare Web Analyticsを使う。有料分析サービスは導入しない。投稿別UTMとZIPクリックは、無料の計測方法が別途確認できるまでは未取得とする。
-4. 計測を有効にできた後、最初の4週間の基準値を取り、X投稿を既存上限の週2件で試す。計測のない期間をゼロ実績として扱わない。
+1. 本番のデプロイ元を確定し、`robots.txt` が `text/plain`、`sitemap.xml` が有効なXMLとして返る状態に反映する。現在の公開URLは両方ともLPの `text/html` を返すため、修正が公開されるまではサイトマップを送信しない。
+2. 既存GoogleアカウントでSearch ConsoleのURLプレフィックス `https://scene-memo.pages.dev/` を追加し、利用可能な方法で所有権を確認してから `https://scene-memo.pages.dev/sitemap.xml` を送信する。
+3. 既存MicrosoftアカウントでBing Webmaster Toolsに同じURLを登録・確認し、サイトマップを送信する。検索パフォーマンスとAI Performanceは、プロパティの確認後に取得できる範囲で見る。
+4. Cloudflare Pagesの既存アカウントでWeb Analyticsを利用できるか確認する。有効化の前に公開プライバシー説明との整合を確認する。ページ閲覧・パフォーマンスの基準値用とし、UTM・ZIPクリックの計測には使わない。
+5. 接続後に最初の4週間の基準値を取り、X投稿は既存上限の週2件で試す。投稿別UTM・ZIPクリック・インストール完了は無料で直接確認できる方法がない限り未取得とし、未計測期間をゼロ実績にしない。
 
 ## 根拠資料
 
@@ -56,6 +57,10 @@
 - [X Developer Platform](https://developer.x.com/): 投稿作成を含む従量課金の単価を掲載。
 - [Google Search Consoleの案内](https://developers.google.com/crawling/docs/about-crawling): サイト所有者向けに無償で提供。
 - [Cloudflare PagesでWeb Analyticsを有効にする](https://developers.cloudflare.com/pages/how-to/web-analytics/): Pagesダッシュボードから有効化し、次回デプロイでスクリプトを挿入する手順。
+- [Cloudflare Web Analyticsの概要](https://developers.cloudflare.com/web-analytics/about/): 無料提供と、個人データを収集・使用しないというCloudflareの説明。
 - [Cloudflare Web Analytics FAQ](https://developers.cloudflare.com/web-analytics/faq/): UTMクエリ文字列およびカスタムイベントは現在記録しない旨。
 - [Google Search Consoleを使う](https://developers.google.com/search/docs/monitor-debug/search-console-start?hl=en): 検索パフォーマンス・検索語・ページ別指標の確認。
+- [Search Consoleにサイトを追加する](https://support.google.com/webmasters/answer/34592?hl=en): URLプレフィックスの追加と所有権確認方法。
+- [Bing Webmaster Tools](https://www.bing.com/webmasters/about): 無料SEO/GEOツール。
+- [Bing Webmaster Tools AI Performance](https://www.bing.com/webmasters/help/ai-performance-9f8e7d6c): AI回答で引用されたページ、可視性の変化、関連クエリのレポート。
 - [FANZA公式ヘルプ: DMM Player v2の利用方法](https://support.fanza.jp/digital/article/46515): チャプター追加、チャプター間のABリピート、動画ファイル・プレイリストの扱い。
