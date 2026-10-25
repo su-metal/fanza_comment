@@ -38,7 +38,7 @@
 - LPではストア外配布の拡張機能ZIPを直接ダウンロードでき、Chromeのデベロッパーモードで解凍フォルダを読み込む手順を案内する。ブラウザーの優先言語に応じて日本語・英語・簡体字中国語・韓国語を表示し、配布ZIPに各言語の導入手順書を同梱する
 - 認知施策の原稿・配信台帳・運用手順は `docs/marketing/` で管理する。このチャットに週2回（月曜・木曜9時、日本時間）の原稿作成・確認を登録済みで、月曜に記事・効果確認も行う。Xの投稿先はユーザー指定の `@awawawawawadama`。公式X APIはユーザーが利用中との申告があるが、この環境での接続は未確認。認知施策は追加費用0円を原則とし、新規の有料契約・登録料・API従量課金が発生する手段を使わない。X投稿はAPIを呼ばず、原稿作成までを自動化し、無料の手動投稿を前提とする。計測はSearch ConsoleやCloudflare Web Analyticsなど無料で使える既存サービスを優先する
 - LPは用途が分かる冒頭説明、説明重複の整理、実画面スクリーンショット、FANZA向け使い方ガイドを実装し、ユーザー指定の Cloudflare Pages `https://scene-memo.pages.dev/` の本番 `main` へ反映済み。LP・ガイド・ZIP・画像・英中韓の言語ファイルがHTTP 200で取得でき、英語表示とガイド画面をブラウザーで確認済み
-- LPはブラウザー優先言語で日本語・英語・簡体字中国語・韓国語を表示する。FANZAガイドは現時点で日本語のみ。多言語固定URL、YouTubeガイド、計測、本番の自動配信は後続の提案で、追加費用0円を維持する間はX投稿APIを使わない
+- LPはブラウザー優先言語で日本語・英語・簡体字中国語・韓国語を表示する。FANZAガイドは現時点で日本語のみ。多言語固定URL、YouTubeガイド、計測は後続の提案。Cloudflare PagesのDirect Uploadプロジェクトを維持し、GitHub Actions + Wranglerによる自動デプロイ設定を `.github/workflows/deploy-scene-memo-pages.yml` に追加した。PR #7はDraftで `en_language` に未マージ、Cloudflare Pages用GitHub Secretsも未設定のため、本番配信はまだ実行していない。追加費用0円を維持する間はX投稿APIを使わない
 - LP整理・使い方ガイド・SEO/AIOの要件と進捗は `docs/marketing/lp-seo-requirements.md`。robots/sitemapはローカルに追加済みだが、公開URLはHTTP 200でLP HTMLを返し未反映。中国語・韓国語の実ブラウザー表示とSEO効果・検索数も未確認であり、本番反映と区別する
 
 ## プロダクト原則
