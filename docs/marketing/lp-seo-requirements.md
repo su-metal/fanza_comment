@@ -1,7 +1,8 @@
 # LP整理・使い方ガイド・SEO/AIO 要件整理
 
-作成日・最終更新日: 2026-10-24（日本時間）  
-状態: LPと日本語FANZAガイドをCloudflare Pages本番へ反映済み。LP・ガイド・ZIP等の取得と英語ブラウザー表示を確認。中国語・韓国語の実ブラウザー表示とSEO効果は未確認（2026-10-24）。
+作成日: 2026-10-24（日本時間）
+最終更新日: 2026-10-25（日本時間）
+状態: LPと日本語FANZAガイドをCloudflare Pages本番へ反映済み。LP・ガイド・ZIP等の取得と英語ブラウザー表示を確認。robots/sitemapはローカルに追加済みだが、公開URLはLPのHTMLを返しており未反映（2026-10-25）。
 
 ## 1. 目的と文書の位置付け
 
@@ -116,7 +117,7 @@ LPと日本語FANZAガイドをCloudflare Pages本番へ反映済み。YouTube�
 - ブラウザの優先言語判定は初回の案内に使い、言語を選んだURLではその言語の本文を安定して表示する。対応する言語への切替リンクを用意する。
 - 主要な説明を初期HTMLで読める構成にし、各言語版の `hreflang` とcanonicalを整える。
 - 公開済みページのサイトマップ、robots設定、ホスティング側のアクセス制限を確認する。Googlebot、Bingbot、OAI-SearchBotのアクセス方針を整理する。
-- 2026-10-25に `scene-memo-LP/robots.txt` と `scene-memo-LP/sitemap.xml` をローカル作成。Cloudflare Pagesへの反映と公開URLでのHTTP応答は未確認。
+- 2026-10-25に `scene-memo-LP/robots.txt` と `scene-memo-LP/sitemap.xml` をローカル作成。公開URLの両パスはHTTP 200だが `text/html` でLP本文を返すため、静的ファイルは本番に未反映。Cloudflare Pagesへの反映後に正しいContent-Typeと本文を再確認する。
 - ガイドの全言語展開は別の段階で検討する。未翻訳のガイドへ、存在しない言語版のリンクを作らない。
 
 ### SEARCH-04: AIの回答で参照される説明

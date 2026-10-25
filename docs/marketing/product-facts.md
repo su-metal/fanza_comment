@@ -33,7 +33,7 @@
 
 ## 計測の現状
 
-- 初回監査時、LPソースにアクセス解析タグや `google-site-verification` メタタグ、`scene-memo-LP/` にサイトマップとrobots.txtが見当たらなかった。2026-10-25に `robots.txt` と `sitemap.xml` をローカル作成したが、Cloudflare Pagesへは未反映。CloudflareやSearch Console側の設定状態は断定できない。
+- 初回監査時、LPソースにアクセス解析タグや `google-site-verification` メタタグ、`scene-memo-LP/` にサイトマップとrobots.txtが見当たらなかった。2026-10-25に両ファイルをローカル作成した。公開URLをブラウザーで確認すると、`/robots.txt` と `/sitemap.xml` はどちらもHTTP 200だが `text/html` でLP本文を返したため、本番では未反映と判定する。CloudflareやSearch Console側の設定状態は断定できない。
 - 配信台帳の `analytics_connection` は `not_connected`。Search Console・SNS・LPの計測値は未取得と記録されている。[queue.json](queue.json)、[初回準備記録](runs/2026-10-24.md)。
 - UTMパラメータはリンクに付けるだけでは集計されない。LP側でクエリやイベントを受け取る計測先が必要。
 - Cloudflare Web Analyticsは、Pagesのダッシュボードから有効化すると、次回デプロイ時に計測スクリプトを自動挿入できる。ページ閲覧・パフォーマンスの把握には使えるが、現行仕様ではUTMのクエリ文字列もカスタムイベントも記録しない。したがって、これだけでは投稿別の流入やZIPクリックを計測できない。
