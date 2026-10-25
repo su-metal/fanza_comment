@@ -60,14 +60,15 @@ Emulatorや依存パッケージのダウンロードがCodex Cloudのネット�
 
 ## LPのCloudflare Pages自動デプロイ
 
-`scene-memo-LP/` は静的サイトの配布元です。`.github/workflows/deploy-scene-memo-pages.yml` は `en_language` ブランチ上でLPファイルが更新されたとき、既存のCloudflare Pages `scene-memo` プロジェクトへ本番デプロイします。アップロードにはWranglerを使い、PagesのProductionブランチ `main` を指定します。PR #7はDraftで、Secrets設定とマージ前のため、まだ実行されません。
+`scene-memo-LP/` は静的サイトの配布元。`.github/workflows/deploy-scene-memo-pages.yml` は `en_language` ブランチ上でLPファイルが更新されたとき、既存のCloudflare Pages `scene-memo` プロジェクトへWranglerでデプロイし、Production branch `main` に反映する。PR #9は `en_language` にマージ済みで、2026-10-25にGitHub Actions run `40165595407` の本番デプロイ成功を確認した。
 
-初回のみ、Cloudflareで次の権限に絞ったAPI Tokenを作成し、GitHubリポジトリ `su-metal/fanza_comment` の Settings > Secrets and variables > Actions に保存します。
+デプロイ用のCloudflare API TokenとAccount IDはGitHub Actions Secretsに設定済み。設定値はソースコード、コミット、チャットに記載しない。
 
 - `CLOUDFLARE_API_TOKEN`: Account / Cloudflare Pages / Edit
 - `CLOUDFLARE_ACCOUNT_ID`: CloudflareアカウントID
 
-Tokenの値はGitHub Secretsに直接入力し、ソースコード、コミット、チャットには記載しません。設定後は `en_language` の `scene-memo-LP/` に変更をPushすると、ZIPを手動アップロードせずに本番へ反映できます。リポジトリはPublicのため、標準のUbuntu GitHub-hosted runnerを使うActionsの実行料金はかかりません。
+`en_language` の `scene-memo-LP/` を更新してPushすると、ZIPを手動アップロードせずに本番へ反映できる。標準のUbuntu GitHub-hosted runnerを使うため、公開リポジトリではGitHub Actionsの実行料金はかからない。
+
 ## Codex Cloud環境の作成
 
 Codex Cloudのリポジトリ接続と環境公開はCodexのWeb版またはデスクトップアプリの環境設定で行う。リポジトリにあるファイルだけではGitHub接続やクラウド環境の公開を完了できない。
