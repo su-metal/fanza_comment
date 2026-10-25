@@ -19,8 +19,8 @@
 - 課金UIは `無料 / ベータ特典 / 購入済みPro` を表示上で区別し、ベータ特典者には課金導線を出さない
 - 開発確認時のみ `chrome.storage.local` の `fanza_memo_force_show_upgrade_for_beta=true` で、ベータ特典者にも一時的に課金導線を表示できる
 - 決済確認を無料状態で試す必要がある場合は `chrome.storage.local` の `fanza_memo_disable_beta_for_checkout_test=true` でベータ特典を一時無効化できる
-- 公開中の拡張v1.0.2はSupabase版ライセンスAPIを利用する。移行対象ソースv1.0.3はFirebase Functions `licenseApi`を呼び出し、Functions/Rules/Stripe webhookを本番へ設定済み。Stripe test modeとFirebase EmulatorでCheckout・決済完了Webhook・Pro確認・返金失効をE2E確認し、activate/restore・誤入力・端末移行もEmulatorで確認済み。本番の実購入/返金は未確認で、v1.0.3は未配布
-- Pro価格は買い切り `$3.99` / 1デバイスで表示し、Stripe Checkout も `$3.99` 用の Price ID を使う
+- v1.0.2利用者向けSupabase APIの互換期間を維持する。Firebase Functions `licenseApi` を使うv1.0.3 ZIPを作成し、候補LPリンクを同じ版へ同期した。Stripe test mode / Firebase EmulatorでCheckout・Webhook・返金失効およびactivate/restore・端末移行を確認済み。本番の実購入/返金は任意の追加確認で公開条件ではない。`en_language` 反映後、Cloudflare Pages Actions成功で公開版切替を確認する
+- Pro価格は1デバイスの買い切り。`Asia/Tokyo` では拡張UIとStripe Checkoutが¥500、その他は$3.99を使う
 - `create-checkout-session` で Stripe Checkout の `allow_promotion_codes=true` を有効化し、本番環境でも promotion code を入力して割引適用できる
 - Stripe webhook の失効処理は `stripe_payment_intent_id` に加えて `stripe_checkout_session_id` でも追跡し、無料Checkout系イベントでも entitlement を無効化できる
 - 拡張の Pro キャッシュは `verify-device` が `false` を返した時に自動で解除し、失効済みライセンス表示が端末に残留しない
@@ -31,17 +31,17 @@
 - 拡張の `popup` / `onboarding` / プレーヤー内UIは、LPと共通の暗色・ローズアクセント・細い境界線・システムフォントのデザインに揃える。広告掲載用の拡張画面スクリーンショットはローカルの模擬プレーヤーと説明用サンプルデータで撮影し、利用者のコメントや視聴履歴を使わない。このUI・LP差替えはGitHubの作業ブランチにあり、`en_language` へのマージ・Cloudflare Pages本番・配布ZIPには未反映
 - 決済価格はタイムゾーン判定に連動し、`Asia/Tokyo` なら `¥500` の JPY Price、それ以外は `$3.99` の USD Price を自動選択する
 - LPでは `Asia/Tokyo` 向けに `¥500` をリリース記念キャンペーン価格として2027年1月30日まで表示し、2027年1月31日から `¥980` で販売する予定を案内する。価格切替前にLP・拡張機能・Checkoutの表示と実価格を同期する
-- 公開中v1.0.2の本番課金APIはSupabase。Firebaseプロジェクト `fanza-comment-lic-20260303` は2026-10-24にBlaze有効を確認済み。Firestoreには既存のデフォルトDBがあり、場所は `nam5`、データは空。Functionsの `asia-northeast1` とはリージョンが異なる
+- v1.0.2利用者の本番課金APIはSupabase。Firebaseプロジェクト `fanza-comment-lic-20260303` は2026-10-24にBlaze有効を確認済み。Firestoreには既存のデフォルトDBがあり、場所は `nam5`、データは空。Functionsの `asia-northeast1` とはリージョンが異なる
 - FirestoreのリモートRulesはクライアントの読み書きをすべて拒否し、2026-10-24に本番デプロイ済み。移行コードはFirestoreデフォルトDBをAdmin SDKで使い、コメント本文は移行対象外。FunctionsのTypeScriptビルドは成功し、本番依存のnpm監査は0件
 - ユーザー確認（2026-10-24）では既存購入者はいないため、初回Firebase公開ではSupabaseからのentitlement/claim/webhookデータ移行を省略し、空のFirestoreから開始する。Supabase Management APIの読み取り認証はHTTP 401だが、この初回公開のブロッカーではない。将来移行が必要になった場合は認証を復旧して再確認する
-- Stripeの本番商品カタログでJPY ¥500 / USD $3.99のPrice IDを確認し、Firebase用の `functions/.env.fanza-comment-lic-20260303` にローカル設定済み（`functions/.gitignore` 対象）。Firebase Secret Managerの `LICENSE_TOKEN_SECRET` / `STRIPE_API_KEY` / `STRIPE_WEBHOOK_SECRET` は有効なバージョン1を確認済み。Stripe本人確認（パスキー）は完了。差し替え後のrestricted API keyを使用し、旧キーの失効状態は未確認。Firebase向けStripe webhookは `checkout.session.completed` / `charge.refunded` で有効化済み、既存Supabase webhookも維持する。Firebase Functions `licenseApi` は `asia-northeast1` にデプロイ済み。Artifact Registryの古いイメージは7日後に整理する設定。本番APIのCORS `OPTIONS` と読み取り専用 `verify-device` は成功したが、本番Checkout/返金は未確認。v1.0.3は未配布
+- Stripeの本番商品カタログでJPY ¥500 / USD $3.99のPrice IDを確認し、Firebase用の `functions/.env.fanza-comment-lic-20260303` にローカル設定済み（`functions/.gitignore` 対象）。Firebase Secret Managerの `LICENSE_TOKEN_SECRET` / `STRIPE_API_KEY` / `STRIPE_WEBHOOK_SECRET` は有効なバージョン1を確認済み。Stripe本人確認（パスキー）は完了。差し替え後のrestricted API keyを使用し、旧キーの失効状態は未確認。Firebase向けStripe webhookは `checkout.session.completed` / `charge.refunded` で有効化済み、既存Supabase webhookも維持する。Firebase Functions `licenseApi` は `asia-northeast1` にデプロイ済み。Artifact Registryの古いイメージは7日後に整理する設定。本番APIのCORS `OPTIONS` と読み取り専用 `verify-device` は成功したが、本番Checkout/返金は未確認（配布条件ではない）。v1.0.3 ZIPと候補LPリンクは同期済みで、本番切替はPages Actions成功後に確認
 - Supabaseのデータ正本 `supabase/schema.sql` と説明資料は既存v1.0.2の運用・移行元として保持する。移行手順と実施状態は `docs/firebase_migration.md` を参照する
 - 対応プレイヤーは YouTube / FANZA / DMM TV のローカルメモ用途を含む
 - LPではストア外配布の拡張機能ZIPを直接ダウンロードでき、Chromeのデベロッパーモードで解凍フォルダを読み込む手順を案内する。ブラウザーの優先言語に応じて日本語・英語・簡体字中国語・韓国語を表示し、配布ZIPに各言語の導入手順書を同梱する
 - LPには、FANZA/DMMの地域制限により日本国外で利用できないサービス・動画があること、VPN等でも利用は保証されず拡張機能は地域制限を回避しないことを、日本語・英語・簡体字中国語・韓国語で案内する
 - 認知施策の原稿・配信台帳・運用手順は `docs/marketing/` で管理する。このチャットに週2回（月曜・木曜9時、日本時間）の原稿作成・確認を登録済みで、月曜に記事・効果確認も行う。Xの投稿先はユーザー指定の `@awawawawawadama`。公式X APIはユーザーが利用中との申告があるが、この環境での接続は未確認。認知施策は追加費用0円を原則とし、新規の有料契約・登録料・API従量課金が発生する手段を使わない。X投稿はAPIを呼ばず、原稿作成までを自動化し、無料の手動投稿を前提とする。計測はSearch ConsoleやCloudflare Web Analyticsなど無料で使える既存サービスを優先する
 - LPは用途が分かる冒頭説明、説明重複の整理、実画面スクリーンショット、FANZA向け使い方ガイドを実装し、ユーザー指定の Cloudflare Pages `https://scene-memo.pages.dev/` の本番 `main` へ反映済み。LP・ガイド・ZIP・画像・英中韓の言語ファイルがHTTP 200で取得でき、英語表示とガイド画面をブラウザーで確認済み
-- LPはブラウザー優先言語で日本語・英語・簡体字中国語・韓国語を表示する。FANZAガイドは現時点で日本語のみ。多言語固定URLとYouTubeガイドは後続候補。LP FAQとFANZAガイドにCloudflare Web Analyticsの計測範囲を説明する。公開説明が本番に反映されるまではAnalyticsを有効化しない（現在のPages設定状態は未確認）。計測対象はLP・ガイドの閲覧数と表示性能に限定し、拡張機能のコメント本文、動画ID、タイトル、保存時刻、利用状況は収集しない。Cloudflare PagesのDirect Uploadプロジェクトを維持し、GitHub Actions + Wranglerによる自動デプロイを設定した。PR #7は2026-10-25に `en_language` へマージ（`b95453d`）し、Actions runs `40161734375` と `40163075966` が成功して本番 `main` へ反映済み。Cloudflare APIトークンをローテーションしたため、GitHub Repository Secret `CLOUDFLARE_API_TOKEN` の差し替え待ち。追加費用0円を維持する間はX投稿APIを使わない
+- LPはブラウザー優先言語で日本語・英語・簡体字中国語・韓国語を表示する。FANZAガイドは現時点で日本語のみ。多言語固定URLとYouTubeガイドは後続候補。LP FAQとFANZAガイドにCloudflare Web Analyticsの計測範囲を説明する。公開説明が本番に反映されるまではAnalyticsを有効化しない（現在のPages設定状態は未確認）。計測対象はLP・ガイドの閲覧数と表示性能に限定し、拡張機能のコメント本文、動画ID、タイトル、保存時刻、利用状況は収集しない。Cloudflare PagesのDirect Uploadプロジェクトを維持し、GitHub Actions + Wranglerによる自動デプロイを設定した。PR #7は2026-10-25に `en_language` へマージ（`b95453d`）し、Actions runs `40161734375` と `40163075966` が成功して本番 `main` へ反映済み。APIトークンをローテーション後、Actions run `40185303631`（commit `3e1ca5a`）の成功でRepository SecretとPages本番デプロイを再確認した。追加費用0円を維持する間はX投稿APIを使わない
 - LP整理・使い方ガイド・SEO/AIOの要件と進捗は `docs/marketing/lp-seo-requirements.md`。本番の `/robots.txt`（HTTP 200・`text/plain`）と `/sitemap.xml`（HTTP 200・`application/xml`）、共有画像を確認済み。Search Consoleの所有権確認はHTMLファイル方式で成功。サイトマップ初回レポートは「取得できませんでした」・検出0件だったため、公開URLの正常応答を確認後、2026-10-25に再送信し、Googleの送信成功表示を確認した。処理結果はまだ更新されていない。Bing Webmaster Toolsは未接続。Web Analyticsの公開説明はPR #9にあり、本番未反映・Pages設定状態は未確認。検索実績とSEO効果は未確認
 
 ## プロダクト原則
@@ -67,7 +67,7 @@
 
 ## 課金基盤 方針（SupabaseからFirebaseへ移行中）
 
-- 現行本番（配布中v1.0.2）: Supabase Edge Function / Postgres。移行元URLは `https://wzinimxikcihdqqdvppa.supabase.co`
+- v1.0.2互換期間の課金API: Supabase Edge Function / Postgres。移行元URLは `https://wzinimxikcihdqqdvppa.supabase.co`
 - 移行先プロジェクト: `fanza-comment-lic-20260303`。Stripe決済は維持する
 - 移行先実装: `functions/src/index.ts`、Functionsエンドポイント `https://asia-northeast1-fanza-comment-lic-20260303.cloudfunctions.net/licenseApi`
 - Firestoreモデルと運用手順: `docs/firebase_migration.md`。クライアント直接アクセスは禁止し、Functions Admin SDKだけが課金データを扱う
@@ -75,7 +75,7 @@
 - `app_id = fanza_comment` は両基盤で維持し、ライセンス照合をアプリ単位で分離する
 - 移行スクリプト: `functions/scripts/migrate-supabase-to-firestore.mjs`。既定はdry-runで、`--apply` を付けるまでFirestoreに書き込まない
 - `firestore.rules` はFirebase MCPの構文検証に合格し、2026-10-24に本番デプロイ済み。FirestoreデフォルトDBは空で `nam5`。Functionsは `asia-northeast1` のためリージョン差がある
-- Firebase BillingはBlaze有効を2026-10-24に確認済み。Cloud Functions API / Secret Manager API等を有効化し、必要なSecrets・Stripe webhook・Functions `licenseApi` を本番へ設定済み。Firestore Rulesはクライアントアクセスを拒否し、本番デプロイ済み。本番APIのCORSと読み取り専用verifyは確認済み。Stripe test mode/EmulatorのCheckout・Webhook発行・返金失効E2E、およびactivate/restore・端末移行は確認済み。本番の実購入/返金は未確認で、v1.0.3は未配布。初回データ移行はユーザー確認により不要。価格IDとデプロイ用パラメーターはGit除外のローカルenvに設定済み
+- Firebase BillingはBlaze有効を2026-10-24に確認済み。Cloud Functions API / Secret Manager API等を有効化し、必要なSecrets・Stripe webhook・Functions `licenseApi` を本番へ設定済み。Firestore Rulesはクライアントアクセスを拒否し、本番デプロイ済み。本番APIのCORSと読み取り専用verifyは確認済み。Stripe test mode/EmulatorのCheckout・Webhook発行・返金失効E2E、およびactivate/restore・端末移行は確認済み。本番の実購入/返金は未確認だが配布条件ではない。v1.0.3 ZIPとLPリンクを同期済みで、本番切替はPages Actions成功後に確認。初回データ移行はユーザー確認により不要。価格IDとデプロイ用パラメーターはGit除外のローカルenvに設定済み
 - Firebase Emulator SuiteはFunctions `5001` / Firestore `8080` / UI `4000`。`demo-scene-memo` のStripe test mode/Emulator E2EでJPY ¥500 Checkout作成API `200`、`checkout.session.completed` webhook `200`、Firestore entitlement `active`、`verify-device is_pro=true` を確認した。全額テスト返金後は `charge.refunded` webhook `200`、entitlement `refunded`、`verify-device is_pro=false`（`no_active_license`）を確認済み。検証専用Price ID・restricted Checkout API key・CLI listener secretはGit除外の `functions/.env.local` / `.secret.local` を使用し、2026-10-24にはEmulator内の合成entitlementでactivate/verifyの成功、誤メール403、未知コード404、同一端末再activation、別端末への移行と旧claim解除を確認した。本番データにはテスト書き込みなし
 
 ## 通信・データ取り扱い注記

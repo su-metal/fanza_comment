@@ -24,9 +24,9 @@
 | Supabase移行元の認証 | 環境内の `SUPABASE_ACCESS_TOKEN` による読み取りはHTTP 401。既存購入者なしのため初回公開では移行不要。将来データ移行が必要になれば認証を復旧する |
 | Stripe本番webhook | Supabase向け `engaging-brilliance` が有効。`checkout.session.completed` / `charge.refunded` を購読 |
 | Functions / Firebase Stripe webhook | `licenseApi` はデプロイ済み。Firebase webhookも承認済みURLで有効化され、`checkout.session.completed` / `charge.refunded` を購読。既存Supabase endpointも有効のまま |
-| 公開LPと配布ZIP | v1.0.2 のまま。Supabase API を使用 |
+| 現在の公開LPとZIP | v1.0.2 はCloudflare Pagesの本番切替が成功するまで公開版として残る。リリース候補にはFirebase APIを使うv1.0.3 ZIPを含め、LPリンクも同じ版へ同期する |
 
-依存関係は `firebase-admin@14.5.0` / `firebase-functions@7.4.0` / Express型5系に更新し、本番依存のnpm監査は0件。`/activate` の応答も拡張が期待するentitlement形式に合わせた。本番APIのCORSと読み取り専用verify、およびStripe test mode / Firebase Emulator E2Eは確認済み。Emulatorで合成entitlementによるactivate/restore・誤入力・端末移行を確認した。本番Checkout/返金とStripe発行ライセンスを使う実購入フローは未確認だが、任意の追加確認で配布条件ではない。公開中v1.0.2の本番課金APIは引き続きSupabaseであるため、Firebaseのデプロイだけで本番移行完了とは扱わない。
+依存関係は `firebase-admin@14.5.0` / `firebase-functions@7.4.0` / Express型5系に更新し、本番依存のnpm監査は0件。`/activate` の応答も拡張が期待するentitlement形式に合わせた。本番APIのCORSと読み取り専用verify、およびStripe test mode / Firebase Emulator E2Eは確認済み。Emulatorで合成entitlementによるactivate/restore・誤入力・端末移行を確認した。本番Checkout/返金とStripe発行ライセンスを使う実購入フローは未確認だが、任意の追加確認で配布条件ではない。v1.0.2利用者の本番課金APIはSupabaseであるため、Firebaseのデプロイだけで本番移行完了とは扱わない。
 
 ## 2. 移行先の構成
 
@@ -122,4 +122,4 @@ npx --yes @stripe/cli listen --events 'checkout.session.completed,charge.refunde
 
 Stripe CLIが表示するローカルWebhook署名シークレットを `.secret.local` に保存し、Emulatorを起動し直す。Stripe test modeで作成したJPY/USD Price IDと制限付きテストAPI keyを使って `/create-checkout-session` を呼び、CheckoutではStripe提供のテストカードを使う。Webhookの成功応答とEmulator UI上の `license_entitlements` / `license_code_indexes` / `license_claims` / `webhook_events` を確認し、同じ端末指紋への `verify-device` がProを返すこと、テスト返金後にProが失効することを確認する。Stripe test modeはテストキーとtest Price IDを使い、テストデータは本番データから分離する。テストキーや署名シークレットをチャットやGitへ書かない。
 
-Stripe test mode / Firebase EmulatorのCheckout・Webhook発行・返金失効E2Eと、合成entitlementによるactivate/restore・誤入力・端末移行確認は完了した。本番Checkout/返金およびStripe発行ライセンスから拡張UIまでの実購入フローは未確認だが、任意の追加確認で配布条件ではない。v1.0.3 ZIPは未作成・未公開。ローカルFunctionsビルドと拡張JavaScript構文・ロケールJSONの最終確認は2026-10-25に成功した。LPは現在v1.0.2 ZIPを参照しているため、公開時に配布ZIPとリンクを同期する。過去にStripe画面の読み取り結果へ含まれたキーは使用していないが、旧キーの失効状態は未確認。標準テストSecret keyも画面に表示されたため、他環境で使っている場合は差し替える。Supabaseはv1.0.2互換のため維持する。Supabaseを停止する日付・旧版サポート期間は未決定。初回Firestoreデータ移行はユーザー確認により不要。
+Stripe test mode / Firebase EmulatorのCheckout・Webhook発行・返金失効E2Eと、合成entitlementによるactivate/restore・誤入力・端末移行確認は完了した。本番Checkout/返金およびStripe発行ライセンスから拡張UIまでの実購入フローは未確認だが、任意の追加確認で配布条件ではない。v1.0.3 ZIPをFirebase版拡張ソースから作成し、リリース候補LPのダウンロードリンクと版を同期した。`en_language` への反映でCloudflare Pages本番デプロイが起動し、Actions成功と公開ZIP内manifest `1.0.3` を確認して切替完了とする。過去にStripe画面の読み取り結果へ含まれたキーは使用していないが、旧キーの失効状態は未確認。標準テストSecret keyも画面に表示されたため、他環境で使っている場合は差し替える。Supabaseはv1.0.2互換のため維持する。Supabaseを停止する日付・旧版サポート期間は未決定。初回Firestoreデータ移行はユーザー確認により不要。

@@ -251,7 +251,7 @@ Functionsパラメーター:
 - Project URL: `https://wzinimxikcihdqqdvppa.supabase.co`
 - 実装: `supabase/functions/license-api/index.ts`
 - `POST /functions/v1/license-api/activate`, `/verify`, `/verify-device`, `/create-checkout-session`, `/stripe-webhook`
-- 公開中v1.0.2はSupabase publishable keyを `apikey` ヘッダーに付け、Edge Functionは `verify_jwt=false` で呼び出す
+- v1.0.2はSupabase publishable keyを `apikey` ヘッダーに付け、Edge Functionは `verify_jwt=false` で呼び出す。v1.0.3はFirebase Functions APIを使う
 - Firebaseへ移行後も、旧版利用者の購入・復元をサポートする期間はSupabase APIとデータを維持する。既存Stripe webhook（`checkout.session.completed` / `charge.refunded`）を維持し、互換期間中は同じイベントをFirebase webhookにも配信する
 - SupabaseからFirestoreへの移行手順は `docs/firebase_migration.md`。移行元のスキーマ正本は `supabase/schema.sql`
 
@@ -264,8 +264,8 @@ Functionsパラメーター:
 - `firestore.rules` はクライアントの読み書きを拒否し、2026-10-24に本番デプロイ済み。FunctionsのTypeScriptビルド成功、本番依存のnpm監査0件を確認済み
 - Firebase Secret Managerに `LICENSE_TOKEN_SECRET` / `STRIPE_API_KEY` / `STRIPE_WEBHOOK_SECRET` を設定し、Firebase Functions `licenseApi` とFirestore Rulesを本番デプロイ済み。本番API CORS `OPTIONS` は `204`、ランダム指紋の読み取り専用 `verify-device` は `200 no_claim_found` で成功した。本番Checkout/返金は未確認。Stripe本番商品のJPY `¥500` / USD `$3.99` Price IDとローカル設定は `docs/firebase_migration.md` を参照。旧キーの失効状態は未確認
 - 2026-10-24にStripe test mode / Firebase Emulator E2Eを確認した。Checkout作成 `200`、決済完了 `checkout.session.completed` webhook `200`、entitlement `active`、同端末 `verify-device is_pro=true` を確認。全額テスト返金後、`charge.refunded` webhook `200`、entitlement `refunded`、`verify-device is_pro=false` / `no_active_license` を確認済み。本番データへテスト書き込みなし
-- Emulatorで合成entitlementのactivate/restore・誤入力・端末移行を確認した。Stripe発行entitlementから拡張UIまでの実購入フローと本番Checkout/返金は未確認のためFirebase移行対象ソースv1.0.3は未配布。公開中v1.0.2はSupabase APIを継続利用する
-- 公開中LP ZIPはv1.0.2のまま。Firebase側の実動作確認前にv1.0.3を配布しない。旧版互換期間はSupabaseを維持し、Stripe webhookを両基盤へ配信する
+- Emulatorで合成entitlementのactivate/restore・誤入力・端末移行を確認した。Stripe発行entitlementから拡張UIまでの実購入フローと本番Checkout/返金は未確認だが、任意の追加確認で配布条件ではない。v1.0.2利用者はSupabase APIを継続利用する
+- Cloudflare Pagesの本番切替が成功するまでは公開LP ZIPはv1.0.2。v1.0.3のFirebase版ZIPを作成し、リリース候補LPのリンクを同期した。`en_language` への反映後、Pages Actions成功と公開ZIP内manifest `1.0.3` を確認して切替完了とする。実購入/返金は配布条件ではない。旧版互換期間はSupabaseを維持し、Stripe webhookを両基盤へ配信する
 - v1.0.2を利用する既存インストールはSupabase APIを継続利用するため、Firebase移行後も旧版互換期間が必要
 
 ## 10. 受け入れ基準（現行版）
@@ -296,7 +296,7 @@ Functionsパラメーター:
 - 主軸候補「FANZA 動画 再生位置 保存」に対応する説明をタイトル・本文・FAQへ反映し、保存対象を動画ファイルと誤認させない。ブラウザー優先言語による4言語表示・ZIP配布・導入手順を維持する
 - ガイドは独立URL `guide-fanza.html` とし、LPからの紹介リンク、記事から導入案内・ZIPへのリンクを実装済み。検索数やAI掲載・引用を保証しない
 - 公開先はユーザー指定の Cloudflare Pages `https://scene-memo.pages.dev/`。GitHub Actions run `40161734375` が成功し、LP・ガイド・ZIP・画像・英中韓の言語ファイルを本番 `main` へ反映済み。robots.txt・sitemap.xml・共有画像の表示をブラウザーで確認し、英語表示とガイド画面も確認済み
-- LP用GitHub Actions + WranglerはPR #7として `en_language` へ2026-10-25にマージ済み（`b95453d`）。Cloudflare Pages用GitHub Secretsを使う。Cloudflare APIトークンのローテーション後、Repository Secret `CLOUDFLARE_API_TOKEN` の差し替え待ちで、次回の本番配信はその更新後に確認する
+- LP用GitHub Actions + WranglerはPR #7として `en_language` へ2026-10-25にマージ済み（`b95453d`）。Cloudflare Pages用GitHub Secretsを使う。Cloudflare APIトークンをローテーション後、Actions run `40185303631`（commit `3e1ca5a`）の成功でRepository Secretと本番配信を再確認した
 - Google Search ConsoleのURLプレフィックス `https://scene-memo.pages.dev/` はHTMLファイル方式で所有権確認済み。サイトマップ初回レポートは「取得できませんでした」・検出0件。公開URLのrobots/sitemap応答を確認後、2026-10-25にサイトマップを再送信し、Googleの送信成功表示を確認した。レポートの処理結果は未更新で、検索流入・順位・SEO/AIO効果は未確認。中国語・韓国語の実ブラウザー表示も未確認
 - 多言語固定URL、YouTube向けガイド、Bing Webmaster Toolsは後続候補。Cloudflare Web Analyticsの計測説明をLP FAQとFANZAガイドに追加する変更を準備したが、本番未反映。Pages設定状態は未確認で、公開説明が反映された後に確認・有効化する。既存の定期実行登録と本番配信を区別する
 - SEO効果・検索順位・検索数は未確認。追加費用0円を維持する間はX投稿API認証を確認・利用しない

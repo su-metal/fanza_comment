@@ -3,17 +3,19 @@
 確認日: 2026-10-25（日本時間）
 用途: LP・投稿・記事の事実確認用。リポジトリ内の公開ZIPとソースを照合した結果であり、外部の公開サイトや各ダッシュボードの設定状態を今回再確認したものではない。
 
-## 公開中の製品について使える事実
+## v1.0.3公開候補について使える事実
+
+候補LPにはFirebase版v1.0.3 ZIPを含め、ダウンロードリンクを同期した。Cloudflare PagesのProduction workflow成功後に公開版切替を確認する。
 
 | 項目 | 確認できた事実 | 根拠・表現上の注意 |
 |---|---|---|
-| 公開対象 | LPの配布リンクは拡張 v1.0.2 のZIPを指す。ZIP内の `manifest.json` も `1.0.2`。作業ツリーの拡張ソースは `1.0.3` だが、Firebase移行版は未配布。 | [公開ZIP](../../scene-memo-LP/extension_v1.0.2.zip)、[作業ツリーのmanifest](../../extension/manifest.json)、[AGENTS.md](../../AGENTS.md)。投稿は公開ZIPの挙動を基準にし、未配布の1.0.3を公開済みとして扱わない。 |
-| 対応環境 | PC版Chrome拡張。FANZA、DMM TV、YouTubeの対象プレーヤーページをmanifestに指定している。 | [公開ZIP内manifest](../../scene-memo-LP/extension_v1.0.2.zip)。各サービスの全ページ・全プレーヤー対応とは言わない。 |
+| 公開対象 | リリース候補LPの配布リンクは拡張 v1.0.3 ZIPを指し、ZIP内manifestも `1.0.3`。本番切替はCloudflare Pages Actions成功で確認する。 | [候補ZIP](../../scene-memo-LP/extension_v1.0.3.zip)、[ソースmanifest](../../extension/manifest.json)、[AGENTS.md](../../AGENTS.md)。公開確認前にv1.0.3を公開済みとして扱わない。 |
+| 対応環境 | PC版Chrome拡張。FANZA、DMM TV、YouTubeの対象プレーヤーページをmanifestに指定している。 | [候補ZIP内manifest](../../scene-memo-LP/extension_v1.0.3.zip)。各サービスの全ページ・全プレーヤー対応とは言わない。 |
 | 主な機能 | 動画の再生時刻と文章メモを複数保存し、メモ一覧・検索から該当位置へ戻れる。A/Bで任意区間をリピートできる。 | [requirements_definition.md](../requirements_definition.md)、公開LP。公開ZIP内のコメント上限は50件。 |
-| 保存対象 | コメント本文・再生時刻などのメモは `chrome.storage.local` に保存される。動画ファイルを保存・ダウンロードする機能ではない。 | [公開ZIP内content.js](../../scene-memo-LP/extension_v1.0.2.zip)、[LP](../../scene-memo-LP/index.html)。 |
-| 外部通信 | コメント本文を開発者サーバーへ送信しない。動画タイトル補完ではYouTube oEmbedまたは対象動画ページへ取得通信する場合がある。Pro確認・購入では公開 v1.0.2 のSupabaseライセンスAPIへ通信する。 | [公開ZIP内content.js / popup.js](../../scene-memo-LP/extension_v1.0.2.zip)、[README](../../README.md)。「完全オフライン」「通信しない」とは表現しない。 |
+| 保存対象 | コメント本文・再生時刻などのメモは `chrome.storage.local` に保存される。動画ファイルを保存・ダウンロードする機能ではない。 | [候補ZIP内content.js](../../scene-memo-LP/extension_v1.0.3.zip)、[LP](../../scene-memo-LP/index.html)。 |
+| 外部通信 | コメント本文を開発者サーバーへ送信しない。動画タイトル補完ではYouTube oEmbedまたは対象動画ページへ取得通信する場合がある。v1.0.3ではPro確認・購入にFirebase版ライセンスAPIを使い、v1.0.2はSupabase APIを継続利用する。 | [候補ZIP内content.js / popup.js](../../scene-memo-LP/extension_v1.0.3.zip)、[README](../../README.md)。「完全オフライン」「通信しない」とは表現しない。 |
 | LP・ガイドのサイト計測 | Cloudflare Web Analyticsが有効な場合、ページ閲覧数と表示性能をCloudflareへ送って集計する。拡張機能内データは対象外。 | CloudflareはCookie不使用、個人データ不収集・不使用、顧客サイト間の追跡なしと説明。現状はPages設定未有効化で、公開説明の反映後に接続する。 [公式データ説明](https://developers.cloudflare.com/web-analytics/data-metrics/data-origin-and-collection/)、[公式プライバシー説明](https://developers.cloudflare.com/use-cases/performance/monitoring/) |
-| 無料上限 | 対応サイト・動画全体で合計50件。 | [公開ZIP内content.js](../../scene-memo-LP/extension_v1.0.2.zip)、[LP](../../scene-memo-LP/index.html)。 |
+| 無料上限 | 対応サイト・動画全体で合計50件。 | [候補ZIP内content.js](../../scene-memo-LP/extension_v1.0.3.zip)、[LP](../../scene-memo-LP/index.html)。 |
 | Pro価格 | 1デバイス買い切り。タイムゾーンが `Asia/Tokyo` の場合は¥500、それ以外は$3.99。LPは日本向けに¥500のリリース記念キャンペーン価格を2027年1月30日まで、2027年1月31日から¥980で販売する予定を表示する。価格切替時はLP・拡張機能・Checkoutの表示と実価格を同期する。 | [LP価格処理](../../scene-memo-LP/app.js)、[LP](../../scene-memo-LP/index.html)、[requirements_definition.md](../requirements_definition.md)。「500円」と書く場合は日本向け表現とする。 |
 | 地域利用 | FANZA/DMMの地域制限により、日本国外では利用できないサービス・動画がある。LPではVPN等を使っても利用は保証されず、拡張機能が地域制限を回避しないことを4言語で案内する。 | [DMM公式サポート](https://support.dmm.com/accounts/article/45604)。利用可能性を一律に断定せず、サービスや動画によって制限があると説明する。 |
 | 導入・更新 | 現行LPはChrome Web Storeを経由しないZIPの手動導入を案内。ストアの自動更新はなく、新しいZIPの手動更新が必要。 | [LP導入案内](../../scene-memo-LP/index.html)、公開ZIP内の多言語手順書。Chrome Web Store限定公開への切替は未決定。 |
@@ -30,7 +32,7 @@
 
 - 動画をダウンロード・保存する、端末間でメモが自動同期する、すべてのプレーヤーで動く。
 - 完全オフライン、外部通信なし、完全匿名。
-- 公開済みv1.0.3、Firebase版の課金APIを現行利用者が使っている。
+- v1.0.3を公開済みと表現するのはCloudflare PagesのProduction workflow成功後。v1.0.2利用者もFirebase版APIへ移行済みと説明する。
 - ZIPクリックをインストール完了数として扱う。
 - 実測のない利用者数、継続率、検索数、検索順位。
 
@@ -41,7 +43,7 @@
 - UTMパラメータはリンクに付けるだけでは集計されない。LP側でクエリやイベントを受け取る計測先が必要。
 - Cloudflare Web Analyticsは、Pagesのダッシュボードから有効化すると、次回デプロイ時に計測スクリプトを自動挿入できる。ページ閲覧・パフォーマンスの把握には使えるが、現行仕様ではUTMのクエリ文字列もカスタムイベントも記録しない。したがって、これだけでは投稿別の流入やZIPクリックを計測できない。
 - Cloudflare Web Analyticsの利用可否はCloudflareアカウントのPages設定で確認が必要。今回の作業環境からそのダッシュボード状態は読めていない。
-- Cloudflare PagesはDirect Upload型だが、GitHub Actions + Wranglerを使った本番自動配信を設定済み。PR #7は2026-10-25に `en_language` へマージされ、Actions runs `40161734375` と `40163075966` が成功。Cloudflare APIトークンをローテーションしたため、Repository Secret `CLOUDFLARE_API_TOKEN` の更新を待ってから次回の自動配信を確認する。
+- Cloudflare PagesはDirect Upload型だが、GitHub Actions + Wranglerを使った本番自動配信を設定済み。PR #7は2026-10-25に `en_language` へマージされ、Actions runs `40161734375` と `40163075966` が成功。Cloudflare APIトークンのローテーション後、Actions run `40185303631`（commit `3e1ca5a`）が成功し、Repository Secretと本番配信を再確認した。
 - Search Consoleの所有権確認とサイトマップ送信は完了。初回送信レポートは「取得できませんでした」・検出0件のまま。公開URLを修正後に再送信し、送信成功表示は確認済みだが、再処理後のレポートと検索実績はまだ未取得。
 - 代替機能の確認では、FANZA公式ヘルプにDMM Player v2のチャプター追加・チャプター間ABリピートが記載されていた。対象ページは動画ファイルを開くデスクトッププレーヤーの説明なので、ブラウザー視聴向けの神シーンメモとは利用環境を分けて説明する。
 - 拡張機能内のコメント本文・動画ID・動画タイトル・保存時刻・利用状況を、認知施策の計測へ追加しない。導入完了は、利用者の任意申告または直接確認できる根拠がある場合だけ記録する。
