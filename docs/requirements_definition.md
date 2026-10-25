@@ -295,7 +295,7 @@ Functionsパラメーター:
 - ガイドは独立URL `guide-fanza.html` とし、LPからの紹介リンク、記事から導入案内・ZIPへのリンクを実装済み。検索数やAI掲載・引用を保証しない
 - 公開先はユーザー指定の Cloudflare Pages `https://scene-memo.pages.dev/`。本番 `main` へ反映済み。LP・ガイド・ZIP・画像・英中韓の言語ファイルのHTTP取得を確認し、英語表示とガイド画面をブラウザーで確認済み
 - robots/sitemapはローカルに追加済みだが、公開URLはHTTP 200でLPのHTMLを返しており未反映。中国語・韓国語の実ブラウザー表示、検索流入・順位・SEO/AIO効果も未確認
-- 多言語固定URL、クロール基盤、YouTube向けガイド、計測、本番の自動配信は後続の提案として扱う。既存の定期実行登録と本番の配信開始を区別する
+- 多言語固定URL、クロール基盤、YouTube向けガイド、計測は後続の提案として扱う。LP用GitHub Actions + WranglerをPR #7に追加した。`en_language` へのマージとCloudflare Pages用GitHub Secrets設定後に本番自動配信を開始するため、現時点では未稼働。既存の定期実行登録と本番配信を区別する
 - SEO効果・検索順位・検索数は未確認。追加費用0円を維持する間はX投稿API認証を確認・利用しない
 
 ---
