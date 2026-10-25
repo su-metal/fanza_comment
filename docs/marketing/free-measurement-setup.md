@@ -6,19 +6,17 @@
 ## 0. 公開状態を先に確認する
 
 - [x] Cloudflare Pagesの本番へ `robots.txt` と `sitemap.xml` を反映する。
-- [x] `https://scene-memo.pages.dev/robots.txt` がrobots.txt本文を返すことをブラウザーで確認する。
-- [x] `https://scene-memo.pages.dev/sitemap.xml` が有効なXMLとして表示され、LP本文を返さないことを確認する。
+- [x] `https://scene-memo.pages.dev/robots.txt` がHTTP 200・`text/plain`でrobots.txt本文を返すことを確認する。
+- [x] `https://scene-memo.pages.dev/sitemap.xml` がHTTP 200・`application/xml`で有効なXMLを返すことを確認する。
 - [x] サイトマップ内のURLが `https://scene-memo.pages.dev/` と `https://scene-memo.pages.dev/guide-fanza.html` であることを確認する。
 
-2026-10-25時点で公開本文とXML表示を確認済み。HTTPのContent-Typeヘッダーは別途検査していない。Google/Bingへサイトマップを送信する前に、対象ファイルの公開と所有権確認を完了する。
+2026-10-25時点でHTTP応答ヘッダー、robots本文、XML表示を確認済み。
 
 ## 1. Google Search Console
 
-1. Search Consoleにある既存のURLプレフィックス `https://scene-memo.pages.dev/` を使う（2026-10-25時点で所有権は未確認）。
-2. Googleが発行したHTML確認ファイル `googled80bb7700135914b.html` を `scene-memo-LP/` のルートに置いて公開する。Googleの確認ファイルは公開サイトで取得可能にする必要があり、このファイルはリポジトリで公開する。確認用の値はチャットへ貼り付けない。
-3. 公開後、Search Consoleで「確認」を押して所有権を確かめる。確認成功後も、HTML確認ファイルを削除・改名せず公開状態に保つ。
-4. サイトマップ欄へ `https://scene-memo.pages.dev/sitemap.xml` を送信する。
-5. 送信状態、検出URL数、ページのインデックス状態を記録する。表示回数やクリックがまだない場合は「0件」と断定せず、「データ未反映」と区別する。
+1. Search ConsoleのURLプレフィックス `https://scene-memo.pages.dev/` は、2026-10-25にHTMLファイル方式で所有権確認済み。確認用HTMLファイルは公開ルートから削除・改名しない。
+2. `https://scene-memo.pages.dev/sitemap.xml` を送信済み。初回レポートは「取得できませんでした」・検出0件だが、URL検査の公開URLライブテストはクロール許可・ページ取得成功。Search Consoleの定期再試行とレポート更新を待ち、後日ステータスと検出URL数を再確認する。
+3. 検索表示・クリック等の実績はまだ未取得。未反映をゼロ実績として報告しない。
 
 ## 2. Bing Webmaster Tools
 

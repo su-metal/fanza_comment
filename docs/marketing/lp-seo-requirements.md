@@ -2,7 +2,7 @@
 
 作成日: 2026-10-24（日本時間）
 最終更新日: 2026-10-25（日本時間）
-状態: LP・日本語FANZAガイド・robots.txt・sitemap.xml・共有画像をCloudflare Pages本番へ反映済み。GitHub Actionsの自動配信が稼働。Google Search ConsoleのHTML所有権確認ファイルを追加し、所有権確認とサイトマップ送信を準備中（2026-10-25）。
+状態: LP・日本語FANZAガイド・robots.txt・sitemap.xml・共有画像をCloudflare Pages本番へ反映済み。GitHub Actionsの自動配信が稼働。Google Search Consoleの所有権確認とサイトマップ送信は完了。初回レポートは取得失敗表示だが、Googleライブテストで取得成功を確認し、再処理を待機中（2026-10-25）。
 
 ## 1. 目的と文書の位置付け
 
@@ -119,7 +119,7 @@ LPと日本語FANZAガイドをCloudflare Pages本番へ反映済み。YouTube�
 - ブラウザの優先言語判定は初回の案内に使い、言語を選んだURLではその言語の本文を安定して表示する。対応する言語への切替リンクを用意する。
 - 主要な説明を初期HTMLで読める構成にし、各言語版の `hreflang` とcanonicalを整える。
 - 公開済みページのサイトマップ、robots設定、ホスティング側のアクセス制限を確認する。Googlebot、Bingbot、OAI-SearchBotのアクセス方針を整理する。
-- 2026-10-25に `scene-memo-LP/robots.txt` と `scene-memo-LP/sitemap.xml` を作成して本番へ反映。ブラウザーでrobots本文と有効なXML表示を確認済み。Content-Typeヘッダーは別途確認していない。
+- 2026-10-25に `scene-memo-LP/robots.txt` と `scene-memo-LP/sitemap.xml` を本番へ反映。robots.txtはHTTP 200・`text/plain`、sitemap.xmlはHTTP 200・`application/xml`。Search Consoleの所有権確認は成功し、sitemap.xmlを送信済み。初回レポートは「取得できませんでした」・検出0件だが、公開URLライブテストではクロール許可・取得成功。サイト側の応答は正常で、Googleの再処理待ち。
 - ガイドの全言語展開は別の段階で検討する。未翻訳のガイドへ、存在しない言語版のリンクを作らない。
 
 ### SEARCH-04: AIの回答で参照される説明

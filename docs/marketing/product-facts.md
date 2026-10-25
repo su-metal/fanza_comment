@@ -34,13 +34,13 @@
 
 ## 計測の現状
 
-- 2026-10-25にCloudflare Pages本番の `/robots.txt` と `/sitemap.xml` をブラウザーで確認し、robots.txt本文と有効なXML表示を確認した。Content-Typeヘッダーは別途検査していない。Google Search ConsoleのURLプレフィックスは既存アカウントにあるが未確認。Google発行のHTML確認ファイルを公開ルートへ追加する変更を準備中。
-- 配信台帳の `analytics_connection` は `not_connected`。Search Console・SNS・LPの計測値は未取得と記録されている。[queue.json](queue.json)、[初回準備記録](runs/2026-10-24.md)。
+- 2026-10-25にCloudflare Pages本番の `/robots.txt` はHTTP 200・`text/plain`、`/sitemap.xml` はHTTP 200・`application/xml`で返ることを確認した。Search ConsoleのURLプレフィックスはHTMLファイル方式で所有権確認済み。サイトマップ送信後の初回レポートは「取得できませんでした」だが、Googleの公開URLライブテストはクロール許可・取得成功。Google側の再処理・レポート更新待ち。
+- 配信台帳の `analytics_connection` は `gsc_verified_sitemap_pending_processing`。Search Consoleの接続は完了したが、サイトマップ処理と検索実績の反映は未確認。SNS・LPの計測値も未取得。[queue.json](queue.json)、[初回準備記録](runs/2026-10-24.md)。
 - UTMパラメータはリンクに付けるだけでは集計されない。LP側でクエリやイベントを受け取る計測先が必要。
 - Cloudflare Web Analyticsは、Pagesのダッシュボードから有効化すると、次回デプロイ時に計測スクリプトを自動挿入できる。ページ閲覧・パフォーマンスの把握には使えるが、現行仕様ではUTMのクエリ文字列もカスタムイベントも記録しない。したがって、これだけでは投稿別の流入やZIPクリックを計測できない。
 - Cloudflare Web Analyticsの利用可否はCloudflareアカウントのPages設定で確認が必要。今回の作業環境からそのダッシュボード状態は読めていない。
 - Cloudflare PagesはDirect Upload型だが、GitHub Actions + Wranglerを使った本番自動配信を設定済み。PR #7は2026-10-25に `en_language` へマージされ、Actions run `40161734375` が成功。Secrets登録済みで、次回以降の対象更新も自動配信される。
-- Search Consoleの検索パフォーマンス取得には対象サイトの所有権確認が必要。既存URLプレフィックスは未確認で、検索実績はまだ取得できていない。
+- Search Consoleの所有権確認とサイトマップ送信は完了。送信レポートは未処理相当の「取得できませんでした」・検出0件だが、Googleライブテストでは公開URLの取得に成功。検索実績はまだ取得できていない。
 - 代替機能の確認では、FANZA公式ヘルプにDMM Player v2のチャプター追加・チャプター間ABリピートが記載されていた。対象ページは動画ファイルを開くデスクトッププレーヤーの説明なので、ブラウザー視聴向けの神シーンメモとは利用環境を分けて説明する。
 - 拡張機能内のコメント本文・動画ID・動画タイトル・保存時刻・利用状況を、認知施策の計測へ追加しない。導入完了は、利用者の任意申告または直接確認できる根拠がある場合だけ記録する。
 
@@ -48,9 +48,8 @@
 
 各サービスの無料接続手順と、確認前に満たす条件は[無料計測の接続チェックリスト](free-measurement-setup.md)に記録する。
 
-1. GoogleのHTML所有権確認ファイルを公開し、Search Consoleで所有権を確認してから `https://scene-memo.pages.dev/sitemap.xml` を送信する。
-2. Search Consoleの送信状態・検出URL数を記録する。
-3. 既存MicrosoftアカウントでBing Webmaster Toolsに同じURLを登録・確認し、Search Consoleからインポートできる場合はそれを使う。検索パフォーマンスとAI Performanceは、プロパティの確認後に取得できる範囲で見る。
+1. Search Consoleのサイトマップレポートを後日再確認し、処理状態と検出URL数を記録する。
+2. 既存MicrosoftアカウントでBing Webmaster Toolsに同じURLを登録・確認し、Search Consoleからインポートできる場合はそれを使う。検索パフォーマンスとAI Performanceは、プロパティの確認後に取得できる範囲で見る。
 4. Cloudflare Pagesの既存アカウントでWeb Analyticsを利用できるか確認する。有効化の前に公開プライバシー説明との整合を確認する。ページ閲覧・パフォーマンスの基準値用とし、UTM・ZIPクリックの計測には使わない。
 5. 接続後に最初の4週間の基準値を取り、X投稿は既存上限の週2件で試す。投稿別UTM・ZIPクリック・インストール完了は無料で直接確認できる方法がない限り未取得とし、未計測期間をゼロ実績にしない。
 
