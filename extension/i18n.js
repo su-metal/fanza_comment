@@ -71,7 +71,9 @@
 
   function substituteMessage(template, substitutions) {
     const values = normalizeSubstitutions(substitutions);
-    return String(template || '').replace(/\$(\d)/g, (_, indexText) => {
+    const message = String(template || '');
+    if (values.length === 0) return message;
+    return message.replace(/\$(\d)/g, (_, indexText) => {
       const index = Number(indexText) - 1;
       return values[index] !== undefined ? String(values[index]) : '';
     });
