@@ -15,7 +15,7 @@
 ## 1. Google Search Console
 
 1. Search ConsoleのURLプレフィックス `https://scene-memo.pages.dev/` は、2026-10-25にHTMLファイル方式で所有権確認済み。確認用HTMLファイルは公開ルートから削除・改名しない。
-2. `https://scene-memo.pages.dev/sitemap.xml` を送信済み。初回レポートは「取得できませんでした」・検出0件だが、URL検査の公開URLライブテストはクロール許可・ページ取得成功。Search Consoleの定期再試行とレポート更新を待ち、後日ステータスと検出URL数を再確認する。
+2. `https://scene-memo.pages.dev/sitemap.xml` は初回レポートが「取得できませんでした」・検出0件だったため、公開URLで正しいXMLと応答Content-Typeを確認したうえで2026-10-25に再送信し、Googleの送信成功表示を確認。画面の既存レポート行はまだ初回の失敗状態のままなので、処理結果と検出URL数の更新を後日確認する。
 3. 検索表示・クリック等の実績はまだ未取得。未反映をゼロ実績として報告しない。
 
 ## 2. Bing Webmaster Tools
@@ -28,7 +28,7 @@
 
 ## 3. Cloudflare Web Analytics（任意・無料）
 
-現状: LPとFANZAガイドの公開説明を追加する変更を準備中。Pages設定はまだ有効化しない。説明が本番へ反映された後に接続する。
+現状: LPとFANZAガイドの公開説明を含むPR #9は未マージ。本番LPで説明が未掲載であることを確認した。Pages設定状態は未確認。公開説明が本番へ反映された後に設定を確認し、必要に応じて有効化する。
 
 1. LP FAQとFANZAガイドのプライバシー欄に、計測範囲・Cloudflareへの送信・拡張機能データを対象外とする説明が公開されていることを確認する。
 2. Cloudflare DashboardでWorkers & Pages → `scene-memo` → Metrics → Web Analytics → Enableを選ぶ。

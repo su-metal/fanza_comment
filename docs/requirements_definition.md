@@ -294,9 +294,9 @@ Functionsパラメーター:
 - 主軸候補「FANZA 動画 再生位置 保存」に対応する説明をタイトル・本文・FAQへ反映し、保存対象を動画ファイルと誤認させない。ブラウザー優先言語による4言語表示・ZIP配布・導入手順を維持する
 - ガイドは独立URL `guide-fanza.html` とし、LPからの紹介リンク、記事から導入案内・ZIPへのリンクを実装済み。検索数やAI掲載・引用を保証しない
 - 公開先はユーザー指定の Cloudflare Pages `https://scene-memo.pages.dev/`。GitHub Actions run `40161734375` が成功し、LP・ガイド・ZIP・画像・英中韓の言語ファイルを本番 `main` へ反映済み。robots.txt・sitemap.xml・共有画像の表示をブラウザーで確認し、英語表示とガイド画面も確認済み
-- LP用GitHub Actions + WranglerはPR #7として `en_language` へ2026-10-25にマージ済み（`b95453d`）。Cloudflare Pages用のGitHub Secretsを登録し、以後 `scene-memo-LP/**` の更新を本番 `main` へ自動配信する
-- Google Search ConsoleのURLプレフィックス `https://scene-memo.pages.dev/` はHTMLファイル方式で所有権確認済み。サイトマップを送信したが、初回レポートは「取得できませんでした」・検出0件。Googleの公開URLライブテストではクロール許可・ページ取得成功。再処理待ちで、検索流入・順位・SEO/AIO効果は未確認。中国語・韓国語の実ブラウザー表示も未確認
-- 多言語固定URL、YouTube向けガイド、Bing Webmaster Toolsは後続候補。Cloudflare Web Analyticsの計測説明をLP FAQとFANZAガイドに追加する変更を準備したが、本番未反映・Pages設定未有効化。公開説明が反映された後に有効化する。既存の定期実行登録と本番配信を区別する
+- LP用GitHub Actions + WranglerはPR #7として `en_language` へ2026-10-25にマージ済み（`b95453d`）。Cloudflare Pages用GitHub Secretsを使う。Cloudflare APIトークンのローテーション後、Repository Secret `CLOUDFLARE_API_TOKEN` の差し替え待ちで、次回の本番配信はその更新後に確認する
+- Google Search ConsoleのURLプレフィックス `https://scene-memo.pages.dev/` はHTMLファイル方式で所有権確認済み。サイトマップ初回レポートは「取得できませんでした」・検出0件。公開URLのrobots/sitemap応答を確認後、2026-10-25にサイトマップを再送信し、Googleの送信成功表示を確認した。レポートの処理結果は未更新で、検索流入・順位・SEO/AIO効果は未確認。中国語・韓国語の実ブラウザー表示も未確認
+- 多言語固定URL、YouTube向けガイド、Bing Webmaster Toolsは後続候補。Cloudflare Web Analyticsの計測説明をLP FAQとFANZAガイドに追加する変更を準備したが、本番未反映。Pages設定状態は未確認で、公開説明が反映された後に確認・有効化する。既存の定期実行登録と本番配信を区別する
 - SEO効果・検索順位・検索数は未確認。追加費用0円を維持する間はX投稿API認証を確認・利用しない
 
 ---

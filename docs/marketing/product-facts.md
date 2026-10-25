@@ -22,7 +22,7 @@
 
 - Chrome Web Storeへ公開するには開発者登録と一回限りの登録料が必要。既に登録済みで追加費用がないかは未確認のため、費用ゼロを優先する間は現行のZIP配布を維持する。
 - X APIの投稿作成は従量課金で、2026-10-25に公式料金ページで1投稿リクエストあたり $0.015 と表示されていた。料金は変わり得るため0円運用では投稿APIを呼び出さず、原稿作成までにとどめて手動投稿を前提とする。
-- Search ConsoleとBing Webmaster Toolsは無料のサイト所有者向けサービス。Bing Webmaster Toolsには検索パフォーマンスとAI Performanceのレポートがある。Cloudflare Web Analyticsも無料で提供され、Cloudflare Pagesでは設定画面から有効化できる。Search ConsoleのURLプレフィックスは2026-10-25に所有権確認済みで、サイトマップ送信後のレポート更新待ち。Bingは未接続。Cloudflare Web Analyticsは公開説明の準備中で、Pages設定は未有効化。
+- Search ConsoleとBing Webmaster Toolsは無料のサイト所有者向けサービス。Bing Webmaster Toolsには検索パフォーマンスとAI Performanceのレポートがある。Cloudflare Web Analyticsも無料で提供され、Cloudflare Pagesでは設定画面から有効化できる。Search ConsoleのURLプレフィックスは2026-10-25に所有権確認済みで、サイトマップ送信後のレポート更新待ち。Bingは未接続。Cloudflare Web Analyticsは公開説明の準備中で、Pages設定状態は未確認。
 - 新規の有料契約、登録料、API従量課金を発生させる操作は行わない。
 
 ### 原稿で避ける表現
@@ -35,13 +35,13 @@
 
 ## 計測の現状
 
-- 2026-10-25にCloudflare Pages本番の `/robots.txt` はHTTP 200・`text/plain`、`/sitemap.xml` はHTTP 200・`application/xml`で返ることを確認した。Search ConsoleのURLプレフィックスはHTMLファイル方式で所有権確認済み。サイトマップ送信後の初回レポートは「取得できませんでした」だが、Googleの公開URLライブテストはクロール許可・取得成功。Google側の再処理・レポート更新待ち。
+- 2026-10-25にCloudflare Pages本番の `/robots.txt` はHTTP 200・`text/plain`、`/sitemap.xml` はHTTP 200・`application/xml`で正しい本文を返すことを確認した。Search ConsoleのURLプレフィックスはHTMLファイル方式で所有権確認済み。サイトマップの初回レポートは「取得できませんでした」・検出0件だったため、同日再送信しGoogleの送信成功表示を確認。既存レポート行は初回失敗のままで、再処理・レポート更新を待つ。
 - 配信台帳の `analytics_connection` は `gsc_verified_sitemap_pending_processing`。Search Consoleの接続は完了したが、サイトマップ処理と検索実績の反映は未確認。SNS・LPの計測値も未取得。[queue.json](queue.json)、[初回準備記録](runs/2026-10-24.md)。
 - UTMパラメータはリンクに付けるだけでは集計されない。LP側でクエリやイベントを受け取る計測先が必要。
 - Cloudflare Web Analyticsは、Pagesのダッシュボードから有効化すると、次回デプロイ時に計測スクリプトを自動挿入できる。ページ閲覧・パフォーマンスの把握には使えるが、現行仕様ではUTMのクエリ文字列もカスタムイベントも記録しない。したがって、これだけでは投稿別の流入やZIPクリックを計測できない。
 - Cloudflare Web Analyticsの利用可否はCloudflareアカウントのPages設定で確認が必要。今回の作業環境からそのダッシュボード状態は読めていない。
-- Cloudflare PagesはDirect Upload型だが、GitHub Actions + Wranglerを使った本番自動配信を設定済み。PR #7は2026-10-25に `en_language` へマージされ、Actions run `40161734375` が成功。Secrets登録済みで、次回以降の対象更新も自動配信される。
-- Search Consoleの所有権確認とサイトマップ送信は完了。送信レポートは未処理相当の「取得できませんでした」・検出0件だが、Googleライブテストでは公開URLの取得に成功。検索実績はまだ取得できていない。
+- Cloudflare PagesはDirect Upload型だが、GitHub Actions + Wranglerを使った本番自動配信を設定済み。PR #7は2026-10-25に `en_language` へマージされ、Actions runs `40161734375` と `40163075966` が成功。Cloudflare APIトークンをローテーションしたため、Repository Secret `CLOUDFLARE_API_TOKEN` の更新を待ってから次回の自動配信を確認する。
+- Search Consoleの所有権確認とサイトマップ送信は完了。初回送信レポートは「取得できませんでした」・検出0件のまま。公開URLを修正後に再送信し、送信成功表示は確認済みだが、再処理後のレポートと検索実績はまだ未取得。
 - 代替機能の確認では、FANZA公式ヘルプにDMM Player v2のチャプター追加・チャプター間ABリピートが記載されていた。対象ページは動画ファイルを開くデスクトッププレーヤーの説明なので、ブラウザー視聴向けの神シーンメモとは利用環境を分けて説明する。
 - 拡張機能内のコメント本文・動画ID・動画タイトル・保存時刻・利用状況を、認知施策の計測へ追加しない。導入完了は、利用者の任意申告または直接確認できる根拠がある場合だけ記録する。
 
