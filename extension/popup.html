@@ -270,6 +270,168 @@
       transform: translateX(-50%) translateY(0);
     }
   </style>
+  <style>
+    :root {
+      color-scheme: dark;
+      --primary-gradient: linear-gradient(105deg, #ff468c, #ff7193);
+      --bg-color: #0c090c;
+      --card-bg: #171117;
+      --text-main: #f8f0e9;
+      --text-sub: #b39fa9;
+      --border-color: #3b2934;
+      --accent: #ff4b92;
+      --shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
+    }
+
+    body {
+      width: 350px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif;
+      background: radial-gradient(ellipse at 95% 0%, rgba(80, 19, 44, 0.25), transparent 36%), var(--bg-color);
+      color: var(--text-main);
+    }
+
+    .header {
+      padding: 18px 18px 15px;
+      background: linear-gradient(105deg, #21141e, #140f14);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .header-icon {
+      width: 30px;
+      height: 30px;
+      filter: drop-shadow(0 5px 14px rgba(255, 75, 146, 0.26));
+    }
+
+    h3 {
+      color: var(--text-main);
+      font-size: 17px;
+      font-weight: 750;
+      letter-spacing: -0.025em;
+    }
+
+    .content { padding: 18px; }
+
+    .description {
+      margin-bottom: 16px;
+      color: var(--text-sub);
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    .status-card,
+    .sub-card {
+      position: relative;
+      overflow: hidden;
+      padding: 15px;
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      background: linear-gradient(145deg, #1c141b, #151015);
+      box-shadow: var(--shadow);
+    }
+
+    .status-card { margin-bottom: 18px; }
+
+    .status-card::before {
+      position: absolute;
+      inset: 0 0 auto;
+      height: 3px;
+      background: var(--primary-gradient);
+      content: "";
+    }
+
+    .status-title {
+      margin-bottom: 9px;
+      color: #cc91aa;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+    }
+
+    .status-content { align-items: center; gap: 12px; }
+    .status-text { font-size: 14px; font-weight: 700; }
+    .limits-text { color: var(--text-sub); font-size: 11px; text-align: right; }
+
+    .action-container { margin-top: 16px; }
+
+    .upgrade-btn {
+      padding: 12px 14px;
+      border: 0;
+      border-radius: 3px;
+      background: var(--primary-gradient);
+      color: #240d19;
+      font-size: 13px;
+      box-shadow: 0 6px 28px rgba(255, 50, 124, 0.2);
+    }
+
+    .upgrade-btn:hover { box-shadow: 0 9px 32px rgba(255, 50, 124, 0.3); }
+    .upgrade-btn:disabled { background: #47343e; color: #a9909c; }
+
+    .pro-badge {
+      border-radius: 3px;
+      background: var(--primary-gradient);
+      color: #240d19;
+      font-weight: 800;
+    }
+
+    .help-text { color: #987d8b; font-size: 10px; }
+    .sub-card { margin-top: 12px; padding: 13px; }
+    .sub-card h4 { color: var(--text-main); font-size: 12px; }
+
+    .code-value,
+    .restore-input {
+      border: 1px solid #4a3441;
+      border-radius: 3px;
+      background: #100c10;
+      color: var(--text-main);
+    }
+
+    .code-value { padding: 9px; }
+
+    .secondary-btn,
+    .tertiary-btn {
+      border: 1px solid #5a3a4d;
+      border-radius: 3px;
+      background: #21151d;
+      color: var(--text-main);
+      transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+    }
+
+    .secondary-btn:hover,
+    .tertiary-btn:hover {
+      border-color: #a34c72;
+      background: #2a1824;
+      color: #ff9bc0;
+    }
+
+    .tertiary-btn {
+      border-style: solid;
+      background: transparent;
+      color: var(--text-sub);
+    }
+
+    .restore-details summary { color: var(--text-main); }
+    .restore-help, .restore-message { color: var(--text-sub); }
+    .restore-message.error { color: #ff9a9a; }
+    .restore-form { gap: 9px; }
+    .restore-input { padding: 10px 11px; }
+
+    button, input { font: inherit; }
+    button:focus-visible, input:focus-visible, summary:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .toast {
+      border: 1px solid #684355;
+      border-radius: 4px;
+      background: rgba(23, 17, 23, 0.98);
+      color: var(--text-main);
+      box-shadow: var(--shadow);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
 </head>
 <body>
   <div class="header">

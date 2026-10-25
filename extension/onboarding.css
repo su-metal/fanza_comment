@@ -254,6 +254,8 @@ h2 {
 .price {
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
+  min-width: max-content;
 }
 
 .amount {
@@ -261,6 +263,7 @@ h2 {
   font-weight: 900;
   color: white;
   line-height: 1;
+  white-space: nowrap;
 }
 
 .period {
@@ -456,4 +459,133 @@ footer p {
 .close-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: white;
+}
+
+/* Scene Memo editorial palette — shared with the landing page. */
+:root {
+  color-scheme: dark;
+  --primary-gradient: linear-gradient(105deg, #ff468c, #ff7193);
+  --secondary-gradient: linear-gradient(105deg, #ff7193, #ffb1c9);
+  --bg-color: #0c090c;
+  --text-main: #f8f0e9;
+  --text-sub: #b39fa9;
+  --card-bg: rgba(23, 17, 23, 0.92);
+  --glass-border: #3b2934;
+  --sm-accent: #ff4b92;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif;
+  background: radial-gradient(ellipse at 94% 9%, rgba(80, 19, 44, 0.27), transparent 32%), var(--bg-color);
+  color: var(--text-main);
+}
+
+.glow-1 { background: rgba(255, 75, 146, 0.23); }
+.glow-2 { background: rgba(255, 113, 147, 0.14); }
+.container { max-width: 960px; }
+.logo-icon { filter: drop-shadow(0 10px 25px rgba(255, 75, 146, 0.3)); }
+
+h1 {
+  background: linear-gradient(105deg, #ff4b92, #ff9bbb);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+h2 { color: var(--text-main); letter-spacing: -0.035em; }
+.subtitle { color: #c5adb8; }
+
+.step-card {
+  border-color: var(--glass-border);
+  border-radius: 5px;
+  background: linear-gradient(145deg, rgba(35, 19, 31, 0.96), rgba(21, 16, 22, 0.96));
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+}
+
+.step-card:hover {
+  border-color: #704057;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.34);
+}
+
+.step-number {
+  border-radius: 4px;
+  background: var(--primary-gradient);
+  color: #240d19;
+  box-shadow: 0 5px 18px rgba(255, 50, 124, 0.2);
+}
+
+.pro-plan-content {
+  border-color: #5b3045;
+  border-radius: 5px;
+  background: linear-gradient(135deg, rgba(35, 19, 31, 0.96), rgba(15, 10, 15, 0.96));
+}
+
+.pro-badge {
+  border-radius: 3px;
+  background: var(--primary-gradient);
+  color: #240d19;
+}
+
+.pricing-card {
+  border: 1px solid #503044;
+  border-radius: 4px;
+  background: rgba(12, 9, 12, 0.55);
+}
+
+.price-row { border-color: var(--glass-border); }
+.price-row.pro { border-color: var(--glass-border); color: #ff75a8; }
+.check { color: #ff75a8; }
+
+.upgrade-btn {
+  border-radius: 3px;
+  background: var(--primary-gradient);
+  color: #240d19;
+  box-shadow: 0 7px 24px rgba(255, 50, 124, 0.2);
+}
+
+.upgrade-btn:hover { box-shadow: 0 10px 28px rgba(255, 50, 124, 0.3); }
+.upgrade-btn:disabled { background: #47343e; color: #a9909c; }
+
+.recovery-card {
+  border-color: var(--glass-border);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.recovery-input,
+.recovery-code {
+  border-color: #4a3441;
+  border-radius: 3px;
+  background: #100c10;
+  color: var(--text-main);
+}
+
+.secondary-btn,
+.close-btn {
+  border-color: #684355;
+  border-radius: 3px;
+  background: #21151d;
+  color: var(--text-main);
+}
+
+.secondary-btn:hover,
+.close-btn:hover {
+  border-color: #a34c72;
+  background: #2a1824;
+  color: #ff9bc0;
+}
+
+.toast {
+  border: 1px solid #684355;
+  border-radius: 4px;
+  background: rgba(23, 17, 23, 0.98);
+  color: var(--text-main);
+}
+
+button:focus-visible, input:focus-visible {
+  outline: 2px solid var(--sm-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

@@ -1,9 +1,13 @@
 const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
 const EXTENSION_PATH = path.join(__dirname, '..', '..', 'extension');
 const OUT_DIR = path.join(__dirname, 'screenshots');
+const PROFILE_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'scene-memo-capture-en-'));
+const LICENSE_VERIFY_URL = 'https://asia-northeast1-fanza-comment-lic-20260303.cloudfunctions.net/licenseApi/verify-device';
+let captureContext;
 
 if (!fs.existsSync(OUT_DIR)) fs.mkdirSync(OUT_DIR);
 
@@ -21,7 +25,8 @@ const DUMMY_COMMENTS_EN = [
 async function run() {
   console.log('=== English Screenshot Capture (Headless) ===');
 
-  const ctx = await chromium.launchPersistentContext('', {
+  const ctx = captureContext = await chromium.launchPersistentContext(PROFILE_DIR, {
+    timezoneId: 'America/Los_Angeles',
     headless: false, // Use non-headless for extension support
     args: [
       `--disable-extensions-except=${EXTENSION_PATH}`,
@@ -50,26 +55,34 @@ async function run() {
       extensionId = worker.url().split('/')[2];
     } catch (e) {
       console.log('Service worker wait failed, trying to trigger via page...');
-      const p = await ctx.newPage();
-      await p.goto('https://www.example.com');
-      await p.waitForTimeout(3000);
-      extensionId = findId();
-      await p.close();
+      throw e;
     }
   }
   console.log('Extension ID:', extensionId);
-  if (!extensionId) { await ctx.close(); return; }
+  if (!extensionId) throw new Error('Extension ID not found');
+  await ctx.route(LICENSE_VERIFY_URL, route => {
+    const headers = {
+      'access-control-allow-origin': '*',
+      'access-control-allow-methods': 'POST, OPTIONS',
+      'access-control-allow-headers': 'content-type'
+    };
+    if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers, body: '' });
+    return route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify({ ok: true, is_pro: false }) });
+  });
 
   // --- Inject dummy comments ---
   console.log('Injecting dummy comments (English)...');
   const popup = await ctx.newPage();
+  console.log('Opening extension popup page...');
   await popup.goto(`chrome-extension://${extensionId}/popup.html`);
   await popup.waitForTimeout(1000);
+  console.log('Writing sample comments to extension storage...');
 
   await popup.evaluate(async (comments) => {
     const COMMENTS_PREFIX = 'video_memo_comments_';
     const META_PREFIX = 'video_memo_meta_';
     const ENTITLEMENT_KEY_PRO_PURCHASED = 'fanza_memo_is_pro_purchased';
+    const ENTITLEMENT_KEY_BETA = 'fanza_memo_is_beta_grandfathered';
 
     // Clear UI state
     await new Promise(r => chrome.storage.local.remove([
@@ -77,9 +90,10 @@ async function run() {
       'fanza_default_auto_min', 'fanza_shortcut'
     ], r));
 
-    // Enable Pro mode and force English locale
+    // Use the free beta entitlement for sample comments without a license API call.
     await new Promise(r => chrome.storage.local.set({ 
-      [ENTITLEMENT_KEY_PRO_PURCHASED]: true,
+      [ENTITLEMENT_KEY_PRO_PURCHASED]: false,
+      [ENTITLEMENT_KEY_BETA]: true,
       'fanza_memo_dev_force_locale': 'en'
     }, r));
 
@@ -138,50 +152,55 @@ async function run() {
     }
   }, DUMMY_COMMENTS_EN);
 
+  console.log('Sample comments written.');
+  await popup.reload({ waitUntil: 'domcontentloaded' });
+  await popup.evaluate(() => window.extI18n?.ready);
+  await popup.waitForFunction(() => !/checking|確認中/i.test(document.querySelector('#license-status')?.textContent || ''), null, { timeout: 10000 });
+  await popup.locator('body').screenshot({ path: path.join(OUT_DIR, 'popup_dark_en.png'), animations: 'disabled' });
+  await popup.setViewportSize({ width: 1365, height: 900 });
+  await popup.goto(`chrome-extension://${extensionId}/onboarding.html`, { waitUntil: 'domcontentloaded' });
+  await popup.evaluate(() => window.extI18n?.ready);
+  await popup.waitForFunction(() => {
+    const status = document.querySelector('#license-status')?.textContent || '';
+    const restoreCard = document.querySelector('#restore-card');
+    return !/checking|確認中/i.test(status) && restoreCard?.style.display === 'none';
+  }, null, { timeout: 10000 });
+  await popup.screenshot({ path: path.join(OUT_DIR, 'onboarding_en.png'), fullPage: true, animations: 'disabled' });
   await popup.close();
 
-  // --- Navigate to YouTube ---
+  // --- Navigate to a local YouTube-shaped player page ---
   const page = await ctx.newPage();
-  console.log('Navigating to YouTube...');
-  await page.goto('https://www.youtube.com/watch?v=aqz-KE-bpKQ', { waitUntil: 'networkidle' });
-
-  // Handle cookies
-  for (const label of ['Reject all', 'すべて拒否', 'Accept all', '同意する']) {
-    try {
-      const btn = await page.$(`button:has-text("${label}")`);
-      if (btn) { await btn.click(); break; }
-    } catch (e) {}
-  }
+  await page.route('https://www.youtube.com/watch**', route => route.fulfill({
+    status: 200,
+    contentType: 'text/html; charset=utf-8',
+      body: `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Big Buck Bunny - Scene Memo sample</title>
+      <style>html,body{margin:0;background:#09070a;color:#fff;font:16px system-ui,sans-serif}#movie_player{position:relative;width:1280px;height:720px;margin:110px auto 0;overflow:hidden;background:radial-gradient(ellipse at 68% 35%,#8aa477 0,#58745f 24%,#253b39 55%,#10191e 100%)}#movie_player:before{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(5,7,8,.65),transparent 38%),radial-gradient(ellipse at 25% 82%,#b09c6c 0,transparent 30%)}video{position:absolute;inset:0;width:100%;height:100%;opacity:.01}</style></head>
+      <body><main id="movie_player" class="html5-video-player"><video playsinline></video></main></body></html>`
+  }));
+  console.log('Navigating to local sample player...');
+  await page.goto('https://www.youtube.com/watch?v=aqz-KE-bpKQ', { waitUntil: 'domcontentloaded' });
 
   // Prep video
   await page.evaluate(async () => {
     const v = document.querySelector('video');
     if (!v) return;
     v.pause();
-    v.currentTime = 15;
+    try { v.currentTime = 15; } catch (_) {}
   });
 
-  await page.waitForTimeout(5000); 
+  await page.waitForTimeout(1200);
   await page.waitForSelector('#fanza-comment-overlay', { timeout: 30000 });
 
   // UI labels cleanup (match user screenshot)
   await page.addStyleTag({ content: `
-    #fc-upgrade-btn, .fc-badge-beta, .fc-badge-pro { display: none !important; }
     #secondary { display: none !important; }
     ytd-watch-flexy[flexy] #primary.ytd-watch-flexy { max-width: 100% !important; min-width: 100% !important; }
   `});
 
-  // Force actual English labels
-  await page.evaluate(() => {
-    const status = document.querySelector('#fc-status');
-    if (status) status.textContent = 'Epic Moments';
-  });
-
   // Helper functions
   async function fitOverlayToPlayer(options = {}) {
-    await page.evaluate((opts) => {
+    await page.locator('#fanza-comment-overlay').evaluate((overlay, opts) => {
       const video = document.querySelector('video');
-      const overlay = document.getElementById('fanza-comment-overlay');
       if (video && overlay) {
         const vRect = video.getBoundingClientRect();
         const padding = 20;
@@ -192,7 +211,7 @@ async function run() {
         if (opts.theme === 'light') overlay.classList.add('fc-light-theme');
         else overlay.classList.remove('fc-light-theme');
 
-        const targetWidth = opts.width || 320;
+        const targetWidth = opts.width || 360;
         const targetHeight = opts.height || 440;
         
         overlay.style.width = `${targetWidth}px`;
@@ -209,14 +228,10 @@ async function run() {
   }
 
   async function screenshotOverlay(filename) {
-    const el = await page.$('#fanza-comment-overlay');
-    if (el) {
-      const box = await el.boundingBox();
-      if (box) {
-        await page.screenshot({ path: path.join(OUT_DIR, filename), clip: box });
-        console.log(`  Saved: ${filename}`);
-      }
-    }
+    const overlay = page.locator('#fanza-comment-overlay').first();
+    if (!await overlay.count()) return;
+    await overlay.screenshot({ path: path.join(OUT_DIR, filename), animations: 'disabled' });
+    console.log(`  Saved: ${filename}`);
   }
 
   // Capture loop
@@ -224,32 +239,26 @@ async function run() {
 
   // 1. Full page (dark, input)
   await fitOverlayToPlayer({ theme: 'dark' });
-  await page.evaluate(() => {
-    const input = document.querySelector('#fanza-comment-overlay .fc-input-area .fc-input');
-    if (input) { input.value = "This part is the best..."; input.dispatchEvent(new Event('input', { bubbles: true })); }
-  });
+  await page.locator('#fanza-comment-overlay .fc-input-area .fc-input').fill('This part is the best...');
   await page.waitForTimeout(1000);
   await page.screenshot({ path: path.join(OUT_DIR, 'wide_full_dark_input_en.png') });
 
   // 2. Closeup (dark list)
-  await page.evaluate(() => {
-    const input = document.querySelector('#fanza-comment-overlay .fc-input-area .fc-input');
-    if (input) input.value = "";
-  });
-  await screenshotOverlay('closeup_dark_burst_en.png');
+  await page.locator('#fanza-comment-overlay .fc-input-area .fc-input').fill('');
+  await screenshotOverlay('closeup_dark_list_en.png');
 
   // 3. Closeup (dark settings)
-  await page.evaluate(() => document.querySelector('#fc-settings-btn')?.click());
+  await page.locator('#fc-settings-btn').click();
   await page.waitForTimeout(1000);
   await screenshotOverlay('closeup_dark_settings_en.png');
 
   // 4. Closeup (light settings)
-  await page.evaluate(() => document.querySelector('#fc-theme-toggle')?.click());
+  await page.locator('#fc-theme-toggle').check({ force: true });
   await page.waitForTimeout(1000);
   await screenshotOverlay('closeup_light_settings_en.png');
 
   // 5. Closeup (light list)
-  await page.evaluate(() => document.querySelector('#fc-settings-back')?.click());
+  await page.locator('#fc-settings-close').click();
   await page.waitForTimeout(1000);
   await screenshotOverlay('closeup_light_list_en.png');
 
@@ -259,7 +268,14 @@ async function run() {
   await page.screenshot({ path: path.join(OUT_DIR, 'wide_full_light_resized_en.png') });
 
   await ctx.close();
+  captureContext = null;
+  fs.rmSync(PROFILE_DIR, { recursive: true, force: true });
   console.log('Capture Done.');
 }
 
-run();
+run().catch(async error => {
+  console.error('FATAL:', error);
+  if (captureContext) await captureContext.close().catch(() => {});
+  fs.rmSync(PROFILE_DIR, { recursive: true, force: true });
+  process.exit(1);
+});
