@@ -46,6 +46,8 @@
 
 ## 次に必要な計測判断
 
+各サービスの無料接続手順と、確認前に満たす条件は[無料計測の接続チェックリスト](free-measurement-setup.md)に記録する。
+
 1. 本番のデプロイ元を確定し、`robots.txt` が `text/plain`、`sitemap.xml` が有効なXMLとして返る状態に反映する。現在の公開URLは両方ともLPの `text/html` を返すため、修正が公開されるまではサイトマップを送信しない。
 2. 既存GoogleアカウントでSearch ConsoleのURLプレフィックス `https://scene-memo.pages.dev/` を追加し、利用可能な方法で所有権を確認してから `https://scene-memo.pages.dev/sitemap.xml` を送信する。
 3. 既存MicrosoftアカウントでBing Webmaster Toolsに同じURLを登録・確認し、サイトマップを送信する。検索パフォーマンスとAI Performanceは、プロパティの確認後に取得できる範囲で見る。
