@@ -23,7 +23,7 @@
       "evidence": ["docs/requirements_definition.md:FR-02", "docs/requirements_definition.md:FR-04", "docs/requirements_definition.md:4.3", "docs/requirements_definition.md:FR-09"],
       "remote_id": null,
       "public_url": null,
-      "hold_reason": "投稿先は @awawawawawadama と指定済み。公式API接続と対象アカウントの照合が必要。"
+      "hold_reason": "追加費用0円のため投稿APIは使わず、無料の手動投稿を前提とする。公開は未実施。"
     },
     {
       "id": "ja-ab-repeat-001",
@@ -36,7 +36,7 @@
       "evidence": ["docs/requirements_definition.md:FR-05.5", "docs/requirements_definition.md:2", "docs/requirements_definition.md:4.3"],
       "remote_id": null,
       "public_url": null,
-      "hold_reason": "投稿先は @awawawawawadama と指定済み。公式API接続と対象アカウントの照合が必要。"
+      "hold_reason": "追加費用0円のため投稿APIは使わず、無料の手動投稿を前提とする。公開は未実施。"
     },
     {
       "id": "ja-fanza-scene-guide-001",
