@@ -184,6 +184,7 @@
 - Node.js 22と各 `package-lock.json` を基準に依存関係を `npm ci` で再現し、ビルド・Emulator・拡張機能の起動手順を `docs/development_environment.md` に記載すること
 - コメント本文などChromeローカルデータ、`.env*`、`.secret.local`、サービスアカウント鍵、依存ディレクトリや生成物をGitHubへ同期しないこと
 - ローカルとクラウドの同時編集による競合を避けるため作業ブランチを分けること。Push前には対象リポジトリ・ブランチ・コミット・差分についてユーザー確認を得ること
+- 複数レーンで進める調査・改善では、担当範囲とファイル所有者を明示して同一ファイルの同時編集を避け、統括役が公開状態・要件資料との整合を確認して差分を統合すること。標準レーンと手順は `docs/development_environment.md` に記載する
 
 ## 7. データ要件
 
@@ -291,14 +292,14 @@ Functionsパラメーター:
 ## 12. LP整理・SEO/AIO 要件と進捗
 
 - 要件と進捗の詳細は `docs/marketing/lp-seo-requirements.md`、検索意図の根拠と限界は `docs/marketing/keyword-research-2026-10-24.md` を参照する
-- LP冒頭の機能説明、重複説明の整理、実画面の操作例、LP下部のガイド紹介、同一サイト内の日本語FANZAガイド1本を実装・本番反映済み
+- LP冒頭の機能説明、重複説明の整理、実画面の操作例、LP下部のガイド紹介、同一サイト内の日本語FANZA・YouTubeガイドを実装・本番反映済み
 - 拡張UIをLPのビジュアルトーンに揃え、操作ガイド掲載用の実画面スクリーンショットを日本語・英語で撮り直し済み。撮影にはローカル模擬プレーヤーと説明用サンプルデータを使用し、利用者のコメント・視聴履歴は使わない。変更はGitHubの作業ブランチにあり、`en_language` へのマージ・Cloudflare Pages・配布ZIPへの反映は未実施
 - 主軸候補「FANZA 動画 再生位置 保存」に対応する説明をタイトル・本文・FAQへ反映し、保存対象を動画ファイルと誤認させない。ブラウザー優先言語による4言語表示・ZIP配布・導入手順を維持する
-- ガイドは独立URL `guide-fanza.html` とし、LPからの紹介リンク、記事から導入案内・ZIPへのリンクを実装済み。検索数やAI掲載・引用を保証しない
+- ガイドの公開URLは `https://scene-memo.pages.dev/guide-fanza` と `https://scene-memo.pages.dev/guide-youtube`。ソースファイル名はそれぞれ `.html`。内部リンク、canonical、`og:url`、sitemapを拡張子なしURLへ統一するソース変更を実施済み。本番反映前。検索数やAI掲載・引用を保証しない
 - 公開先はユーザー指定の Cloudflare Pages `https://scene-memo.pages.dev/`。GitHub Actions run `40161734375` が成功し、LP・ガイド・ZIP・画像・英中韓の言語ファイルを本番 `main` へ反映済み。robots.txt・sitemap.xml・共有画像の表示をブラウザーで確認し、英語表示とガイド画面も確認済み
 - LP用GitHub Actions + WranglerはPR #7として `en_language` へ2026-10-25にマージ済み（`b95453d`）。Cloudflare Pages用GitHub Secretsを使う。Cloudflare APIトークンをローテーション後、Actions run `40185303631`（commit `3e1ca5a`）の成功でRepository Secretと本番配信を再確認した
 - Google Search ConsoleのURLプレフィックス `https://scene-memo.pages.dev/` はHTMLファイル方式で所有権確認済み。サイトマップ初回レポートは「取得できませんでした」・検出0件。公開URLのrobots/sitemap応答を確認後、2026-10-25にサイトマップを再送信し、Googleの送信成功表示を確認した。レポートの処理結果は未更新で、検索流入・順位・SEO/AIO効果は未確認。中国語・韓国語の実ブラウザー表示も未確認
-- 多言語固定URL、YouTube向けガイド、Bing Webmaster Toolsは後続候補。Cloudflare Web Analyticsの計測説明をLP FAQとFANZAガイドに追加する変更を準備したが、本番未反映。Pages設定状態は未確認で、公開説明が反映された後に確認・有効化する。既存の定期実行登録と本番配信を区別する
+- 多言語固定URLとBing Webmaster Toolsは後続候補。YouTube向け日本語ガイドは公開済み。Cloudflare Web Analyticsの計測説明をLP FAQとFANZAガイドに追加する変更を準備したが、本番未反映。Pages設定状態は未確認で、公開説明が反映された後に確認・有効化する。既存の定期実行登録と本番配信を区別する
 - SEO効果・検索順位・検索数は未確認。追加費用0円を維持する間はX投稿API認証を確認・利用しない
 
 ---

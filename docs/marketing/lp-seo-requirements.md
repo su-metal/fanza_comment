@@ -37,7 +37,7 @@ LP自体を検索流入の受け皿とし、詳しい手順が必要なテーマ
 | 更新・移行 | ストア経由の自動更新・端末間自動同期はない。更新は手動、移行はJSONバックアップ・復元 |
 | 現在のLP | 冒頭で用途・対応環境を説明し、説明重複を整理。AI画像の操作サンプルと区別した実画面、FANZAガイド紹介を追加済み。2026-10-25にLPのビジュアルへ揃えた拡張UIと日本語スクリーンショットをローカル作成（本番未反映） |
 | 操作サンプル | AI生成静止画を使う説明用デモと実際の拡張機能画面を併記し、それぞれサンプル・実画面と明記 |
-| FANZAガイド | `guide-fanza.html` に日本語の手順・実画面・保存範囲・バックアップ・導入案内を追加。LPから紹介し、記事からLPとZIPへリンク |
+| FANZA・YouTubeガイド | `guide-fanza.html`（公開URL `/guide-fanza`）と `guide-youtube.html`（公開URL `/guide-youtube`）に、日本語の個別手順を掲載。LPと相互に通常リンクで案内 |
 | 公開環境 | Cloudflare Pages `https://scene-memo.pages.dev/`。ユーザー指定の公開先。本番 `main` へ反映し、LP・ガイド・ZIP・スクリーンショット・言語ファイルのHTTP 200を確認 |
 | X | 投稿先は `@awawawawawadama`。ユーザーは公式X APIを利用中と申告。投稿作成APIは従量課金のため、追加費用0円を維持する間は呼び出さず、手動投稿を前提とする |
 | 今回の実施範囲 | LPと日本語FANZAガイドをCloudflare Pages本番へ反映。追加費用0円を優先し、投稿API認証の確認は行わず、X原稿作成までとする |
@@ -87,7 +87,7 @@ LPと日本語FANZAガイドをCloudflare Pages本番へ反映済み。YouTube�
 ### GUIDE-02: 最初のFANZAガイド（日本語版を公開済み）
 
 - タイトル: 「FANZA動画の再生位置を保存する方法｜時刻付きメモ｜神シーンメモ」。
-- URL: `https://scene-memo.pages.dev/guide-fanza.html`。本文は日本語。
+- URL: `https://scene-memo.pages.dev/guide-fanza`。本文は日本語。ソースファイル名は `guide-fanza.html`。
 - 必須内容: 対応環境、保存するのは時刻と文章であること、導入への案内、メモ保存、複数の場面の登録、頭出し、メモ検索、保存場所、バックアップ、既知の制限。
 - 実物の画面と操作手順を含め、LPの紹介文の繰り返しだけにしない。
 - 作品全体のお気に入りと動画内の位置の違いを説明する。公式DMM Player v2にチャプター・リピート機能が存在することと矛盾させない。
@@ -110,7 +110,8 @@ LPと日本語FANZAガイドをCloudflare Pages本番へ反映済み。YouTube�
 - LPとガイドに、内容に対応する固有のタイトル・説明文・分かりやすい見出しを用意する。
 - ガイドは独立したURLとcanonicalを持つ。LPとガイドを同一内容のページとして扱わない。
 - ガイドの紹介リンクと、記事からの導入リンクは、リンク先の内容が分かる文章にする。
-- ローカルのYouTubeガイドにも固有のtitle/description、canonical、`og:url`を設定。YouTube画面と誤認させる共有画像は付けず、公開判断前の下書きとして扱う。
+- YouTubeガイドにも固有のtitle/description、canonical、`og:url`を設定する。YouTube画面と誤認させる共有画像は付けない。公開URLは `https://scene-memo.pages.dev/guide-youtube`、ソースファイル名は `guide-youtube.html`。
+- 2つのガイドの内部リンク、canonical、`og:url`、サイトマップは拡張子なしの公開URLへ統一する。Cloudflare Pagesが `.html` を拡張子なしURLへ転送するため、`.html` のURLを新しいリンク先として使わない。
 - LPとFANZAガイドに、canonicalと一致する`og:url`、ページ固有のOpen Graph title/description、公開絶対URLの`og:image`、`twitter:card=summary_large_image`を設定する。共有画像は1200×630 PNGとし、実画面とサンプルデータの説明が一致するようにする。
 - 今回の公開ではURL・ガイド・ZIPが意図した内容を返すことを確認済み。以後の更新時も、公開後にリンク先とZIP取得を確認する。
 - 2026-10-25に日本語共有カード`scene-memo-LP/assets/og-share-ja.png`を作成。LPとガイドのSNSメタデータ、本番画像の表示を確認済み。X等のカード展開表示は未確認。
@@ -121,7 +122,7 @@ LPと日本語FANZAガイドをCloudflare Pages本番へ反映済み。YouTube�
 - ブラウザの優先言語判定は初回の案内に使い、言語を選んだURLではその言語の本文を安定して表示する。対応する言語への切替リンクを用意する。
 - 主要な説明を初期HTMLで読める構成にし、各言語版の `hreflang` とcanonicalを整える。
 - 公開済みページのサイトマップ、robots設定、ホスティング側のアクセス制限を確認する。Googlebot、Bingbot、OAI-SearchBotのアクセス方針を整理する。
-- 2026-10-25に `scene-memo-LP/robots.txt` と `scene-memo-LP/sitemap.xml` を本番へ反映。robots.txtはHTTP 200・`text/plain`、sitemap.xmlはHTTP 200・`application/xml`。Search Consoleの所有権確認は成功。初回のsitemapレポートは「取得できませんでした」・検出0件だったため、公開URLが正しく応答することを確認して再送信し、送信成功表示を確認。レポートの処理結果は未更新。公開中のサイトマップはトップページとFANZAガイドの2 URLで、ローカルのYouTubeガイド追加は未公開。
+- 2026-10-25に `scene-memo-LP/robots.txt` と `scene-memo-LP/sitemap.xml` を本番へ反映。robots.txtはHTTP 200・`text/plain`、sitemap.xmlはHTTP 200・`application/xml`。Search Consoleの所有権確認は成功。初回のsitemapレポートは「取得できませんでした」・検出0件だったため、公開URLが正しく応答することを確認して再送信し、送信成功表示を確認。レポートの処理結果は未更新。前回の公開確認ではサイトマップにトップページと2つのガイドが含まれていたが、ガイドのcanonical・`og:url`・sitemap URLは `.html`、実際の転送先は拡張子なしで不一致だった。今回ソース上の公開URLを拡張子なしに統一したが、本番反映は未実施。
 - ガイドの全言語展開は別の段階で検討する。未翻訳のガイドへ、存在しない言語版のリンクを作らない。
 
 ### SEARCH-04: AIの回答で参照される説明
@@ -134,7 +135,7 @@ LPと日本語FANZAガイドをCloudflare Pages本番へ反映済み。YouTube�
 
 ## 5. 後続のガイドと認知施策
 
-- YouTube向けガイド「YouTubeの見返したい時間を保存する方法」をローカル作成済み。未公開で、sitemap.xml・ホームのガイド紹介・FANZAガイドからのリンクも公開前の差分。YouTube公式の開始位置付き共有リンクとの使い分けを説明し、自分用の複数メモ保存という用途を明確にする。
+- YouTube向けガイド「YouTubeの見返したい時間を保存する方法」は公開済み。YouTube公式の開始位置付き共有リンクとの使い分けを説明し、自分用の複数メモ保存という用途を明確にする。公開URLは `/guide-youtube`。
 - 関連語は「YouTube タイムスタンプ 自分用 保存」「YouTube 好きな場面 ブックマーク」「YouTube 見ながら メモ タイムスタンプ」。
 - 公開コメントの自動投稿、タイムスタンプ一覧のテキスト書き出し、自動同期など、未提供の機能を約束しない。
 - YouTubeの説明ページから、その用途に合う機能説明と導入案内へ進める構成にする。
