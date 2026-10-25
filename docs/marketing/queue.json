@@ -18,12 +18,11 @@
       "locale": "ja",
       "status": "draft",
       "proposed_slot": "2026-10-26T09:00:00+09:00",
-      "text": "FANZAの「あの場面、どこだっけ？」に。\nChrome拡張「神シーンメモ」で、場面を時刻付きメモに保存。次はクリックですぐ戻れます。\nPC版Chrome向けの非公式ツール。合計50件まで無料、ZIPから手動導入。",
-      "link_utm_content": "ja-scene-bookmark-001",
+      "text": "FANZAの「あの場面、どこだっけ？」に。\nChrome拡張「神シーンメモ」で、場面を時刻付きメモに保存。クリックですぐ戻れます。\nPC版Chrome向けの非公式ツール。合計50件まで無料、ZIPから手動導入。\n使い方・ZIPはこちら：\nhttps://scene-memo.pages.dev/",
       "evidence": ["docs/requirements_definition.md:FR-02", "docs/requirements_definition.md:FR-04", "docs/requirements_definition.md:4.3", "docs/requirements_definition.md:FR-09"],
       "remote_id": null,
       "public_url": null,
-      "hold_reason": "投稿先は @awawawawawadama と指定済み。公式API接続と対象アカウントの照合が必要。"
+      "hold_reason": "追加費用0円のため投稿APIは使わず、無料の手動投稿を前提とする。公開は未実施。"
     },
     {
       "id": "ja-ab-repeat-001",
@@ -31,12 +30,11 @@
       "locale": "ja",
       "status": "draft",
       "proposed_slot": "2026-10-29T09:00:00+09:00",
-      "text": "見返したい区間を、毎回シークバーで探していませんか。\n「神シーンメモ」は、保存した2つのメモをA・Bに指定して区間リピート。\nFANZAの対応プレーヤー・PC版Chrome向けの非公式拡張です。ZIPから手動導入。",
-      "link_utm_content": "ja-ab-repeat-001",
+      "text": "見返したい区間を、毎回シークバーで探していませんか。\n「神シーンメモ」は、保存した2つのメモをA・Bに指定して区間リピート。\nFANZAの対応プレーヤー・PC版Chrome向けの非公式拡張です。ZIPから手動導入。\n使い方・ZIPはこちら：\nhttps://scene-memo.pages.dev/",
       "evidence": ["docs/requirements_definition.md:FR-05.5", "docs/requirements_definition.md:2", "docs/requirements_definition.md:4.3"],
       "remote_id": null,
       "public_url": null,
-      "hold_reason": "投稿先は @awawawawawadama と指定済み。公式API接続と対象アカウントの照合が必要。"
+      "hold_reason": "追加費用0円のため投稿APIは使わず、無料の手動投稿を前提とする。公開は未実施。"
     },
     {
       "id": "ja-fanza-scene-guide-001",

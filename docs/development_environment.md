@@ -58,6 +58,16 @@ TypeScriptビルドだけならStripeやFirebaseの認証情報は不要。Check
 
 Emulatorや依存パッケージのダウンロードがCodex Cloudのネットワーク制限で失敗する場合は、環境設定で失敗した配布元ドメインだけを確認して許可する。ビルドだけを行う環境にStripeやFirebaseの本番Secretを登録する必要はない。
 
+## LPのCloudflare Pages自動デプロイ
+
+`scene-memo-LP/` は静的サイトの配布元です。`.github/workflows/deploy-scene-memo-pages.yml` は `en_language` ブランチ上でLPファイルが更新されたとき、既存のCloudflare Pages `scene-memo` プロジェクトへ本番デプロイします。アップロードにはWranglerを使い、PagesのProductionブランチ `main` を指定します。PR #7はDraftで、Secrets設定とマージ前のため、まだ実行されません。
+
+初回のみ、Cloudflareで次の権限に絞ったAPI Tokenを作成し、GitHubリポジトリ `su-metal/fanza_comment` の Settings > Secrets and variables > Actions に保存します。
+
+- `CLOUDFLARE_API_TOKEN`: Account / Cloudflare Pages / Edit
+- `CLOUDFLARE_ACCOUNT_ID`: CloudflareアカウントID
+
+Tokenの値はGitHub Secretsに直接入力し、ソースコード、コミット、チャットには記載しません。設定後は `en_language` の `scene-memo-LP/` に変更をPushすると、ZIPを手動アップロードせずに本番へ反映できます。リポジトリはPublicのため、標準のUbuntu GitHub-hosted runnerを使うActionsの実行料金はかかりません。
 ## Codex Cloud環境の作成
 
 Codex Cloudのリポジトリ接続と環境公開はCodexのWeb版またはデスクトップアプリの環境設定で行う。リポジトリにあるファイルだけではGitHub接続やクラウド環境の公開を完了できない。

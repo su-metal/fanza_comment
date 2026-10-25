@@ -6,7 +6,13 @@ FANZAの動画で見返したい場面があっても、あとでシークバー
 
 ## 使える環境
 
-PC版Google Chromeと、FANZAの `dmm.co.jp/digital/-/player/` 配下にある対応プレーヤーが対象です。FANZA内のすべてのプレーヤーへの対応を保証するものではありません。スマートフォン向けアプリや、DMM Player v2の追加機能ではありません。
+PC版Google Chromeと、FANZAの `dmm.co.jp/digital/-/player/` 配下にある対応プレーヤーが対象です。FANZA内のすべてのプレーヤーへの対応を保証するものではありません。スマートフォン向けアプリや、DMM Player v2のプラグインではありません。
+
+## DMM Player v2のチャプター機能との違い
+
+DMM Player v2には、動画ファイルへチャプターを追加し、チャプター間をABリピートする機能があります。ファイルを開いて再生するDMM Player v2を使っている場合は、公式プレーヤーの機能が選択肢になります。[FANZA公式ヘルプ](https://support.fanza.jp/digital/article/46515)
+
+この記事で紹介する神シーンメモは、対応するFANZAのブラウザー再生ページで、動画ファイルを保存せずに再生時刻と短い文章メモをブラウザー内へ残す方法です。視聴環境に合う方法を選んでください。
 
 ## ZIPから拡張機能を読み込む
 
@@ -35,11 +41,15 @@ Chromeは、展開した拡張機能の読み込みを開発用途として説�
 
 無料版は全動画・対応サイトの合計50件まで保存できます。対応環境、導入手順、最新バージョンは配布ページで確認してください。
 
+## 配布・詳細
+
+配布ZIP、画面説明、FAQ、導入手順は[神シーンメモのLP](https://scene-memo.pages.dev/)で確認できます。
+
 ---
 
 編集用記録（公開前に削除）:
 
 - 状態: 下書き。公開先未指定。
-- 配布ページへのリンク: `queue.json` の候補URLを公開環境で確認してから挿入する。
-- 根拠: `docs/requirements_definition.md` の2、4.3、FR-02、FR-04、FR-05.5、FR-07、FR-08、FR-09、NFR-01、および同梱の `extension/INSTALL.txt`。
+- 配布ページURLは2026-10-24に公開環境で確認したcanonical LPを挿入済み。記事の公開先は未指定。
+- 根拠: `docs/requirements_definition.md` の2、4.3、FR-02、FR-04、FR-05.5、FR-07、FR-08、FR-09、NFR-01、同梱の `extension/INSTALL.txt`、[FANZA公式DMM Player v2ヘルプ](https://support.fanza.jp/digital/article/46515)。
 - この記事は機能仕様をもとに作成した。実際の利用者のコメントや利用履歴は用いていない。
