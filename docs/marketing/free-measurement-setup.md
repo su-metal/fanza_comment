@@ -26,14 +26,16 @@
 4. サイトマップがインポートされていない場合だけ、BingのSitemaps画面から `https://scene-memo.pages.dev/sitemap.xml` を送信する。
 5. 登録後は検索パフォーマンスと、利用可能な場合はAI Performanceを確認する。インデックス掲載やAI回答での引用は保証されない。
 
-## 3. Cloudflare Web Analytics（任意）
+## 3. Cloudflare Web Analytics（任意・無料）
 
-1. 既存CloudflareアカウントでWorkers & Pagesを開き、`scene-memo` のPagesプロジェクトを選ぶ。
-2. **Metrics → Web Analytics → Enable** を選ぶ。Pagesは次回デプロイ時に計測スクリプトを挿入する。
-3. 有効化前に公開プライバシー説明を確認し、分析利用について説明が足りなければ先に文面を整える。
-4. 公開後、Web Analytics画面でページ閲覧とパフォーマンスの基準値を記録する。
+現状: LPとFANZAガイドの公開説明を追加する変更を準備中。Pages設定はまだ有効化しない。説明が本番へ反映された後に接続する。
 
-この機能はページ閲覧・パフォーマンスの確認用とする。現行のCloudflare Web AnalyticsはUTMクエリ文字列とカスタムイベントを記録しないため、投稿別流入やZIPクリックの数値として扱わない。必要なプライバシー説明が整うまで有効化を保留してよい。
+1. LP FAQとFANZAガイドのプライバシー欄に、計測範囲・Cloudflareへの送信・拡張機能データを対象外とする説明が公開されていることを確認する。
+2. Cloudflare DashboardでWorkers & Pages → `scene-memo` → Metrics → Web Analytics → Enableを選ぶ。
+3. Pagesは次回デプロイ時に計測スクリプトを自動挿入する。デプロイ後にHTMLの計測スクリプトとWeb Analytics画面の受信状態を確認する。
+4. ページ閲覧数と表示性能を初回基準値として記録する。ZIPクリックや拡張機能の利用・インストール数として読み替えない。
+
+Cloudflareの現行説明ではWeb Analyticsは無料で、Cookieを使わず、訪問者の個人データを収集・使用せず、顧客サイト間で個人を追跡しない。計測対象はLPとガイドのページ閲覧・表示性能に限る。拡張機能のメモ本文、動画ID、動画タイトル、再生位置、利用状況は送信しない。Cloudflare Web AnalyticsはURLクエリ文字列とカスタムイベントを記録しないため、UTM別流入やZIPクリックの値は取れないものとして扱う。
 
 ## 4. 初回の基準値
 

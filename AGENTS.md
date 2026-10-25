@@ -38,7 +38,7 @@
 - LPではストア外配布の拡張機能ZIPを直接ダウンロードでき、Chromeのデベロッパーモードで解凍フォルダを読み込む手順を案内する。ブラウザーの優先言語に応じて日本語・英語・簡体字中国語・韓国語を表示し、配布ZIPに各言語の導入手順書を同梱する
 - 認知施策の原稿・配信台帳・運用手順は `docs/marketing/` で管理する。このチャットに週2回（月曜・木曜9時、日本時間）の原稿作成・確認を登録済みで、月曜に記事・効果確認も行う。Xの投稿先はユーザー指定の `@awawawawawadama`。公式X APIはユーザーが利用中との申告があるが、この環境での接続は未確認。認知施策は追加費用0円を原則とし、新規の有料契約・登録料・API従量課金が発生する手段を使わない。X投稿はAPIを呼ばず、原稿作成までを自動化し、無料の手動投稿を前提とする。計測はSearch ConsoleやCloudflare Web Analyticsなど無料で使える既存サービスを優先する
 - LPは用途が分かる冒頭説明、説明重複の整理、実画面スクリーンショット、FANZA向け使い方ガイドを実装し、ユーザー指定の Cloudflare Pages `https://scene-memo.pages.dev/` の本番 `main` へ反映済み。LP・ガイド・ZIP・画像・英中韓の言語ファイルがHTTP 200で取得でき、英語表示とガイド画面をブラウザーで確認済み
-- LPはブラウザー優先言語で日本語・英語・簡体字中国語・韓国語を表示する。FANZAガイドは現時点で日本語のみ。多言語固定URL、YouTubeガイド、計測は後続の提案。Cloudflare PagesのDirect Uploadプロジェクトを維持し、GitHub Actions + Wranglerによる自動デプロイを設定した。PR #7は2026-10-25に `en_language` へマージ（`b95453d`）し、GitHub Secrets設定後のActions run `40161734375` が成功して本番 `main` へ反映済み。以後 `en_language` の `scene-memo-LP/**` 更新で自動配信する。追加費用0円を維持する間はX投稿APIを使わない
+- LPはブラウザー優先言語で日本語・英語・簡体字中国語・韓国語を表示する。FANZAガイドは現時点で日本語のみ。多言語固定URLとYouTubeガイドは後続候補。LP FAQとFANZAガイドにCloudflare Web Analyticsの計測範囲を説明する。Cloudflare Web AnalyticsはPages設定で未有効化で、公開説明が本番に反映されるまでは有効化しない。計測対象はLP・ガイドの閲覧数と表示性能に限定し、拡張機能のコメント本文、動画ID、タイトル、保存時刻、利用状況は収集しない。Cloudflare PagesのDirect Uploadプロジェクトを維持し、GitHub Actions + Wranglerによる自動デプロイを設定した。PR #7は2026-10-25に `en_language` へマージ（`b95453d`）し、GitHub Secrets設定後のActions run `40161734375` が成功して本番 `main` へ反映済み。以後 `en_language` の `scene-memo-LP/**` 更新で自動配信する。追加費用0円を維持する間はX投稿APIを使わない
 - LP整理・使い方ガイド・SEO/AIOの要件と進捗は `docs/marketing/lp-seo-requirements.md`。本番の `/robots.txt`（HTTP 200・`text/plain`）と `/sitemap.xml`（HTTP 200・`application/xml`）、共有画像を確認済み。Search Consoleの所有権確認はHTMLファイル方式で成功し、サイトマップを送信済み。レポートは初回に「取得できませんでした」だが、Googleライブテストはクロール許可・取得成功。再処理待ちで、検索実績とSEO効果は未確認
 
 ## プロダクト原則
@@ -47,6 +47,7 @@
 2. 操作は再生体験を中断しない（最小クリック・最小視線移動）
 3. 既存データを壊さない（後方互換を優先）
 4. 権限は最小化し、挙動は説明可能にする
+5. 認知計測は公開説明付きのLP・ガイドページ閲覧と表示性能に限り、拡張機能内データを計測しない
 
 ## スコープ境界
 
