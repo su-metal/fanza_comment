@@ -15,6 +15,7 @@
 | 無料上限 | 対応サイト・動画全体で合計50件。 | [公開ZIP内content.js](../../scene-memo-LP/extension_v1.0.2.zip)、[LP](../../scene-memo-LP/index.html)。 |
 | Pro価格 | 1デバイス買い切り。LPはタイムゾーンが `Asia/Tokyo` の場合に¥500、それ以外は$3.99を表示する。 | [LP価格処理](../../scene-memo-LP/app.js)、[LP](../../scene-memo-LP/index.html)、[requirements_definition.md](../requirements_definition.md)。「500円」と書く場合は日本向け表現とする。 |
 | 導入・更新 | 現行LPはChrome Web Storeを経由しないZIPの手動導入を案内。ストアの自動更新はなく、新しいZIPの手動更新が必要。 | [LP導入案内](../../scene-memo-LP/index.html)、公開ZIP内の多言語手順書。Chrome Web Store限定公開への切替は未決定。 |
+| 公式プレーヤーの代替機能 | DMM Player v2はお気に入り場面へのチャプター追加、チャプター間のABリピートに対応する。公式ヘルプでは動画ファイルを開いて使うプレーヤーとして説明されている。 | [FANZA公式ヘルプ](https://support.fanza.jp/digital/article/46515)。神シーンメモを「唯一のシーン保存手段」と言わず、FANZAのブラウザー視聴中に文章メモ付きの時刻をローカル保存できる点を軸に説明する。 |
 
 ## 追加費用0円で進める判断
 
@@ -39,6 +40,7 @@
 - Cloudflare Web Analyticsは、Pagesのダッシュボードから有効化すると、次回デプロイ時に計測スクリプトを自動挿入できる。ページ閲覧・パフォーマンスの把握には使えるが、現行仕様ではUTMのクエリ文字列もカスタムイベントも記録しない。したがって、これだけでは投稿別の流入やZIPクリックを計測できない。
 - Cloudflare Web Analyticsの利用可否はCloudflareアカウントのPages設定で確認が必要。今回の作業環境からそのダッシュボード状態は読めていない。
 - Search Consoleの検索パフォーマンスは、Googleアカウントで対象サイトの所有権確認とプロパティ接続が必要。今回の作業環境からプロパティや検索実績は確認できていない。
+- 代替機能の確認では、FANZA公式ヘルプにDMM Player v2のチャプター追加・チャプター間ABリピートが記載されていた。対象ページは動画ファイルを開くデスクトッププレーヤーの説明なので、ブラウザー視聴向けの神シーンメモとは利用環境を分けて説明する。
 - 拡張機能内のコメント本文・動画ID・動画タイトル・保存時刻・利用状況を、認知施策の計測へ追加しない。導入完了は、利用者の任意申告または直接確認できる根拠がある場合だけ記録する。
 
 ## 次に必要な計測判断
@@ -56,3 +58,4 @@
 - [Cloudflare PagesでWeb Analyticsを有効にする](https://developers.cloudflare.com/pages/how-to/web-analytics/): Pagesダッシュボードから有効化し、次回デプロイでスクリプトを挿入する手順。
 - [Cloudflare Web Analytics FAQ](https://developers.cloudflare.com/web-analytics/faq/): UTMクエリ文字列およびカスタムイベントは現在記録しない旨。
 - [Google Search Consoleを使う](https://developers.google.com/search/docs/monitor-debug/search-console-start?hl=en): 検索パフォーマンス・検索語・ページ別指標の確認。
+- [FANZA公式ヘルプ: DMM Player v2の利用方法](https://support.fanza.jp/digital/article/46515): チャプター追加、チャプター間のABリピート、動画ファイル・プレイリストの扱い。
