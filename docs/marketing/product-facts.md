@@ -39,6 +39,7 @@
 - UTMパラメータはリンクに付けるだけでは集計されない。LP側でクエリやイベントを受け取る計測先が必要。
 - Cloudflare Web Analyticsは、Pagesのダッシュボードから有効化すると、次回デプロイ時に計測スクリプトを自動挿入できる。ページ閲覧・パフォーマンスの把握には使えるが、現行仕様ではUTMのクエリ文字列もカスタムイベントも記録しない。したがって、これだけでは投稿別の流入やZIPクリックを計測できない。
 - Cloudflare Web Analyticsの利用可否はCloudflareアカウントのPages設定で確認が必要。今回の作業環境からそのダッシュボード状態は読めていない。
+- Pagesへの反映方法はプロジェクト種別によって異なる。Cloudflare公式手順では、Git連携プロジェクトはWranglerから手動デプロイできるが、ダッシュボードのドラッグ＆ドロップは使えない。Direct Uploadプロジェクトならドラッグ＆ドロップまたはWranglerを使える。現在のPagesプロジェクト種別は未確認。この環境にはCloudflare APIトークン・アカウントID・Wrangler CLIがなく、ログインも確認できていないため、デプロイは未実施。
 - Search Consoleの検索パフォーマンスは、Googleアカウントで対象サイトの所有権確認とプロパティ接続が必要。今回の作業環境からプロパティや検索実績は確認できていない。
 - 代替機能の確認では、FANZA公式ヘルプにDMM Player v2のチャプター追加・チャプター間ABリピートが記載されていた。対象ページは動画ファイルを開くデスクトッププレーヤーの説明なので、ブラウザー視聴向けの神シーンメモとは利用環境を分けて説明する。
 - 拡張機能内のコメント本文・動画ID・動画タイトル・保存時刻・利用状況を、認知施策の計測へ追加しない。導入完了は、利用者の任意申告または直接確認できる根拠がある場合だけ記録する。
@@ -57,6 +58,8 @@
 - [X Developer Platform](https://developer.x.com/): 投稿作成を含む従量課金の単価を掲載。
 - [Google Search Consoleの案内](https://developers.google.com/crawling/docs/about-crawling): サイト所有者向けに無償で提供。
 - [Cloudflare PagesでWeb Analyticsを有効にする](https://developers.cloudflare.com/pages/how-to/web-analytics/): Pagesダッシュボードから有効化し、次回デプロイでスクリプトを挿入する手順。
+- [Cloudflare Pages Direct Upload](https://developers.cloudflare.com/pages/get-started/direct-upload/): Direct Uploadの手順と、Git連携プロジェクトではダッシュボードのドラッグ＆ドロップが使えない制約。
+- [Wrangler Pages deploy](https://developers.cloudflare.com/workers/wrangler/commands/pages/): Pagesの静的ファイルを手動デプロイするCLIコマンド。
 - [Cloudflare Web Analyticsの概要](https://developers.cloudflare.com/web-analytics/about/): 無料提供と、個人データを収集・使用しないというCloudflareの説明。
 - [Cloudflare Web Analytics FAQ](https://developers.cloudflare.com/web-analytics/faq/): UTMクエリ文字列およびカスタムイベントは現在記録しない旨。
 - [Google Search Consoleを使う](https://developers.google.com/search/docs/monitor-debug/search-console-start?hl=en): 検索パフォーマンス・検索語・ページ別指標の確認。
@@ -64,3 +67,4 @@
 - [Bing Webmaster Tools](https://www.bing.com/webmasters/about): 無料SEO/GEOツール。
 - [Bing Webmaster Tools AI Performance](https://www.bing.com/webmasters/help/ai-performance-9f8e7d6c): AI回答で引用されたページ、可視性の変化、関連クエリのレポート。
 - [FANZA公式ヘルプ: DMM Player v2の利用方法](https://support.fanza.jp/digital/article/46515): チャプター追加、チャプター間のABリピート、動画ファイル・プレイリストの扱い。
+
