@@ -43,7 +43,7 @@ LP自体を検索流入の受け皿とし、詳しい手順が必要なテーマ
 
 ## 3. 初期対応: LP整理とガイド1本（本番反映済み）
 
-LPと日本語FANZAガイドをCloudflare Pages本番へ反映済み。YouTubeガイド、ガイド本文の4言語展開、自動公開基盤は後続範囲とする。
+LPと日本語FANZAガイドをCloudflare Pages本番へ反映済み。YouTubeガイドはローカル下書きを作成済みで未公開。ガイド本文の4言語展開は後続範囲とする。
 
 ### LP-01: 冒頭で用途が分かる説明（実装・本番反映済み）
 
@@ -109,6 +109,7 @@ LPと日本語FANZAガイドをCloudflare Pages本番へ反映済み。YouTube�
 - LPとガイドに、内容に対応する固有のタイトル・説明文・分かりやすい見出しを用意する。
 - ガイドは独立したURLとcanonicalを持つ。LPとガイドを同一内容のページとして扱わない。
 - ガイドの紹介リンクと、記事からの導入リンクは、リンク先の内容が分かる文章にする。
+- ローカルのYouTubeガイドにも固有のtitle/description、canonical、`og:url`を設定。YouTube画面と誤認させる共有画像は付けず、公開判断前の下書きとして扱う。
 - LPとFANZAガイドに、canonicalと一致する`og:url`、ページ固有のOpen Graph title/description、公開絶対URLの`og:image`、`twitter:card=summary_large_image`を設定する。共有画像は1200×630 PNGとし、実画面とサンプルデータの説明が一致するようにする。
 - 今回の公開ではURL・ガイド・ZIPが意図した内容を返すことを確認済み。以後の更新時も、公開後にリンク先とZIP取得を確認する。
 - 2026-10-25に日本語共有カード`scene-memo-LP/assets/og-share-ja.png`を作成。LPとガイドのSNSメタデータ、本番画像の表示を確認済み。X等のカード展開表示は未確認。
@@ -119,7 +120,7 @@ LPと日本語FANZAガイドをCloudflare Pages本番へ反映済み。YouTube�
 - ブラウザの優先言語判定は初回の案内に使い、言語を選んだURLではその言語の本文を安定して表示する。対応する言語への切替リンクを用意する。
 - 主要な説明を初期HTMLで読める構成にし、各言語版の `hreflang` とcanonicalを整える。
 - 公開済みページのサイトマップ、robots設定、ホスティング側のアクセス制限を確認する。Googlebot、Bingbot、OAI-SearchBotのアクセス方針を整理する。
-- 2026-10-25に `scene-memo-LP/robots.txt` と `scene-memo-LP/sitemap.xml` を本番へ反映。robots.txtはHTTP 200・`text/plain`、sitemap.xmlはHTTP 200・`application/xml`。Search Consoleの所有権確認は成功。初回のsitemapレポートは「取得できませんでした」・検出0件だったため、公開URLが正しく応答することを確認して再送信し、送信成功表示を確認。レポートの処理結果は未更新。
+- 2026-10-25に `scene-memo-LP/robots.txt` と `scene-memo-LP/sitemap.xml` を本番へ反映。robots.txtはHTTP 200・`text/plain`、sitemap.xmlはHTTP 200・`application/xml`。Search Consoleの所有権確認は成功。初回のsitemapレポートは「取得できませんでした」・検出0件だったため、公開URLが正しく応答することを確認して再送信し、送信成功表示を確認。レポートの処理結果は未更新。公開中のサイトマップはトップページとFANZAガイドの2 URLで、ローカルのYouTubeガイド追加は未公開。
 - ガイドの全言語展開は別の段階で検討する。未翻訳のガイドへ、存在しない言語版のリンクを作らない。
 
 ### SEARCH-04: AIの回答で参照される説明
@@ -132,7 +133,7 @@ LPと日本語FANZAガイドをCloudflare Pages本番へ反映済み。YouTube�
 
 ## 5. 後続のガイドと認知施策
 
-- YouTube向けガイドの候補は「YouTubeのタイムスタンプを自分用に保存する方法｜コメント欄に投稿せず残す」。
+- YouTube向けガイド「YouTubeの見返したい時間を保存する方法」をローカル作成済み。未公開で、sitemap.xml・ホームのガイド紹介・FANZAガイドからのリンクも公開前の差分。YouTube公式の開始位置付き共有リンクとの使い分けを説明し、自分用の複数メモ保存という用途を明確にする。
 - 関連語は「YouTube タイムスタンプ 自分用 保存」「YouTube 好きな場面 ブックマーク」「YouTube 見ながら メモ タイムスタンプ」。
 - 公開コメントの自動投稿、タイムスタンプ一覧のテキスト書き出し、自動同期など、未提供の機能を約束しない。
 - YouTubeの説明ページから、その用途に合う機能説明と導入案内へ進める構成にする。
@@ -173,7 +174,7 @@ LPと日本語FANZAガイドをCloudflare Pages本番へ反映済み。YouTube�
 ## 8. 残作業・後続判断
 
 1. 中国語・韓国語を含む4言語の実ブラウザー表示確認。
-2. ガイドを翻訳する範囲と順序、YouTubeガイドを追加する時期。
+2. ガイドを翻訳する範囲と順序。YouTubeガイドはローカル下書きを確認してから公開判断する。
 3. 無料の計測ツールと取得項目。Xは追加費用0円を維持する間、投稿APIを使わず手動投稿する。
 
 認証情報の値をチャットやリポジトリに記載する必要はない。追加費用0円を維持する間は、投稿API認証の確認・利用を行わない。
