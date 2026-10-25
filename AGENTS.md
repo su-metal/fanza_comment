@@ -30,6 +30,7 @@
 - 拡張UIは日本語/英語に対応し、タイムゾーンが `Asia/Tokyo` なら日本語、それ以外は英語で `popup` / `onboarding` / プレーヤー内主要導線の文言を切り替える
 - 拡張の `popup` / `onboarding` / プレーヤー内UIは、LPと共通の暗色・ローズアクセント・細い境界線・システムフォントのデザインに揃える。広告掲載用の拡張画面スクリーンショットはローカルの模擬プレーヤーと説明用サンプルデータで撮影し、利用者のコメントや視聴履歴を使わない。このUI・LP差替えはGitHubの作業ブランチにあり、`en_language` へのマージ・Cloudflare Pages本番・配布ZIPには未反映
 - 決済価格はタイムゾーン判定に連動し、`Asia/Tokyo` なら `¥500` の JPY Price、それ以外は `$3.99` の USD Price を自動選択する
+- LPでは `Asia/Tokyo` 向けに `¥500` をリリース記念キャンペーン価格として2027年1月30日まで表示し、2027年1月31日から `¥980` で販売する予定を案内する。価格切替前にLP・拡張機能・Checkoutの表示と実価格を同期する
 - 公開中v1.0.2の本番課金APIはSupabase。Firebaseプロジェクト `fanza-comment-lic-20260303` は2026-10-24にBlaze有効を確認済み。Firestoreには既存のデフォルトDBがあり、場所は `nam5`、データは空。Functionsの `asia-northeast1` とはリージョンが異なる
 - FirestoreのリモートRulesはクライアントの読み書きをすべて拒否し、2026-10-24に本番デプロイ済み。移行コードはFirestoreデフォルトDBをAdmin SDKで使い、コメント本文は移行対象外。FunctionsのTypeScriptビルドは成功し、本番依存のnpm監査は0件
 - ユーザー確認（2026-10-24）では既存購入者はいないため、初回Firebase公開ではSupabaseからのentitlement/claim/webhookデータ移行を省略し、空のFirestoreから開始する。Supabase Management APIの読み取り認証はHTTP 401だが、この初回公開のブロッカーではない。将来移行が必要になった場合は認証を復旧して再確認する
@@ -37,6 +38,7 @@
 - Supabaseのデータ正本 `supabase/schema.sql` と説明資料は既存v1.0.2の運用・移行元として保持する。移行手順と実施状態は `docs/firebase_migration.md` を参照する
 - 対応プレイヤーは YouTube / FANZA / DMM TV のローカルメモ用途を含む
 - LPではストア外配布の拡張機能ZIPを直接ダウンロードでき、Chromeのデベロッパーモードで解凍フォルダを読み込む手順を案内する。ブラウザーの優先言語に応じて日本語・英語・簡体字中国語・韓国語を表示し、配布ZIPに各言語の導入手順書を同梱する
+- LPには、FANZA/DMMの地域制限により日本国外で利用できないサービス・動画があること、VPN等でも利用は保証されず拡張機能は地域制限を回避しないことを、日本語・英語・簡体字中国語・韓国語で案内する
 - 認知施策の原稿・配信台帳・運用手順は `docs/marketing/` で管理する。このチャットに週2回（月曜・木曜9時、日本時間）の原稿作成・確認を登録済みで、月曜に記事・効果確認も行う。Xの投稿先はユーザー指定の `@awawawawawadama`。公式X APIはユーザーが利用中との申告があるが、この環境での接続は未確認。認知施策は追加費用0円を原則とし、新規の有料契約・登録料・API従量課金が発生する手段を使わない。X投稿はAPIを呼ばず、原稿作成までを自動化し、無料の手動投稿を前提とする。計測はSearch ConsoleやCloudflare Web Analyticsなど無料で使える既存サービスを優先する
 - LPは用途が分かる冒頭説明、説明重複の整理、実画面スクリーンショット、FANZA向け使い方ガイドを実装し、ユーザー指定の Cloudflare Pages `https://scene-memo.pages.dev/` の本番 `main` へ反映済み。LP・ガイド・ZIP・画像・英中韓の言語ファイルがHTTP 200で取得でき、英語表示とガイド画面をブラウザーで確認済み
 - LPはブラウザー優先言語で日本語・英語・簡体字中国語・韓国語を表示する。FANZAガイドは現時点で日本語のみ。多言語固定URLとYouTubeガイドは後続候補。LP FAQとFANZAガイドにCloudflare Web Analyticsの計測範囲を説明する。公開説明が本番に反映されるまではAnalyticsを有効化しない（現在のPages設定状態は未確認）。計測対象はLP・ガイドの閲覧数と表示性能に限定し、拡張機能のコメント本文、動画ID、タイトル、保存時刻、利用状況は収集しない。Cloudflare PagesのDirect Uploadプロジェクトを維持し、GitHub Actions + Wranglerによる自動デプロイを設定した。PR #7は2026-10-25に `en_language` へマージ（`b95453d`）し、Actions runs `40161734375` と `40163075966` が成功して本番 `main` へ反映済み。Cloudflare APIトークンをローテーションしたため、GitHub Repository Secret `CLOUDFLARE_API_TOKEN` の差し替え待ち。追加費用0円を維持する間はX投稿APIを使わない

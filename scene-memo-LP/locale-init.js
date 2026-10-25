@@ -15,7 +15,7 @@
   const japanese = {
     title: "FANZAのシーン保存・ABリピートをブラウザで｜神シーンメモ",
     description: "FANZAをブラウザで観る人へ。動画をダウンロードせず、好きなシーンの再生位置を時刻付きメモで保存・検索。クリックで頭出し、ABリピートにも対応するPC版Chrome拡張「神シーンメモ」。無料で合計50件、Proは買い切り{price}。",
-    ogLocale: "ja_JP", strings: { "¥500": "{price}", "Proは買い切り500円で保存数が無制限になります。": "Proは買い切り{price}で保存数が無制限になります。" },
+    ogLocale: "ja_JP", pricingPromo: { label: "リリース記念キャンペーン価格", until: "2027年1月30日まで", nextPrice: "2027年1月31日から980円" }, strings: { "¥500": "{price}", "Proは買い切り500円で保存数が無制限になります。": "Proは買い切り{price}で保存数が無制限になります。" },
     heroHtml: null, attrs: { theme: "背景テーマ", captions: "シーンの文字デザイン", placeholder: "忘れたくない場面に、ひとこと…", save: "メモを保存", timeline: "デモの再生位置" },
     demo: {
       notes: ["見返したい場面", "気になった台詞", "お気に入りのカット", "ラストシーン"], captions: [["見返したい", "場面"], ["気になった", "台詞"], ["お気に入りの", "カット"], ["ラスト", "シーン"]],

@@ -28,6 +28,13 @@ window.sceneMemoLocaleReady.then(copy => {
       textNode.nodeValue = leading + strings[source] + trailing;
     }
   }
+  const priceOffer = document.querySelector("#price-offer");
+  if (isTokyo && priceOffer && copy.pricingPromo) {
+    priceOffer.querySelector("[data-offer-label]").textContent = copy.pricingPromo.label;
+    priceOffer.querySelector("[data-offer-until]").textContent = copy.pricingPromo.until;
+    priceOffer.querySelector("[data-offer-next-price]").textContent = copy.pricingPromo.nextPrice;
+    priceOffer.hidden = false;
+  }
   const setAttr = (selector, name, value) => { const node = document.querySelector(selector); if (node) node.setAttribute(name, value); };
   setAttr(".theme-switch", "aria-label", copy.attrs.theme);
   setAttr(".caption-switch", "aria-label", copy.attrs.captions);

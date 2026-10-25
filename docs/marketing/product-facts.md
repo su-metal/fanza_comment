@@ -14,7 +14,8 @@
 | 外部通信 | コメント本文を開発者サーバーへ送信しない。動画タイトル補完ではYouTube oEmbedまたは対象動画ページへ取得通信する場合がある。Pro確認・購入では公開 v1.0.2 のSupabaseライセンスAPIへ通信する。 | [公開ZIP内content.js / popup.js](../../scene-memo-LP/extension_v1.0.2.zip)、[README](../../README.md)。「完全オフライン」「通信しない」とは表現しない。 |
 | LP・ガイドのサイト計測 | Cloudflare Web Analyticsが有効な場合、ページ閲覧数と表示性能をCloudflareへ送って集計する。拡張機能内データは対象外。 | CloudflareはCookie不使用、個人データ不収集・不使用、顧客サイト間の追跡なしと説明。現状はPages設定未有効化で、公開説明の反映後に接続する。 [公式データ説明](https://developers.cloudflare.com/web-analytics/data-metrics/data-origin-and-collection/)、[公式プライバシー説明](https://developers.cloudflare.com/use-cases/performance/monitoring/) |
 | 無料上限 | 対応サイト・動画全体で合計50件。 | [公開ZIP内content.js](../../scene-memo-LP/extension_v1.0.2.zip)、[LP](../../scene-memo-LP/index.html)。 |
-| Pro価格 | 1デバイス買い切り。LPはタイムゾーンが `Asia/Tokyo` の場合に¥500、それ以外は$3.99を表示する。 | [LP価格処理](../../scene-memo-LP/app.js)、[LP](../../scene-memo-LP/index.html)、[requirements_definition.md](../requirements_definition.md)。「500円」と書く場合は日本向け表現とする。 |
+| Pro価格 | 1デバイス買い切り。タイムゾーンが `Asia/Tokyo` の場合は¥500、それ以外は$3.99。LPは日本向けに¥500のリリース記念キャンペーン価格を2027年1月30日まで、2027年1月31日から¥980で販売する予定を表示する。価格切替時はLP・拡張機能・Checkoutの表示と実価格を同期する。 | [LP価格処理](../../scene-memo-LP/app.js)、[LP](../../scene-memo-LP/index.html)、[requirements_definition.md](../requirements_definition.md)。「500円」と書く場合は日本向け表現とする。 |
+| 地域利用 | FANZA/DMMの地域制限により、日本国外では利用できないサービス・動画がある。LPではVPN等を使っても利用は保証されず、拡張機能が地域制限を回避しないことを4言語で案内する。 | [DMM公式サポート](https://support.dmm.com/accounts/article/45604)。利用可能性を一律に断定せず、サービスや動画によって制限があると説明する。 |
 | 導入・更新 | 現行LPはChrome Web Storeを経由しないZIPの手動導入を案内。ストアの自動更新はなく、新しいZIPの手動更新が必要。 | [LP導入案内](../../scene-memo-LP/index.html)、公開ZIP内の多言語手順書。Chrome Web Store限定公開への切替は未決定。 |
 | 公式プレーヤーの代替機能 | DMM Player v2はお気に入り場面へのチャプター追加、チャプター間のABリピートに対応する。公式ヘルプでは動画ファイルを開いて使うプレーヤーとして説明されている。 | [FANZA公式ヘルプ](https://support.fanza.jp/digital/article/46515)。神シーンメモを「唯一のシーン保存手段」と言わず、FANZAのブラウザー視聴中に文章メモ付きの時刻をローカル保存できる点を軸に説明する。 |
 
