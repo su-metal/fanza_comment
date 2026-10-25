@@ -1,0 +1,33 @@
+name: Deploy Scene Memo LP
+
+on:
+  push:
+    branches:
+      - en_language
+    paths:
+      - "scene-memo-LP/**"
+      - ".github/workflows/deploy-scene-memo-pages.yml"
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: scene-memo-pages-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to Cloudflare Pages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Deploy LP
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy scene-memo-LP --project-name=scene-memo --branch=main
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
