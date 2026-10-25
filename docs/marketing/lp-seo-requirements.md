@@ -2,7 +2,7 @@
 
 作成日: 2026-10-24（日本時間）
 最終更新日: 2026-10-25（日本時間）
-状態: LPと日本語FANZAガイドをCloudflare Pages本番へ反映済み。LP・ガイド・ZIP等の取得と英語ブラウザー表示を確認。robots/sitemapはローカルに追加済みだが、公開URLはLPのHTMLを返しており未反映（2026-10-25）。
+状態: LP・日本語FANZAガイド・robots.txt・sitemap.xml・共有画像をCloudflare Pages本番へ反映済み。GitHub Actionsの自動配信が稼働。Google Search ConsoleのHTML所有権確認ファイルを追加し、所有権確認とサイトマップ送信を準備中（2026-10-25）。
 
 ## 1. 目的と文書の位置付け
 
@@ -111,7 +111,7 @@ LPと日本語FANZAガイドをCloudflare Pages本番へ反映済み。YouTube�
 - ガイドの紹介リンクと、記事からの導入リンクは、リンク先の内容が分かる文章にする。
 - LPとFANZAガイドに、canonicalと一致する`og:url`、ページ固有のOpen Graph title/description、公開絶対URLの`og:image`、`twitter:card=summary_large_image`を設定する。共有画像は1200×630 PNGとし、実画面とサンプルデータの説明が一致するようにする。
 - 今回の公開ではURL・ガイド・ZIPが意図した内容を返すことを確認済み。以後の更新時も、公開後にリンク先とZIP取得を確認する。
-- 2026-10-25に日本語共有カード`scene-memo-LP/assets/og-share-ja.png`を作成し、LPとガイドのSNSメタデータをローカル追加。公開後の画像取得とX等のカード表示は未確認。
+- 2026-10-25に日本語共有カード`scene-memo-LP/assets/og-share-ja.png`を作成。LPとガイドのSNSメタデータ、本番画像の表示を確認済み。X等のカード展開表示は未確認。
 
 ### SEARCH-03: 多言語URLとクロール基盤（後続の提案）
 
@@ -119,7 +119,7 @@ LPと日本語FANZAガイドをCloudflare Pages本番へ反映済み。YouTube�
 - ブラウザの優先言語判定は初回の案内に使い、言語を選んだURLではその言語の本文を安定して表示する。対応する言語への切替リンクを用意する。
 - 主要な説明を初期HTMLで読める構成にし、各言語版の `hreflang` とcanonicalを整える。
 - 公開済みページのサイトマップ、robots設定、ホスティング側のアクセス制限を確認する。Googlebot、Bingbot、OAI-SearchBotのアクセス方針を整理する。
-- 2026-10-25に `scene-memo-LP/robots.txt` と `scene-memo-LP/sitemap.xml` をローカル作成。公開URLの両パスはHTTP 200だが `text/html` でLP本文を返すため、静的ファイルは本番に未反映。Cloudflare Pagesへの反映後に正しいContent-Typeと本文を再確認する。
+- 2026-10-25に `scene-memo-LP/robots.txt` と `scene-memo-LP/sitemap.xml` を作成して本番へ反映。ブラウザーでrobots本文と有効なXML表示を確認済み。Content-Typeヘッダーは別途確認していない。
 - ガイドの全言語展開は別の段階で検討する。未翻訳のガイドへ、存在しない言語版のリンクを作らない。
 
 ### SEARCH-04: AIの回答で参照される説明
