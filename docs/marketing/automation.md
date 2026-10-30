@@ -6,7 +6,7 @@
 
 PC版ChromeでFANZAを視聴する人へ、時刻付きメモ・頭出し・ABリピートの使い方を届ける。初期運用は日本語を中心にする。
 
-このチャットに、毎週月曜・木曜の午前9時（日本時間）の定期実行を登録済み。原稿作成と運用状況の確認を進める。Xの投稿先はユーザー指定の https://x.com/awawawawawadama。投稿用API接続は未接続で、記事の公開先は未指定。Google Search Consoleは所有権確認とサイトマップ送信まで完了したが取得エラーが残り、Cloudflare Web Analyticsは有効化・本番デプロイ済みで実測値待ち。Bing Webmaster Toolsはユーザー方針で保留。外部への投稿や記事公開の成功を示す記録はまだない。
+このチャットに、毎週月曜・木曜の午前9時（日本時間）の定期実行を登録済み。原稿作成と運用状況の確認を進める。Xの投稿先はユーザー指定の https://x.com/awawawawawadama。投稿用API接続は未接続で、記事の公開先は未指定。Search Consoleの所有権確認とサイトマップ再送信成功は記録済みだが、最新レポートは未確認。2026-10-30にGA4専用プロパティを作成し、LP・ガイドにタグと公開説明を追加する変更を準備したが、本番未反映。Cloudflare Pages MetricsではWeb Analyticsが有効と表示されるため、GA4公開後に無効化して二重計測を避ける。Bing Webmaster Toolsはユーザー方針で保留。外部への投稿や記事公開の成功を示す記録はまだない。
 
 その後のユーザー指定により、追加費用0円を優先する。公式X APIはユーザーが利用中との申告があるが、この作業環境での接続確認は未実施で、投稿作成APIは従量課金のため呼び出さない。定期実行では原稿作成まで行い、無料の手動投稿を前提とする。既存の定期実行登録は本番の自動配信基盤とは区別し、本書の更新によるスケジュール変更・公開開始は行っていない。
 
@@ -40,7 +40,7 @@ PC版ChromeでFANZAを視聴する人へ、時刻付きメモ・頭出し・AB�
 
 投稿リンクは確認済みのLP canonical URLを使う。UTMを集計できる無料手段が確認できた場合のみ `utm_source=x&utm_medium=organic_social&utm_campaign=scene_memo_awareness&utm_content=<原稿ID>` を付ける。集計できない間はUTM別流入を未取得と記録する。
 
-計測は無料のSearch ConsoleとCloudflare Web Analyticsを優先し、新しい契約・登録料・従量課金は発生させない。queue.jsonのanalytics_connectionは、両方の設定が有効でも実測値がまだない間はconnected_pending_dataとする。Search Consoleのサイトマップ取得状態とCloudflare Analyticsの実測値は別々に記録し、未取得を0件と扱わない。Cloudflare Web AnalyticsはUTMクエリとカスタムイベントに対応しないため、これを有効化してもUTM別流入・ZIPクリックは計測済みにならない。接続状態と未取得指標は[製品事実・計測確認表](product-facts.md)で管理する。
+計測はSearch ConsoleとGoogle Analytics 4（GA4）を使い、新しい契約・登録料・従量課金は発生させない。GA4タグは専用プロパティに設定済みだが、本番未反映の間は `ga4_property_created_pending_deployment` と記録する。反映後、ページビュー、セッション開始、新規訪問、ページ上の利用時間、参照元を確認し、未取得を0件と扱わない。Googleの自動収集イベント以外のカスタムイベント・ZIPクリックは初期対象に含めない。Cloudflare Web Analytics beaconが本番に残っていないことも確認する。接続状態と未取得指標は[製品事実・計測確認表](product-facts.md)で管理する。
 
 最初の4週間で、最大8件のX投稿と最大4本の記事を扱う。4週間分の実測を確認できる時点で、流入が増えたか、導入で離脱しているか、扱うテーマが重複していないかを評価し、次の頻度を提案する。数字がなければ、データ不足と必要な接続だけを記録する。
 

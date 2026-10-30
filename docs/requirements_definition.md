@@ -299,7 +299,7 @@ Functionsパラメーター:
 - 公開先はユーザー指定の Cloudflare Pages `https://scene-memo.pages.dev/`。GitHub Actions run `40161734375` が成功し、LP・ガイド・ZIP・画像・英中韓の言語ファイルを本番 `main` へ反映済み。robots.txt・sitemap.xml・共有画像の表示をブラウザーで確認し、英語表示とガイド画面も確認済み
 - LP用GitHub Actions + WranglerはPR #7として `en_language` へ2026-10-25にマージ済み（`b95453d`）。Cloudflare Pages用GitHub Secretsを使う。Cloudflare APIトークンをローテーション後、Actions run `40185303631`（commit `3e1ca5a`）の成功でRepository Secretと本番配信を再確認した
 - Google Search ConsoleのURLプレフィックス `https://scene-memo.pages.dev/` はHTMLファイル方式で所有権確認済み。サイトマップ初回レポートは「取得できませんでした」・検出0件。公開URLのrobots/sitemap応答を確認後、2026-10-25にサイトマップを再送信し、Googleの送信成功表示を確認した。レポートの処理結果は未更新で、検索流入・順位・SEO/AIO効果は未確認。中国語・韓国語の実ブラウザー表示も未確認
-- 多言語固定URLとBing Webmaster Toolsは後続候補。YouTube向け日本語ガイドは公開済み。Cloudflare Web Analyticsの計測説明をLP FAQとFANZAガイドに追加する変更を準備したが、本番未反映。Pages設定状態は未確認で、公開説明が反映された後に確認・有効化する。既存の定期実行登録と本番配信を区別する
+- 多言語固定URLとBing Webmaster Toolsは後続候補。YouTube向け日本語ガイドは公開済み。2026-10-30にGA4専用プロパティを作成し、測定ID `G-29BQ8L3ST0` と公開説明をトップ・FANZA・YouTubeへ追加した。本番反映を進行中で、GA4実受信とCloudflare Web Analytics停止はリリース後に確認する。既存の定期実行登録と本番配信を区別する
 - SEO効果・検索順位・検索数は未確認。追加費用0円を維持する間はX投稿API認証を確認・利用しない
 
 ---

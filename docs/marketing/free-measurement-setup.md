@@ -26,26 +26,26 @@
 4. サイトマップがインポートされていない場合だけ、BingのSitemaps画面から `https://scene-memo.pages.dev/sitemap.xml` を送信する。
 5. 登録後は検索パフォーマンスと、利用可能な場合はAI Performanceを確認する。インデックス掲載やAI回答での引用は保証されない。
 
-## 3. Cloudflare Web Analytics（任意・無料）
+## 3. Google Analytics 4（GA4）
 
-現状: LPとFANZAガイドの公開説明を含むPR #9は未マージ。本番LPで説明が未掲載であることを確認した。Pages設定状態は未確認。公開説明が本番へ反映された後に設定を確認し、必要に応じて有効化する。
+現状: 2026-10-30に専用プロパティ「神シーンメモ」とWebストリーム `https://scene-memo.pages.dev` を作成し、測定ID `G-29BQ8L3ST0` を取得。拡張計測はオフ。トップ・FANZAガイド・YouTubeガイドにGoogle tagと公開説明を追加する変更を準備したが、本番未反映で受信開始・レポート値は未確認。Cloudflare Pages MetricsではWeb Analyticsが有効と表示される。
 
-1. LP FAQとFANZAガイドのプライバシー欄に、計測範囲・Cloudflareへの送信・拡張機能データを対象外とする説明が公開されていることを確認する。
-2. Cloudflare DashboardでWorkers & Pages → `scene-memo` → Metrics → Web Analytics → Enableを選ぶ。
-3. Pagesは次回デプロイ時に計測スクリプトを自動挿入する。デプロイ後にHTMLの計測スクリプトとWeb Analytics画面の受信状態を確認する。
-4. ページ閲覧数と表示性能を初回基準値として記録する。ZIPクリックや拡張機能の利用・インストール数として読み替えない。
+1. GA4タグと計測範囲の公開説明を3ページへ同時に反映する。
+2. Cloudflare DashboardでWorkers & Pages → `scene-memo` → Metrics → Web Analytics → 無効にする、を選び、公開ページのCloudflare beaconが止まったことを確認する。
+3. GA4の「リアルタイム」で3ページの `page_view` を確認し、「ページとスクリーン」でページ別閲覧と参照元を確認する。拡張計測は無効のままにする。
+4. ページ閲覧・標準イベントを初回基準値として記録する。ZIPクリックや拡張機能の利用・インストール数として読み替えない。
 
-Cloudflareの現行説明ではWeb Analyticsは無料で、Cookieを使わず、訪問者の個人データを収集・使用せず、顧客サイト間で個人を追跡しない。計測対象はLPとガイドのページ閲覧・表示性能に限る。拡張機能のメモ本文、動画ID、動画タイトル、再生位置、利用状況は送信しない。Cloudflare Web AnalyticsはURLクエリ文字列とカスタムイベントを記録しないため、UTM別流入やZIPクリックの値は取れないものとして扱う。
+GA4ではCookieなどの識別子を使い、ページURL・タイトル、参照元、端末・ブラウザー情報などをGoogleへ送信する。ページビューに加えてセッション開始、新規訪問、ページ上の利用時間が自動収集される。Googleシグナル、広告パーソナライズ用シグナル、拡張計測は無効にし、カスタムイベントは送らない。拡張機能のメモ本文、動画ID、動画タイトル、再生位置、保存時刻、利用状況、ページ上のクリック・スクロール・ダウンロードイベントは計測しない。Google Analyticsのデータ取扱いは[公式説明](https://support.google.com/analytics/answer/6004245?hl=ja)を参照する。
 
 ## 4. 初回の基準値
 
 - [ ] 接続した日付と、各サービスが示す最初の対象期間を記録する。
 - [ ] Search Console: 検索語、表示、クリック、平均掲載順位。
 - [ ] Bing Webmaster Tools: 検索語、表示、クリック、AI Performanceが利用できる場合は引用状況。
-- [ ] Cloudflare Web Analytics: ページ別閲覧とパフォーマンス（任意）。
+- [ ] Google Analytics 4: ページ別閲覧、標準イベント、参照元。
 - [ ] 4週間後に同じ指標を比較する。未取得は空欄または「未取得」とし、ゼロ実績に置き換えない。
 
-拡張機能のメモ本文、動画ID、動画タイトル、保存時刻、利用状況は認知施策の計測へ追加しない。UTMは集計先の仕様を確認するまで付けない。
+拡張機能のメモ本文、動画ID、動画タイトル、保存時刻、利用状況は認知施策の計測へ追加しない。UTM別流入はタグの本番反映後にGA4の標準レポートで受信を確認してから利用する。カスタムイベントやZIPクリック計測は初期対象に含めない。
 
 ## 公式手順
 
@@ -53,5 +53,5 @@ Cloudflareの現行説明ではWeb Analyticsは無料で、Cookieを使わず、
 - [Search Consoleの所有権確認方法](https://support.google.com/webmasters/answer/9008080?hl=en)
 - [Bing Webmaster Tools: サイト追加・所有権確認](https://www.bing.com/webmasters/help/add-and-verify-site-12184f8b)
 - [Bing Webmaster Tools: サイトマップ送信](https://www.bing.com/webmasters/help/Sitemaps-3b5cf6ed)
-- [Cloudflare Pages: Web Analyticsを有効化](https://developers.cloudflare.com/pages/how-to/web-analytics/)
+- [Google Analytics: Webページのページビューを測定](https://developers.google.com/analytics/devguides/collection/ga4/views?technology=websites)
 
