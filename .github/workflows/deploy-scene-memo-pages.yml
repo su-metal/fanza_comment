@@ -24,6 +24,31 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
+      - name: Disable Cloudflare Web Analytics injection
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          api_url="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/scene-memo"
+          response="$(curl --silent --show-error --fail \
+            --request PATCH "$api_url" \
+            --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data '{"build_config":{"web_analytics_tag":"","web_analytics_token":""}}')"
+          if ! jq -e '.success == true' <<< "$response" >/dev/null; then
+            echo "::error::Cloudflare Pages project update failed."
+            exit 1
+          fi
+
+          project="$(curl --silent --show-error --fail "$api_url" \
+            --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}")"
+          if ! jq -e '.success == true and ((.result.build_config.web_analytics_tag // "") == "") and ((.result.build_config.web_analytics_token // "") == "")' <<< "$project" >/dev/null; then
+            echo "::error::Cloudflare Web Analytics settings are still present."
+            exit 1
+          fi
+          echo "Cloudflare Web Analytics injection disabled for the Pages project."
+
       - name: Deploy LP
         uses: cloudflare/wrangler-action@v3
         with:
