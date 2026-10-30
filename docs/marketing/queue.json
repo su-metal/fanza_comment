@@ -9,7 +9,7 @@
     "article_destination": null,
     "lp_candidate_url": "https://scene-memo.pages.dev/",
     "lp_url_verified": true,
-    "analytics_connection": "connected_pending_data"
+    "analytics_connection": "ga4_property_created_pending_deployment"
   },
   "items": [
     {
