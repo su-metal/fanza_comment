@@ -1,7 +1,7 @@
 # 認知施策用の製品事実・計測確認表
 
 確認日: 2026-10-31（日本時間）
-用途: LP・投稿・記事の事実確認用。リポジトリ内の公開ZIPとソースを照合した結果であり、GA4プロパティとCloudflare Pages Metricsの状態も確認した。GA4タグは本番未反映で、実測値は未取得。
+用途: LP・投稿・記事の事実確認用。リポジトリ内の公開ZIPとソースを照合し、GA4プロパティとCloudflare Pagesの本番設定を確認した。GA4のcollectリクエストは3ページで確認済み。リアルタイム集計画面の値は未確認。
 
 ## v1.0.3公開候補について使える事実
 
@@ -14,7 +14,7 @@
 | 主な機能 | 動画の再生時刻と文章メモを複数保存し、メモ一覧・検索から該当位置へ戻れる。A/Bで任意区間をリピートできる。 | [requirements_definition.md](../requirements_definition.md)、公開LP。公開ZIP内のコメント上限は50件。 |
 | 保存対象 | コメント本文・再生時刻などのメモは `chrome.storage.local` に保存される。動画ファイルを保存・ダウンロードする機能ではない。 | [候補ZIP内content.js](../../scene-memo-LP/extension_v1.0.3.zip)、[LP](../../scene-memo-LP/index.html)。 |
 | 外部通信 | コメント本文を開発者サーバーへ送信しない。動画タイトル補完ではYouTube oEmbedまたは対象動画ページへ取得通信する場合がある。v1.0.3ではPro確認・購入にFirebase版ライセンスAPIを使い、v1.0.2はSupabase APIを継続利用する。 | [候補ZIP内content.js / popup.js](../../scene-memo-LP/extension_v1.0.3.zip)、[README](../../README.md)。「完全オフライン」「通信しない」とは表現しない。 |
-| LP・ガイドのサイト計測 | GA4専用プロパティ「神シーンメモ」、Webストリーム `https://scene-memo.pages.dev`、測定ID `G-29BQ8L3ST0` を設定。トップ・FANZA・YouTubeガイドのローカルHTMLにGoogle tagと説明を追加したが本番未反映で、実測値は未取得。 | GA4はCookieなどの識別子を使用。Googleシグナル、広告パーソナライズ用シグナル、拡張計測は無効。拡張機能内データとページ操作イベントは計測対象外。Cloudflare Pages MetricsではWeb Analyticsが有効と表示されるため、GA4公開後に無効化してbeacon停止を確認する。 |
+| LP・ガイドのサイト計測 | GA4専用プロパティ「神シーンメモ」、Webストリーム `https://scene-memo.pages.dev`、測定ID `G-29BQ8L3ST0` を設定。トップ・FANZA・YouTubeガイドにGoogle tagと説明を本番反映し、公開ブラウザーから各ページのcollectリクエストを確認した。GA4リアルタイム集計画面の値は未確認。 | GA4はCookieなどの識別子を使用。Googleシグナル、広告パーソナライズ用シグナル、拡張計測は無効。拡張機能内データとページ操作イベントは計測対象外。Cloudflare Web AnalyticsはPages APIで停止し、公開ページからBeaconがないことを確認した。Pagesデプロイ前に同設定をクリアする。 |
 | 無料上限 | 対応サイト・動画全体で合計50件。 | [候補ZIP内content.js](../../scene-memo-LP/extension_v1.0.3.zip)、[LP](../../scene-memo-LP/index.html)。 |
 | Pro価格 | 1デバイス買い切り。タイムゾーンが `Asia/Tokyo` の場合は¥500、それ以外は$3.99。LPは日本向けに¥500のリリース記念キャンペーン価格を2027年1月30日まで、2027年1月31日から¥980で販売する予定を表示する。価格切替時はLP・拡張機能・Checkoutの表示と実価格を同期する。 | [LP価格処理](../../scene-memo-LP/app.js)、[LP](../../scene-memo-LP/index.html)、[requirements_definition.md](../requirements_definition.md)。「500円」と書く場合は日本向け表現とする。 |
 | 地域利用 | FANZA/DMMの地域制限により、日本国外では利用できないサービス・動画がある。LPではVPN等を使っても利用は保証されず、拡張機能が地域制限を回避しないことを4言語で案内する。 | [DMM公式サポート](https://support.dmm.com/accounts/article/45604)。利用可能性を一律に断定せず、サービスや動画によって制限があると説明する。 |
@@ -39,10 +39,10 @@
 ## 計測の現状
 
 - 2026-10-25にCloudflare Pages本番の `/robots.txt` はHTTP 200・`text/plain`、`/sitemap.xml` はHTTP 200・`application/xml`で正しい本文を返すことを確認した。Search ConsoleのURLプレフィックスはHTMLファイル方式で所有権確認済み。サイトマップの初回レポートは「取得できませんでした」・検出0件だったため、同日再送信しGoogleの送信成功表示を確認。既存レポート行は初回失敗のままで、再処理・レポート更新を待つ。
-- 配信台帳の `analytics_connection` は `ga4_property_created_pending_deployment`。Search Consoleの所有権確認・サイトマップ再送信成功は記録済みだが、最新レポートは未確認。GA4は2026-10-30にプロパティとストリームを作成し、タグと説明をローカル3ページへ追加した。本番反映前のため受信データ・SNS/LP計測値は未取得。[queue.json](queue.json)、[初回準備記録](runs/2026-10-24.md)。
-- GA4では標準の参照元レポートで流入元を確認できる。UTM別流入はタグの本番反映後に実際の受信を確認してから使う。
+- 配信台帳の `analytics_connection` は `ga4_tag_live_pending_report_confirmation`。Search Consoleの所有権確認・サイトマップ再送信成功は記録済みだが、最新レポートは未確認。GA4は2026-10-30にプロパティとストリームを作成し、2026-10-31にトップ・ガイドへタグと説明を本番反映した。公開ページからcollectリクエストを確認したが、Google Analyticsリアルタイム画面の集計値は未確認。[queue.json](queue.json)、[初回準備記録](runs/2026-10-24.md)。
+- GA4では標準の参照元レポートで流入元を確認できる。UTM別流入はGA4レポートで実データを確認してから使う。
 - GA4はページビューと標準イベントを収集する。ページ上のクリック・スクロール・ダウンロードイベント、ZIPクリック、拡張機能内利用は初期対象にしない。
-- Cloudflare Pages MetricsではWeb Analyticsが有効と表示される。GA4タグの公開と同時期に無効化し、公開HTMLからCloudflare beaconが消えたことを確認する。
+- Cloudflare Pages Web Analyticsの挿入設定はActions run `41138048814` でAPI経由で停止し、公開ページからBeaconが消えたことを確認した。以後のPagesデプロイでもAPIでタグ設定をクリアしてから配信する。
 - Cloudflare PagesはDirect Upload型だが、GitHub Actions + Wranglerを使った本番自動配信を設定済み。PR #7は2026-10-25に `en_language` へマージされ、Actions runs `40161734375` と `40163075966` が成功。Cloudflare APIトークンのローテーション後、Actions run `40185303631`（commit `3e1ca5a`）が成功し、Repository Secretと本番配信を再確認した。
 - Search Consoleの所有権確認とサイトマップ送信は完了。初回送信レポートは「取得できませんでした」・検出0件のまま。公開URLを修正後に再送信し、送信成功表示は確認済みだが、再処理後のレポートと検索実績はまだ未取得。
 - 代替機能の確認では、FANZA公式ヘルプにDMM Player v2のチャプター追加・チャプター間ABリピートが記載されていた。対象ページは動画ファイルを開くデスクトッププレーヤーの説明なので、ブラウザー視聴向けの神シーンメモとは利用環境を分けて説明する。

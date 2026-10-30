@@ -2,7 +2,7 @@
 
 作成日: 2026-10-24（日本時間）
 最終更新日: 2026-10-31（日本時間）
-状態: LP・日本語FANZAガイド・robots.txt・sitemap.xml・共有画像をCloudflare Pages本番へ反映済み。GitHub Actionsの自動配信が稼働。Google Search Consoleの所有権確認済み。サイトマップ初回レポートは取得失敗・検出0件だったため、公開URLの正常応答確認後に再送信し、送信成功表示を確認。レポート更新待ち（2026-10-25）。GA4専用プロパティ「神シーンメモ」とストリームを作成し、測定ID `G-29BQ8L3ST0` を取得。GA4タグと公開説明をローカル3ページへ追加したが本番未反映で実測値は未取得。Cloudflare Pages MetricsではWeb Analyticsが有効と確認したため、GA4公開後に無効化して二重計測を防ぐ。
+状態: LP・日本語FANZAガイド・robots.txt・sitemap.xml・共有画像をCloudflare Pages本番へ反映済み。GitHub Actionsの自動配信が稼働。Google Search Consoleの所有権確認済み。サイトマップ初回レポートは取得失敗・検出0件だったため、公開URLの正常応答確認後に再送信し、送信成功表示を確認。レポート更新待ち（2026-10-25）。GA4専用プロパティ「神シーンメモ」の測定ID `G-29BQ8L3ST0` をトップ・2つのガイドへ反映済み（Actions run `41137478946`）。公開ページからGoogle Analytics collectリクエストを確認したが、リアルタイム集計値は未確認。Cloudflare Web AnalyticsはPages API経由で停止し（Actions run `41138048814`）、公開ページにBeaconがないことを確認。
 
 ## 1. 目的と文書の位置付け
 
@@ -177,6 +177,6 @@ LPと日本語FANZAガイドをCloudflare Pages本番へ反映済み。YouTube�
 
 1. 中国語・韓国語を含む4言語の実ブラウザー表示確認。
 2. ガイドを翻訳する範囲と順序。YouTubeガイドはローカル下書きを確認してから公開判断する。
-3. GA4タグと公開説明を本番へ反映し、リアルタイムで3ページの `page_view` を確認する。Cloudflare Web AnalyticsをPages Metricsで無効化し、公開ページのCloudflare beaconが停止したことも確認する。
+3. GA4タグと公開説明の本番反映、3ページからGoogle Analyticsへのcollectリクエスト、Cloudflare Web Analyticsの停止と公開ページからBeaconが消えたことを確認済み。GA4リアルタイム集計画面での `page_view` 確認はGoogleログインが必要なため未完了。
 
 認証情報の値をチャットやリポジトリに記載する必要はない。追加費用0円を維持する間は、投稿API認証の確認・利用を行わない。

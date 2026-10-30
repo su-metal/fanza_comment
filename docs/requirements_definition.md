@@ -66,7 +66,7 @@
 - Xの投稿先はユーザー指定の `@awawawawawadama`。認知施策は追加費用0円を原則とし、開発者登録料やAPI従量課金が発生する配布・投稿手段を使わない。Xは投稿APIを呼ばず、原稿作成までを自動化して無料の手動投稿を前提とする
 - 原稿は実装済み機能と対応範囲を根拠とし、利用者のコメント本文・視聴情報を取得しない。公開を確認できるURL等がない限り、予約・公開済みと記録しない
 - 指標が未接続なら未取得と記録する。ZIPクリックをインストール完了数と扱わない
-- 計測はSearch ConsoleやCloudflare Web Analyticsなど無料サービスを優先する。新しい有料分析契約や、登録料・従量課金が発生する機能は使わない。Cloudflare Web Analyticsを使う場合はLP・ガイドのページ閲覧数と表示性能に限定し、公開説明を先に反映する。CloudflareはCookieを使わず、訪問者の個人データを収集・使用せず、顧客サイト間で個人を追跡しないと説明している。拡張機能のコメント本文、動画ID、動画タイトル、再生位置、利用状況は収集しない。UTMクエリとカスタムイベントは記録しないため、UTM別流入・LP上のZIPクリックを取得したものとして扱わない
+- 認知計測にはSearch ConsoleとGA4を使い、新しい有料分析契約や登録料・従量課金が発生する機能は使わない。GA4ではLP・2つのガイドの標準ページビューと参照元を計測し、Cookieなどの識別子と自動収集範囲を公開説明する。Googleシグナル、広告向けシグナル、拡張計測、カスタムイベント、ページ上のクリック・スクロール・ダウンロード、拡張機能内データは計測しない。Cloudflare Web Analyticsは使わず、Pagesデプロイ時に挿入設定をAPIで停止する
 - 具体的な実行手順・重複防止・接続条件・外部方針の根拠は運用正本に記載する
 
 ## 5. 機能要件
@@ -299,7 +299,7 @@ Functionsパラメーター:
 - 公開先はユーザー指定の Cloudflare Pages `https://scene-memo.pages.dev/`。GitHub Actions run `40161734375` が成功し、LP・ガイド・ZIP・画像・英中韓の言語ファイルを本番 `main` へ反映済み。robots.txt・sitemap.xml・共有画像の表示をブラウザーで確認し、英語表示とガイド画面も確認済み
 - LP用GitHub Actions + WranglerはPR #7として `en_language` へ2026-10-25にマージ済み（`b95453d`）。Cloudflare Pages用GitHub Secretsを使う。Cloudflare APIトークンをローテーション後、Actions run `40185303631`（commit `3e1ca5a`）の成功でRepository Secretと本番配信を再確認した
 - Google Search ConsoleのURLプレフィックス `https://scene-memo.pages.dev/` はHTMLファイル方式で所有権確認済み。サイトマップ初回レポートは「取得できませんでした」・検出0件。公開URLのrobots/sitemap応答を確認後、2026-10-25にサイトマップを再送信し、Googleの送信成功表示を確認した。レポートの処理結果は未更新で、検索流入・順位・SEO/AIO効果は未確認。中国語・韓国語の実ブラウザー表示も未確認
-- 多言語固定URLとBing Webmaster Toolsは後続候補。YouTube向け日本語ガイドは公開済み。2026-10-30にGA4専用プロパティを作成し、測定ID `G-29BQ8L3ST0` と公開説明をトップ・FANZA・YouTubeへ追加した。本番反映を進行中で、GA4実受信とCloudflare Web Analytics停止はリリース後に確認する。既存の定期実行登録と本番配信を区別する
+- 多言語固定URLとBing Webmaster Toolsは後続候補。YouTube向け日本語ガイドは公開済み。GA4専用プロパティ「神シーンメモ」の測定ID `G-29BQ8L3ST0` と公開説明をトップ・FANZA・YouTubeへ追加し、Actions run `41137478946` で本番反映した。公開ページのcollectリクエストとBeacon停止を確認済み。GA4のリアルタイム集計画面は未確認のため、集計値は未報告。既存の定期実行登録と本番配信を区別する
 - SEO効果・検索順位・検索数は未確認。追加費用0円を維持する間はX投稿API認証を確認・利用しない
 
 ---
