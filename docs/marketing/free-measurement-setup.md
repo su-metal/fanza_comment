@@ -28,12 +28,12 @@
 
 ## 3. Google Analytics 4（GA4）
 
-現状: 2026-10-30に専用プロパティ「神シーンメモ」とWebストリーム `https://scene-memo.pages.dev` を作成し、測定ID `G-29BQ8L3ST0` を取得。拡張計測はオフ。トップ・FANZAガイド・YouTubeガイドにGoogle tagと公開説明を追加する変更を準備したが、本番未反映で受信開始・レポート値は未確認。Cloudflare Pages MetricsではWeb Analyticsが有効と表示される。
+現状: 2026-10-30に専用プロパティ「神シーンメモ」とWebストリーム `https://scene-memo.pages.dev` を作成し、測定ID `G-29BQ8L3ST0` を取得。拡張計測はオフ。トップ・FANZAガイド・YouTubeガイドのGoogle tagと公開説明はActions run `41137478946` で本番反映済み。公開ページからcollectリクエストを確認したが、GA4リアルタイム画面の集計値は未確認。Pages APIでWeb Analyticsの挿入設定を停止し、Actions run `41138048814` 後の公開ページにCloudflare beaconがないことを確認した。
 
-1. GA4タグと計測範囲の公開説明を3ページへ同時に反映する。
-2. Cloudflare DashboardでWorkers & Pages → `scene-memo` → Metrics → Web Analytics → 無効にする、を選び、公開ページのCloudflare beaconが止まったことを確認する。
-3. GA4の「リアルタイム」で3ページの `page_view` を確認し、「ページとスクリーン」でページ別閲覧と参照元を確認する。拡張計測は無効のままにする。
-4. ページ閲覧・標準イベントを初回基準値として記録する。ZIPクリックや拡張機能の利用・インストール数として読み替えない。
+1. GA4タグと計測範囲の公開説明を3ページへ反映済み。Actions run `41137478946` の成功後、3ページのタグとGoogle Analyticsへのcollectリクエストをブラウザーで確認した。
+2. Pagesデプロイ前にPages APIでWeb Analyticsの挿入設定を停止する手順を追加した。Actions run `41138048814` 成功後、3ページにCloudflare beaconがないことを確認した。
+3. GA4の「リアルタイム」で3ページの `page_view` を確認し、「ページとスクリーン」でページ別閲覧と参照元を確認する。Google Analytics画面はGoogleログインへ転送されたため、集計値の確認は未完了。拡張計測は無効のままにする。
+4. GA4画面で集計値を確認できるまで初回基準値は未取得と記録する。ZIPクリックや拡張機能の利用・インストール数として読み替えない。
 
 GA4ではCookieなどの識別子を使い、ページURL・タイトル、参照元、端末・ブラウザー情報などをGoogleへ送信する。ページビューに加えてセッション開始、新規訪問、ページ上の利用時間が自動収集される。Googleシグナル、広告パーソナライズ用シグナル、拡張計測は無効にし、カスタムイベントは送らない。拡張機能のメモ本文、動画ID、動画タイトル、再生位置、保存時刻、利用状況、ページ上のクリック・スクロール・ダウンロードイベントは計測しない。Google Analyticsのデータ取扱いは[公式説明](https://support.google.com/analytics/answer/6004245?hl=ja)を参照する。
 
